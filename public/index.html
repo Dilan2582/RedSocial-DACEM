@@ -4,12 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mi Red Social</title>
-
-  <!-- Estilos propios -->
   <link rel="stylesheet" href="css/login.css" />
-
-  <!-- SDK de Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <header class="page-header">
@@ -27,32 +22,30 @@
           <label for="firstName">Nombre</label>
           <input id="firstName" type="text" placeholder="Ej: Juan" />
         </div>
-
         <div class="form-group">
           <label for="lastName">Apellido</label>
           <input id="lastName" type="text" placeholder="Ej: Pérez" />
         </div>
-
         <div class="form-group">
           <label for="nickname">Apodo</label>
           <input id="nickname" type="text" placeholder="Ej: juanito" />
         </div>
-
         <div class="form-group">
           <label for="email">Email</label>
           <input id="email" type="email" placeholder="Ej: juan@example.com" />
         </div>
-
         <div class="form-group">
           <label for="password">Contraseña</label>
           <input id="password" type="password" placeholder="******" />
         </div>
-
         <div class="form-group">
           <label for="confirmPassword">Confirmar contraseña</label>
           <input id="confirmPassword" type="password" placeholder="******" />
         </div>
       </div>
+
+      <!-- reCAPTCHA (registro) -->
+      <div id="recaptcha-register" style="margin:8px 0"></div>
 
       <button class="btn primary" onclick="register()">Registrarme</button>
       <div id="registerMsg" class="msg"></div>
@@ -66,11 +59,13 @@
         <label for="identifier">Apodo o Email</label>
         <input id="identifier" type="text" placeholder="tu apodo o email" />
       </div>
-
       <div class="form-group">
         <label for="loginPassword">Contraseña</label>
         <input id="loginPassword" type="password" placeholder="******" />
       </div>
+
+      <!-- reCAPTCHA (login) -->
+      <div id="recaptcha-login" style="margin:8px 0"></div>
 
       <button class="btn primary" onclick="login()">Entrar</button>
       <div id="loginMsg" class="msg"></div>
@@ -96,9 +91,38 @@
   </main>
 
   <script>
-    // Base URL de tu API (evita hardcodear localhost)
+    // ====== Config ======
     const API_USER = `${location.origin}/api/user`;
     const API_AUTH = `${location.origin}/api/auth`;
+
+    // Site key REAL (v2 checkbox)
+    const RECAPTCHA_SITE_KEY = "6Le1Js8rAAAAAL5ds4gpZ5Wrz1NGxQ4uLMG7AlOx";
+
+    // ====== reCAPTCHA: render explícito (2 widgets) ======
+    let widgetRegister = null;
+    let widgetLogin = null;
+
+    function initRecaptcha() {
+      try {
+        widgetRegister = grecaptcha.render("recaptcha-register", {
+          sitekey: RECAPTCHA_SITE_KEY,
+          theme: "light"
+        });
+        widgetLogin = grecaptcha.render("recaptcha-login", {
+          sitekey: RECAPTCHA_SITE_KEY,
+          theme: "light"
+        });
+        console.log("[reCAPTCHA] widgets", { widgetRegister, widgetLogin });
+      } catch (e) {
+        console.warn("[reCAPTCHA] aún no disponible:", e);
+      }
+    }
+
+    // ---------- Utilidad mensajes ----------
+    function setMsg(el, text, isError = false) {
+      el.textContent = text;
+      el.className = "msg " + (isError ? "error" : "success");
+    }
 
     // ---------- Registro ----------
     async function register() {
@@ -111,67 +135,79 @@
       const msg = document.getElementById("registerMsg");
 
       if (!firstName || !lastName || !nickname || !email || !password || !confirm) {
-        setMsg(msg, "Todos los campos son obligatorios", true);
-        return;
+        return setMsg(msg, "Todos los campos son obligatorios", true);
       }
       if (password !== confirm) {
-        setMsg(msg, "Las contraseñas no coinciden.", true);
-        return;
+        return setMsg(msg, "Las contraseñas no coinciden.", true);
       }
+
+      const recaptchaToken = grecaptcha.getResponse(widgetRegister);
+      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
 
       try {
         const res = await fetch(`${API_USER}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ firstName, lastName, nickname, email, password })
+          body: JSON.stringify({ firstName, lastName, nickname, email, password, recaptchaToken })
         });
-        const data = await res.json();
-        if (data.ok) {
-          setMsg(msg, "Usuario registrado ✅");
-        } else {
-          setMsg(msg, data.message || "Error al registrar.", true);
+        const data = await res.json().catch(() => ({}));
+        console.log("[REGISTER] status", res.status, "data", data);
+
+        if (res.ok && data.ok) setMsg(msg, "Usuario registrado ✅");
+        else {
+          setMsg(msg, data.message || `Error ${res.status}`, true);
+          if (data.details) console.warn("[REGISTER] recaptcha details:", data.details);
         }
-      } catch {
+      } catch (e) {
+        console.error("[REGISTER] fetch error:", e);
         setMsg(msg, "Error de conexión.", true);
+      } finally {
+        grecaptcha.reset(widgetRegister);
       }
     }
 
-    // ---------- Login normal ----------
+    // ---------- Login ----------
     async function login() {
       const identifier = document.getElementById("identifier").value.trim();
       const password   = document.getElementById("loginPassword").value;
       const msg = document.getElementById("loginMsg");
 
       if (!identifier || !password) {
-        setMsg(msg, "Ingresa apodo/email y contraseña", true);
-        return;
+        return setMsg(msg, "Ingresa apodo/email y contraseña", true);
       }
+
+      const recaptchaToken = grecaptcha.getResponse(widgetLogin);
+      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
 
       try {
         const res = await fetch(`${API_USER}/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ identifier, password })
+          body: JSON.stringify({ identifier, password, recaptchaToken })
         });
-        const data = await res.json();
-        if (data.ok) {
+        const data = await res.json().catch(() => ({}));
+        console.log("[LOGIN] status", res.status, "data", data);
+
+        if (res.ok && data.ok) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
           setMsg(msg, "Login exitoso ✅");
           setTimeout(() => (window.location.href = "user.html"), 600);
         } else {
-          setMsg(msg, data.message || "Error al iniciar sesión.", true);
+          setMsg(msg, data.message || `Error ${res.status}`, true);
+          if (data.details) console.warn("[LOGIN] recaptcha details:", data.details);
         }
-      } catch {
+      } catch (e) {
+        console.error("[LOGIN] fetch error:", e);
         setMsg(msg, "Error de conexión.", true);
+      } finally {
+        grecaptcha.reset(widgetLogin);
       }
     }
 
     // ---------- Google Login callback ----------
     async function handleGoogleLogin(response) {
-      // response.credential es el ID Token de Google
       const id_token = response.credential;
-
       try {
         const res = await fetch(`${API_AUTH}/google`, {
           method: "POST",
@@ -190,12 +226,11 @@
         alert("Fallo conexión con backend /api/auth/google");
       }
     }
-
-    // ---------- Utilidad mensajes ----------
-    function setMsg(el, text, isError = false) {
-      el.textContent = text;
-      el.className = "msg " + (isError ? "error" : "success");
-    }
   </script>
+
+  <!-- Cargar scripts UNA sola vez y al final -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://www.google.com/recaptcha/api.js?onload=initRecaptcha&render=explicit" async defer></script>
 </body>
 </html>
+
