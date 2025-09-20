@@ -1,0 +1,23 @@
+# Dependencias
+node_modules/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Builds / caches
+dist/
+build/
+out/
+.cache/
+
+# Logs y cobertura
+*.log
+coverage/
+
+# Editor / SO
+.vscode/
+*.code-workspace
+.DS_Store
+Thumbs.db
