@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mi Red Social</title>
+
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/login.css" />
+
+  <!-- SDK de Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Mi Red Social DACEM</h1>
+    <p>Bienvenido.</p>
+  </header>
+
+  <main class="container">
+    <!-- Registro -->
+    <section class="card">
+      <h2>Crear cuenta</h2>
+
+      <div class="grid">
+        <div class="form-group">
+          <label for="firstName">Nombre</label>
+          <input id="firstName" type="text" placeholder="Ej: Juan" />
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Apellido</label>
+          <input id="lastName" type="text" placeholder="Ej: Pérez" />
+        </div>
+
+        <div class="form-group">
+          <label for="nickname">Apodo</label>
+          <input id="nickname" type="text" placeholder="Ej: juanito" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder="Ej: juan@example.com" />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input id="password" type="password" placeholder="******" />
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar contraseña</label>
+          <input id="confirmPassword" type="password" placeholder="******" />
+        </div>
+      </div>
+
+      <button class="btn primary" onclick="register()">Registrarme</button>
+      <div id="registerMsg" class="msg"></div>
+    </section>
+
+    <!-- Login -->
+    <section class="card">
+      <h2>Iniciar sesión</h2>
+
+      <div class="form-group">
+        <label for="identifier">Apodo o Email</label>
+        <input id="identifier" type="text" placeholder="tu apodo o email" />
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">Contraseña</label>
+        <input id="loginPassword" type="password" placeholder="******" />
+      </div>
+
+      <button class="btn primary" onclick="login()">Entrar</button>
+      <div id="loginMsg" class="msg"></div>
+
+      <div class="divider"><span>o</span></div>
+
+      <!-- Botón de Google -->
+      <div
+        id="g_id_onload"
+        data-client_id="661877365139-mhu54lv2ng3hngf6b5be3merjiuba4b7.apps.googleusercontent.com"
+        data-callback="handleGoogleLogin"
+        data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-size="large"
+           data-theme="outline"
+           data-text="continue_with"
+           data-shape="rectangular"
+           data-logo_alignment="left">
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Base URL de tu API (evita hardcodear localhost)
+    const API_USER = `${location.origin}/api/user`;
+    const API_AUTH = `${location.origin}/api/auth`;
+
+    // ---------- Registro ----------
+    async function register() {
+      const firstName = document.getElementById("firstName").value.trim();
+      const lastName  = document.getElementById("lastName").value.trim();
+      const nickname  = document.getElementById("nickname").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const password  = document.getElementById("password").value;
+      const confirm   = document.getElementById("confirmPassword").value;
+      const msg = document.getElementById("registerMsg");
+
+      if (!firstName || !lastName || !nickname || !email || !password || !confirm) {
+        setMsg(msg, "Todos los campos son obligatorios", true);
+        return;
+      }
+      if (password !== confirm) {
+        setMsg(msg, "Las contraseñas no coinciden.", true);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_USER}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, nickname, email, password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setMsg(msg, "Usuario registrado ✅");
+        } else {
+          setMsg(msg, data.message || "Error al registrar.", true);
+        }
+      } catch {
+        setMsg(msg, "Error de conexión.", true);
+      }
+    }
+
+    // ---------- Login normal ----------
+    async function login() {
+      const identifier = document.getElementById("identifier").value.trim();
+      const password   = document.getElementById("loginPassword").value;
+      const msg = document.getElementById("loginMsg");
+
+      if (!identifier || !password) {
+        setMsg(msg, "Ingresa apodo/email y contraseña", true);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_USER}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          setMsg(msg, "Login exitoso ✅");
+          setTimeout(() => (window.location.href = "user.html"), 600);
+        } else {
+          setMsg(msg, data.message || "Error al iniciar sesión.", true);
+        }
+      } catch {
+        setMsg(msg, "Error de conexión.", true);
+      }
+    }
+
+    // ---------- Google Login callback ----------
+    async function handleGoogleLogin(response) {
+      // response.credential es el ID Token de Google
+      const id_token = response.credential;
+
+      try {
+        const res = await fetch(`${API_AUTH}/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_token })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+          window.location.href = "user.html";
+        } else {
+          alert("Error con Google login: " + (data.message || "Desconocido"));
+        }
+      } catch {
+        alert("Fallo conexión con backend /api/auth/google");
+      }
+    }
+
+    // ---------- Utilidad mensajes ----------
+    function setMsg(el, text, isError = false) {
+      el.textContent = text;
+      el.className = "msg " + (isError ? "error" : "success");
+    }
+  </script>
+</body>
+</html>
