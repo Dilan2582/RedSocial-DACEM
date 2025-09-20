@@ -1,0 +1,48 @@
+:root{
+  --bg:#0f172a;--panel:#121a2a;--line:#1f2a3a;--text:#e6edf7;--muted:#94a3b8;
+  --accent:#60a5fa;--ring:rgba(96,165,250,.18);--panel2:#0b1323;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+     font-family:system-ui,Segoe UI,Roboto,Arial}
+.wrap{max-width:1100px;margin:28px auto;padding:0 20px}
+
+/* Cabecera */
+.header{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:18px
+}
+.header-left{display:flex;gap:14px;align-items:center}
+.avatar{width:80px;height:80px;border-radius:999px;background:#0b1323;border:1px solid var(--line);
+        display:grid;place-items:center;font-weight:800;color:#7aa7ff;font-size:26px}
+.name{margin:0 0 4px;font-size:32px}
+.email{color:var(--muted)}
+.header-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:.85rem;background:#19314f;border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:#8ec1ff}
+.btn{background:#3b82f6;color:#001b36;font-weight:700;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
+.btn.secondary{background:#334459;color:#dbe8ff}
+.btn.danger{background:#ef4444;color:#fff}
+
+/* contadores a la derecha */
+.counts{
+  display:flex;gap:22px;margin-right:10px;color:#cfe4ff;white-space:nowrap
+}
+.counts b{color:#fff}
+
+/* Tarjetas y formularios */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 8px 22px rgba(0,0,0,.25)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:block;margin:10px 0 6px;color:#cbd5e1;font-size:14px}
+input{width:100%;padding:11px 12px;border-radius:10px;background:var(--panel2);color:var(--text);border:1px solid #233144;outline:none;transition:border-color .15s, box-shadow .15s}
+input:hover{border-color:#2f4666}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+.muted{color:var(--muted)}
+
+/* Listado de personas */
+.users{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.userCard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.userCard .topline{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.mini{width:40px;height:40px;border-radius:999px;background:#0f172a;border:1px solid var(--line);display:grid;place-items:center;color:#8bb3ff;font-weight:800}
+a.link{color:#8ec1ff;text-decoration:none}
+.actions{display:flex;justify-content:space-between;gap:10px}
+@media(max-width:860px){.row{grid-template-columns:1fr}}

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Perfil público</title>
+  <link rel="stylesheet" href="css/user.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="header-left">
+        <div class="avatar" id="avatarTxt">U</div>
+        <div>
+          <h1 class="name" id="nameTxt">Perfil</h1>
+          <div class="email" id="emailTxt"></div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="counts">
+          <div><b id="followersCnt">0</b> seguidores</div>
+          <div><b id="followingCnt">0</b> seguidos</div>
+        </div>
+        <button class="btn" id="followBtn" style="display:none">Seguir</button>
+        <button class="btn secondary" id="backBtn">← Volver</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted" id="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = (p)=>`${location.origin}/api${p}`;
+    const token = localStorage.getItem('token');
+    if(!token){ location.replace('index.html'); }
+    const headers = { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` };
+
+    const params = new URLSearchParams(location.search);
+    const viewedId = params.get('id');  // usuario que estamos viendo
+    const me = JSON.parse(localStorage.getItem('user') || '{}'); // mi usuario (del login)
+
+    const $ = s => document.querySelector(s);
+    let isFollowing = false; // estado actual
+    let counts = { followers: 0, following: 0 }; // conteos actuales
+
+    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
+    function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
+
+    // Toggle follow con plan B (por si tu API no tiene /toggle)
+    async function toggleFollowRequest(targetId, currentState){
+      // 1) Intento /toggle
+      const tryToggle = await fetch(API(`/follow/toggle/${targetId}`), { method:'POST', headers });
+      if (tryToggle.status !== 404) {
+        const data = await tryToggle.json();
+        return data.ok;
+      }
+      // 2) Plan B: POST follow / DELETE unfollow
+      if (!currentState) {
+        const r = await fetch(API(`/follow/${targetId}`), { method:'POST', headers });
+        const d = await r.json(); return d.ok;
+      } else {
+        const r = await fetch(API(`/follow/${targetId}`), { method:'DELETE', headers });
+        const d = await r.json(); return d.ok;
+      }
+    }
+
+    function paintFollowButton(){
+      const btn = $('#followBtn');
+      btn.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+      btn.className = isFollowing ? 'btn secondary' : 'btn';
+    }
+
+    async function onFollowClick(){
+      const btn = $('#followBtn');
+      btn.disabled = true;
+      const ok = await toggleFollowRequest(viewedId, isFollowing);
+      if (ok){
+        // Actualiza estado y conteos en pantalla
+        isFollowing = !isFollowing;
+        counts.followers += isFollowing ? 1 : -1;
+        $('#followersCnt').textContent = counts.followers;
+        paintFollowButton();
+        $('#msg').textContent = isFollowing ? 'Ahora sigues a esta persona' : 'Dejaste de seguir a esta persona';
+      }else{
+        $('#msg').textContent = 'No se pudo actualizar el seguimiento';
+      }
+      btn.disabled = false;
+    }
+
+    async function loadProfile(){
+      try{
+        const r = await fetch(API(`/user/${viewedId}/public`), { headers });
+        if (r.status === 401){ localStorage.removeItem('token'); return location.replace('index.html'); }
+        const d = await r.json();
+        if(!d.ok){ $('#msg').textContent = d.message || 'No se pudo cargar el perfil'; return; }
+
+        const u = d.user;
+        counts = d.counts || counts;
+        isFollowing = !!d.isFollowing;
+
+        $('#nameTxt').textContent = displayName(u);
+        $('#emailTxt').textContent = u.email || '';
+        $('#avatarTxt').textContent = initialLetter(u);
+        $('#followersCnt').textContent = counts.followers ?? 0;
+        $('#followingCnt').textContent = counts.following ?? 0;
+
+        // Mostrar botón seguir si NO es mi propio perfil
+        if (me && me._id && me._id !== viewedId){
+          paintFollowButton();
+          $('#followBtn').style.display = 'inline-block';
+        } else {
+          $('#followBtn').style.display = 'none';
+        }
+
+        $('#msg').textContent = isFollowing ? 'Ya sigues a esta persona' : 'Aún no la sigues';
+      }catch(e){
+        $('#msg').textContent = 'Error de red';
+      }
+    }
+
+    $('#backBtn').onclick = ()=> history.length > 1 ? history.back() : location.replace('user.html');
+    $('#followBtn').onclick = onFollowClick;
+
+    if(!viewedId){ $('#msg').textContent='Falta parámetro ?id=...'; } else { loadProfile(); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Módulo de Usuario</title>
+  <link rel="stylesheet" href="css/user.css">
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="avatar" id="avatarTxt">U</div>
+        <div>
+          <h1 class="name" id="nameTxt">Mi perfil</h1>
+          <div class="email" id="emailTxt">email@ejemplo.com</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="counts">
+          <div><b id="followersCnt">0</b> seguidores</div>
+          <div><b id="followingCnt">0</b> seguidos</div>
+        </div>
+        <span class="badge" id="authBadge">Autenticado</span>
+        <button class="btn danger" id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <!-- Editar perfil -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0">Editar perfil</h3>
+        <button class="btn secondary" id="loadMeBtn" title="Recargar mis datos">Recargar</button>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Nombre</label>
+          <input id="firstName" placeholder="Nombre">
+        </div>
+        <div>
+          <label>Apellido</label>
+          <input id="lastName" placeholder="Apellido">
+        </div>
+        <div>
+          <label>Apodo</label>
+          <input id="nickname" placeholder="apodo">
+        </div>
+        <div>
+          <label>Email</label>
+          <input id="email" type="email" placeholder="correo@dominio.com">
+        </div>
+        <div>
+          <label>Nueva contraseña (opcional)</label>
+          <input id="password" type="password" placeholder="••••••">
+        </div>
+        <div>
+          <label>Confirmar contraseña (opcional)</label>
+          <input id="password2" type="password" placeholder="••••••">
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <button class="btn" id="saveBtn">Guardar cambios</button>
+        <span class="muted" id="saveMsg"></span>
+      </div>
+    </div>
+
+    <!-- Otros usuarios -->
+    <div class="card">
+      <h3 style="margin-top:0">Personas</h3>
+      <div class="users" id="usersGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = (p)=>`${location.origin}/api${p}`;
+    const token = localStorage.getItem('token');
+    if(!token){ location.replace('index.html'); }
+
+    const $ = s => document.querySelector(s);
+    const headers = { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` };
+
+    function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
+    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
+
+    // ---- ME
+    async function loadMe(){
+      const r = await fetch(API('/user/me'), { headers });
+      const d = await r.json();
+      if(!d.ok){ localStorage.removeItem('token'); return location.replace('index.html'); }
+
+      const u = d.user;
+      $('#nameTxt').textContent = displayName(u) || 'Mi perfil';
+      $('#emailTxt').textContent = u.email;
+      $('#avatarTxt').textContent = initialLetter(u);
+
+      $('#followersCnt').textContent = d.counts?.followers ?? 0;
+      $('#followingCnt').textContent = d.counts?.following ?? 0;
+
+      // Prefill form
+      $('#firstName').value = u.firstName || '';
+      $('#lastName').value  = u.lastName  || '';
+      $('#nickname').value  = u.nickname  || '';
+      $('#email').value     = u.email     || '';
+      $('#password').value  = '';
+      $('#password2').value = '';
+    }
+
+    async function saveProfile(){
+      const payload = {
+        firstName: $('#firstName').value.trim(),
+        lastName : $('#lastName').value.trim(),
+        nickname : $('#nickname').value.trim(),
+        email    : $('#email').value.trim(),
+      };
+      const p1 = $('#password').value, p2 = $('#password2').value;
+      if (p1 || p2){
+        if (p1 !== p2){ $('#saveMsg').textContent = 'Las contraseñas no coinciden'; return; }
+        payload.password = p1;
+      }
+      $('#saveMsg').textContent = 'Guardando...';
+      const r = await fetch(API('/user/update'), { method:'PUT', headers, body: JSON.stringify(payload) });
+      const d = await r.json();
+      $('#saveMsg').textContent = d.ok ? 'Cambios guardados' : (d.message || 'Error');
+      if(d.ok) loadMe();
+    }
+
+    // ---- FOLLOW (toggle con plan B)
+    async function toggleFollow(id, isFollowing){
+      // 1) Intento toggle
+      const tryToggle = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers });
+      if (tryToggle.status !== 404) {
+        const data = await tryToggle.json();
+        return data.ok;
+      }
+      // 2) Plan B: POST follow / DELETE unfollow
+      if (!isFollowing) {
+        const r = await fetch(API(`/follow/${id}`), { method:'POST', headers });
+        const d = await r.json(); return d.ok;
+      } else {
+        const r = await fetch(API(`/follow/${id}`), { method:'DELETE', headers });
+        const d = await r.json(); return d.ok;
+      }
+    }
+
+    // ---- Otros usuarios
+    async function loadOthers(){
+      const box = $('#usersGrid'); box.innerHTML = '';
+      const r = await fetch(API('/user/others'), { headers });
+      const d = await r.json();
+      if(!d.ok) return;
+
+      d.users.forEach(u=>{
+        const el = document.createElement('div');
+        el.className = 'userCard';
+        el.innerHTML = `
+          <div class="topline">
+            <div class="mini">${initialLetter(u)}</div>
+            <div>
+              <div><strong>${displayName(u)}</strong></div>
+              <div class="muted">@${u.nickname || 'usuario'}</div>
+            </div>
+          </div>
+          <div class="actions">
+            <a class="link" href="profile.html?id=${u._id}">Ver perfil</a>
+            <button class="btn ${u.isFollowing?'secondary':''}" data-id="${u._id}">
+              ${u.isFollowing ? 'Dejar de seguir' : 'Seguir'}
+            </button>
+          </div>
+        `;
+        el.querySelector('button').onclick = async (ev)=>{
+          const id = ev.currentTarget.getAttribute('data-id');
+          const ok = await toggleFollow(id, u.isFollowing);
+          if(ok){ loadOthers(); loadMe(); }
+        };
+        box.appendChild(el);
+      });
+    }
+
+    // ---- Eventos
+    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('token'); location.replace('index.html'); };
+    $('#saveBtn').onclick = saveProfile;
+    $('#loadMeBtn').onclick = loadMe;
+
+    // init
+    loadMe(); loadOthers();
+  </script>
+</body>
+</html>
+
