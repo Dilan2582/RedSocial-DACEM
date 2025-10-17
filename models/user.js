@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { Schema, model } = require('mongoose');
+
 
 const UserSchema = new mongoose.Schema({
   // legacy para tu UI (opcional)
@@ -13,7 +15,9 @@ const UserSchema = new mongoose.Schema({
   password:  { type: String, required: true },
   role:      { type: String, default: 'user' },
   image:     { type: String, default: '' },
-  created_at:{ type: Date, default: Date.now }
+  created_at:{ type: Date, default: Date.now },
+  avatar:     { type:String, default: '' } 
+  
 });
 
 module.exports = mongoose.model('User', UserSchema);

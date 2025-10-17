@@ -1,13 +1,30 @@
 // controllers/user.js
 const bcrypt = require('bcrypt');
-const User = require('../models/user');
+const path   = require('path');
+const fs     = require('fs');
+const sharp  = require('sharp');
+
+const User   = require('../models/user');
 const Follow = require('../models/follow');
 const { createToken } = require('../services/jwt');
 
+// ==== Cloudinary opcional ====
+let useCloud = false;
+let cloudinary = null;
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary = require('cloudinary').v2;
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  useCloud = true;
+}
+
 // ---- helpers ----
-const normStr = (v, def = '') => (typeof v === 'string' ? v : (v ?? '')).toString().trim();
-const emailValid = (e) => /.+@.+\..+/.test(e);
-const nickValid  = (n) => /^[a-z0-9._-]{3,20}$/i.test(n);
+const normStr   = (v, def='') => (typeof v === 'string' ? v : (v ?? def)).toString().trim();
+const emailValid= (e) => /.+@.+\..+/.test(e);
+const nickValid = (n) => /^[a-z0-9._-]{3,20}$/i.test(n);
 const publicUserProjection = '-password -__v';
 
 async function countFollowers(userId) {
@@ -22,7 +39,7 @@ async function amIFollowing(meId, otherId) {
 
 function pickUserFieldsFromBody(body = {}) {
   let firstName = normStr(body.firstName) || normStr(body.name);
-  let lastName  = normStr(body.lastName)  || normStr(body.surname) || normStr(body.last_name) || 'N/A';
+  let lastName  = normStr(body.lastName)  || normStr(body.surname) || normStr(body.last_name) || '';
   let nickname  = normStr(body.nickname)  || normStr(body.nick) || normStr(body.username);
   let email     = normStr(body.email)     || normStr(body.mail);
   let password  = typeof body.password === 'string' ? body.password : normStr(body.pass);
@@ -32,9 +49,64 @@ function pickUserFieldsFromBody(body = {}) {
   return { firstName, lastName, nickname, email, password };
 }
 
-// ---- controllers ----
+// ==== subir avatar ====
+exports.updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ ok:false, message:'No se envió imagen' });
+    }
 
-// POST /api/user/register
+    const userId = req.user?.id || req.user?.sub;
+    if (!userId) return res.status(401).json({ ok:false, message:'No autorizado' });
+
+    // Redimensiona/convierte
+    const processed = await sharp(req.file.buffer)
+      .rotate()
+      .resize(256, 256, { fit: 'cover' })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    let newUrl = null;
+
+    if (useCloud) {
+      // Subida a Cloudinary
+      newUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'dacem/avatars', public_id: `${userId}-${Date.now()}`, resource_type: 'image' },
+          (err, result) => err ? reject(err) : resolve(result.secure_url)
+        );
+        stream.end(processed);
+      });
+    } else {
+      // Guardar a disco local
+      const avatarsDir = path.join(__dirname, '..', 'uploads', 'avatars');
+      fs.mkdirSync(avatarsDir, { recursive: true });
+      const filename = `${userId}-${Date.now()}.webp`;
+      const outPath = path.join(avatarsDir, filename);
+      await fs.promises.writeFile(outPath, processed);
+      newUrl = `/uploads/avatars/${filename}`;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ ok:false, message:'Usuario no encontrado' });
+
+    // Si tenías archivos viejos locales y quieres limpiar:
+    if (!useCloud && user.avatar && user.avatar.startsWith('/uploads/avatars/')) {
+      const oldPath = path.join(__dirname, '..', user.avatar);
+      fs.rm(oldPath, { force: true }, () => {});
+    }
+
+    user.avatar = newUrl;
+    await user.save();
+
+    res.json({ ok:true, avatar: user.avatar });
+  } catch (e) {
+    console.error('[avatar] ', e);
+    res.status(500).json({ ok:false, message:'Error subiendo imagen' });
+  }
+};
+
+// ==== register ====
 const register = async (req, res) => {
   try {
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
@@ -70,7 +142,7 @@ const register = async (req, res) => {
   }
 };
 
-// POST /api/user/login  (identifier = email o nickname)
+// ==== login ====
 const login = async (req, res) => {
   try {
     let identifier = normStr(req.body?.identifier);
@@ -98,10 +170,10 @@ const login = async (req, res) => {
   }
 };
 
-// GET /api/user/me
+// ==== me ====
 const me = async (req, res) => {
   try {
-    const uid = req.user?.sub;
+    const uid = req.user?.id || req.user?.sub;
     const user = await User.findById(uid).select(publicUserProjection);
     if (!user) return res.status(404).json({ ok:false, message:'Usuario no encontrado' });
 
@@ -112,10 +184,10 @@ const me = async (req, res) => {
   }
 };
 
-// PUT /api/user/update
+// ==== update ====
 const update = async (req, res) => {
   try {
-    const uid = req.user?.sub;
+    const uid = req.user?.id || req.user?.sub;
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
     const updates = {};
 
@@ -153,10 +225,10 @@ const update = async (req, res) => {
   }
 };
 
-// GET /api/user/others
+// ==== others ====
 const listOthers = async (req, res) => {
   try {
-    const uid = req.user?.sub;
+    const uid = req.user?.id || req.user?.sub;
     const users = await User.find({ _id: { $ne: uid } })
       .select(publicUserProjection).limit(100).lean();
 
@@ -170,10 +242,10 @@ const listOthers = async (req, res) => {
   }
 };
 
-// GET /api/user/:id/public
+// ==== public profile ====
 const publicProfile = async (req, res) => {
   try {
-    const uid = req.user?.sub;
+    const uid = req.user?.id || req.user?.sub;
     const otherId = req.params.id;
 
     const user = await User.findById(otherId).select(publicUserProjection).lean();
@@ -193,7 +265,7 @@ const publicProfile = async (req, res) => {
   }
 };
 
-// ---- re-export del handler de Google para alias /api/user/google-login ----
+// ---- re-export handler Google (si lo tienes) ----
 const { googleLogin } = require('./auth');
 
 module.exports = {
@@ -203,6 +275,6 @@ module.exports = {
   update,
   listOthers,
   publicProfile,
-  // Alias (apunta al mismo handler que /api/auth/google)
+  updateAvatar: exports.updateAvatar,
   googleLogin,
 };
