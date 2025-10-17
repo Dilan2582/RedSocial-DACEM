@@ -8,6 +8,12 @@
   <!-- Tus estilos generales -->
   <link rel="stylesheet" href="css/login.css"/>
 
+  <!-- Animaciones listas (clases tipo animate__fadeIn, animate__shakeX, etc.) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- AOS: revelado en scroll -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
+
   <!-- Estilos del modal (ligeros, específicos) -->
   <style>
     .modal-backdrop{
@@ -44,7 +50,11 @@
 
   <main class="container">
     <!-- Tarjeta de LOGIN -->
-     <section class="card login-card">
+    <section
+      class="card login-card animate__animated"
+      id="loginCard"
+      data-aos="fade-up"
+    >
       <h2>Iniciar sesión</h2>
 
       <div class="form-group">
@@ -81,14 +91,11 @@
            data-logo_alignment="left">
       </div>
 
-    
       <p class="muted">
         ¿No tienes cuenta? <a href="register.html">Crear cuenta</a>
       </p>
-
     </section>
   </main>
-
 
   <script>
     // ====== Config ======
@@ -126,31 +133,41 @@
     }
 
     // ---------- Modal helpers ----------
-     function openRegisterModal() {
-    const bd = document.getElementById('register-backdrop');
-    bd.setAttribute('data-open', 'true');
-    document.body.classList.add('no-scroll');
-    ensureRegisterRecaptcha(); // monta el captcha del modal si falta
-  }
-
-  function closeRegisterModal() {
-    const bd = document.getElementById('register-backdrop');
-    bd.removeAttribute('data-open');
-    document.body.classList.remove('no-scroll');
-
-    // reset visual + mensajes del modal
-    if (registerRendered && widgetRegister !== null) {
-      try { grecaptcha.reset(widgetRegister); } catch {}
+    function openRegisterModal() {
+      const bd = document.getElementById('register-backdrop');
+      bd.setAttribute('data-open', 'true');
+      document.body.classList.add('no-scroll');
+      ensureRegisterRecaptcha(); // monta el captcha del modal si falta
     }
-    const msg = document.getElementById('registerMsg');
-    msg.textContent = '';
-    msg.className = 'msg';
-  }
 
-  // ---------- Utilidad mensajes ----------
+    function closeRegisterModal() {
+      const bd = document.getElementById('register-backdrop');
+      bd.removeAttribute('data-open');
+      document.body.classList.remove('no-scroll');
+
+      // reset visual + mensajes del modal
+      if (registerRendered && widgetRegister !== null) {
+        try { grecaptcha.reset(widgetRegister); } catch {}
+      }
+      const msg = document.getElementById('registerMsg');
+      msg.textContent = '';
+      msg.className = 'msg';
+    }
+
+    // ---------- Utilidad mensajes ----------
     function setMsg(el, text, isError = false) {
       el.textContent = text;
       el.className = "msg " + (isError ? "error" : "success");
+
+      // ✨ Animación de "shake" en error sin tocar el resto del flujo
+      if (isError) {
+        const card = document.getElementById('loginCard');
+        if (card) {
+          card.classList.remove('animate__shakeX'); // reset
+          void card.offsetWidth;                    // reflow para reiniciar la animación
+          card.classList.add('animate__shakeX');    // dispara animación
+        }
+      }
     }
 
     // ---------- Registro (en modal) ----------
@@ -264,6 +281,16 @@
         alert("Fallo conexión con backend /api/auth/google");
       }
     }
+  </script>
+
+  <!-- AOS JS + init -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init({
+      once: true,
+      duration: 700,
+      easing: 'ease-out'
+    });
   </script>
 
   <!-- Cargar scripts UNA sola vez y al final -->
