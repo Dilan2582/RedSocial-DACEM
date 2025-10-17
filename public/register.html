@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crear cuenta – DACEM</title>
   <link rel="stylesheet" href="css/login.css" />
+
+  <!-- Animaciones (clases tipo animate__fadeIn, animate__shakeX, etc.) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- AOS: revelado en scroll -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
 </head>
 <body>
   <header class="page-header">
@@ -13,7 +19,7 @@
   </header>
 
   <main class="container" style="max-width: 980px;">
-    <section class="card">
+    <section class="card animate__animated" id="registerCard" data-aos="fade-up">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <h2 style="margin:0;">Crear cuenta</h2>
         <a class="btn" href="index.html">← Volver al login</a>
@@ -76,6 +82,16 @@
     function setMsg(el, text, isError=false) {
       el.textContent = text;
       el.className = "msg " + (isError ? "error" : "success");
+
+      // ✨ Shake del card en caso de error (sin tocar el resto del flujo)
+      if (isError) {
+        const card = document.getElementById('registerCard');
+        if (card) {
+          card.classList.remove('animate__shakeX'); // reset
+          void card.offsetWidth;                     // reflow
+          card.classList.add('animate__shakeX');     // dispara animación
+        }
+      }
     }
 
     async function register() {
@@ -120,6 +136,16 @@
         grecaptcha.reset(widgetRegister);
       }
     }
+  </script>
+
+  <!-- AOS JS + init -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init({
+      once: true,
+      duration: 700,
+      easing: 'ease-out'
+    });
   </script>
 
   <!-- reCAPTCHA solo (esta página no necesita el SDK de Google) -->
