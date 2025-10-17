@@ -3,23 +3,18 @@ const bcrypt = require('bcrypt');
 const path   = require('path');
 const fs     = require('fs');
 const sharp  = require('sharp');
+const { Types } = require('mongoose');
 
 const User   = require('../models/user');
 const Follow = require('../models/follow');
 const { createToken } = require('../services/jwt');
 
-// ==== Cloudinary opcional ====
-let useCloud = false;
-let cloudinary = null;
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  cloudinary = require('cloudinary').v2;
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key:    process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-  useCloud = true;
-}
+// Si usarás GridFS para avatares:
+const { getBucket } = require('../services/gridfs');
+
+// ===== Config de almacenamiento de avatares =====
+// AVATAR_STORAGE = 'gridfs' | 'disk'
+const STORAGE = (process.env.AVATAR_STORAGE || 'gridfs').toLowerCase();
 
 // ---- helpers ----
 const normStr   = (v, def='') => (typeof v === 'string' ? v : (v ?? def)).toString().trim();
@@ -49,65 +44,79 @@ function pickUserFieldsFromBody(body = {}) {
   return { firstName, lastName, nickname, email, password };
 }
 
-// ==== subir avatar ====
-exports.updateAvatar = async (req, res) => {
+// ====== Subir/actualizar avatar (disk o gridfs) ======
+async function updateAvatar(req, res) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ ok:false, message:'No se envió imagen' });
-    }
+    if (!req.file) return res.status(400).json({ ok:false, message:'No se envió imagen' });
 
-    const userId = req.user?.id || req.user?.sub;
-    if (!userId) return res.status(401).json({ ok:false, message:'No autorizado' });
-
-    // Redimensiona/convierte
-    const processed = await sharp(req.file.buffer)
-      .rotate()
-      .resize(256, 256, { fit: 'cover' })
-      .webp({ quality: 85 })
-      .toBuffer();
-
-    let newUrl = null;
-
-    if (useCloud) {
-      // Subida a Cloudinary
-      newUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: 'dacem/avatars', public_id: `${userId}-${Date.now()}`, resource_type: 'image' },
-          (err, result) => err ? reject(err) : resolve(result.secure_url)
-        );
-        stream.end(processed);
-      });
-    } else {
-      // Guardar a disco local
-      const avatarsDir = path.join(__dirname, '..', 'uploads', 'avatars');
-      fs.mkdirSync(avatarsDir, { recursive: true });
-      const filename = `${userId}-${Date.now()}.webp`;
-      const outPath = path.join(avatarsDir, filename);
-      await fs.promises.writeFile(outPath, processed);
-      newUrl = `/uploads/avatars/${filename}`;
-    }
-
-    const user = await User.findById(userId);
+    const userId = req.user.id || req.user.sub;
+    const user   = await User.findById(userId);
     if (!user) return res.status(404).json({ ok:false, message:'Usuario no encontrado' });
 
-    // Si tenías archivos viejos locales y quieres limpiar:
-    if (!useCloud && user.avatar && user.avatar.startsWith('/uploads/avatars/')) {
-      const oldPath = path.join(__dirname, '..', user.avatar);
-      fs.rm(oldPath, { force: true }, () => {});
+    // Procesa a webp 256x256
+    const webpBuffer = await sharp(req.file.buffer)
+      .rotate()
+      .resize(256, 256, { fit:'cover' })
+      .webp({ quality:85 })
+      .toBuffer();
+
+    // Elimina avatar anterior (según el tipo)
+    try {
+      if (user.avatar?.startsWith('/uploads/')) {
+        // Archivo en disco
+        const oldPath = path.join(__dirname, '..', user.avatar);
+        fs.rmSync(oldPath, { force:true });
+      } else if (user.avatar?.startsWith('/api/user/avatar/')) {
+        // Archivo en GridFS
+        const oldId = user.avatar.split('/').pop();
+        await getBucket().delete(new Types.ObjectId(oldId));
+      }
+    } catch {}
+
+    if (STORAGE === 'disk') {
+      // === Guardar en DISCO ===
+      const avatarsDir = path.join(__dirname, '..', 'uploads', 'avatars');
+      fs.mkdirSync(avatarsDir, { recursive:true });
+      const filename = `${userId}-${Date.now()}.webp`;
+      const outPath  = path.join(avatarsDir, filename);
+      fs.writeFileSync(outPath, webpBuffer);
+      user.avatar = `/uploads/avatars/${filename}`;
+    } else {
+      // === Guardar en GRIDFS ===
+      const filename = `${userId}-${Date.now()}.webp`;
+      const uploadStream = getBucket().openUploadStream(filename, {
+        contentType: 'image/webp',
+        metadata: { userId }
+      });
+      await new Promise((resolve, reject) => {
+        uploadStream.end(webpBuffer, err => err ? reject(err) : resolve());
+      });
+      user.avatar = `/api/user/avatar/${uploadStream.id.toString()}`;
     }
 
-    user.avatar = newUrl;
     await user.save();
-
     res.json({ ok:true, avatar: user.avatar });
   } catch (e) {
     console.error('[avatar] ', e);
     res.status(500).json({ ok:false, message:'Error subiendo imagen' });
   }
-};
+}
 
-// ==== register ====
-const register = async (req, res) => {
+// Stream de avatar en GridFS
+async function streamAvatar(req, res) {
+  try {
+    const fileId = new Types.ObjectId(req.params.id);
+    res.set('Content-Type', 'image/webp');
+    getBucket().openDownloadStream(fileId)
+      .on('error', () => res.sendStatus(404))
+      .pipe(res);
+  } catch {
+    res.sendStatus(404);
+  }
+}
+
+// ====== Register ======
+async function register(req, res) {
   try {
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
 
@@ -140,10 +149,10 @@ const register = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error al registrar', error: e.message });
   }
-};
+}
 
-// ==== login ====
-const login = async (req, res) => {
+// ====== Login ======
+async function login(req, res) {
   try {
     let identifier = normStr(req.body?.identifier);
     const password = normStr(req.body?.password);
@@ -168,10 +177,10 @@ const login = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error al autenticar', error: e.message });
   }
-};
+}
 
-// ==== me ====
-const me = async (req, res) => {
+// ====== Me ======
+async function me(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
     const user = await User.findById(uid).select(publicUserProjection);
@@ -182,10 +191,10 @@ const me = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error', error: e.message });
   }
-};
+}
 
-// ==== update ====
-const update = async (req, res) => {
+// ====== Update ======
+async function update(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
@@ -223,10 +232,10 @@ const update = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error al actualizar perfil', error: e.message });
   }
-};
+}
 
-// ==== others ====
-const listOthers = async (req, res) => {
+// ====== Others ======
+async function listOthers(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
     const users = await User.find({ _id: { $ne: uid } })
@@ -240,10 +249,10 @@ const listOthers = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error al listar usuarios', error: e.message });
   }
-};
+}
 
-// ==== public profile ====
-const publicProfile = async (req, res) => {
+// ====== Public profile ======
+async function publicProfile(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
     const otherId = req.params.id;
@@ -263,18 +272,24 @@ const publicProfile = async (req, res) => {
   } catch (e) {
     return res.status(500).json({ ok:false, message:'Error al obtener perfil', error: e.message });
   }
-};
+}
 
 // ---- re-export handler Google (si lo tienes) ----
 const { googleLogin } = require('./auth');
 
 module.exports = {
+  // auth + perfil
   register,
   login,
   me,
   update,
   listOthers,
   publicProfile,
-  updateAvatar: exports.updateAvatar,
+
+  // avatar
+  updateAvatar,
+  streamAvatar,
+
+  // google
   googleLogin,
 };
