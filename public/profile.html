@@ -5,12 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Perfil público</title>
   <link rel="stylesheet" href="css/user.css">
+
+  <!-- Estilo pequeño para el avatar con imagen -->
+  <style>
+    .avatar { position: relative; overflow: hidden; }
+    .avatar-img{
+      width:100%; height:100%; object-fit:cover; display:none; /* se muestra solo si hay foto */
+    }
+  </style>
 </head>
 <body>
   <div class="wrap">
+    <!-- Header -->
     <div class="header">
       <div class="header-left">
-        <div class="avatar" id="avatarTxt">U</div>
+        <div class="avatar" id="avatarBox">
+          <img id="avatarImg" class="avatar-img" alt="avatar">
+          <div id="avatarTxt">U</div>
+        </div>
         <div>
           <h1 class="name" id="nameTxt">Perfil</h1>
           <div class="email" id="emailTxt"></div>
@@ -48,6 +60,25 @@
 
     function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
     function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
+    function toAbs(url){
+      if (!url) return '';
+      if (url.startsWith('http')) return url;
+      return `${location.origin}${url.startsWith('/') ? url : '/'+url}`;
+    }
+    function setAvatar(u){
+      const img = $('#avatarImg');
+      const txt = $('#avatarTxt');
+      if (u.avatar){
+        img.src = toAbs(u.avatar);
+        img.style.display = 'block';
+        txt.style.display = 'none';
+      } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        txt.textContent = initialLetter(u);
+        txt.style.display = 'flex';
+      }
+    }
 
     // Toggle follow con plan B (por si tu API no tiene /toggle)
     async function toggleFollowRequest(targetId, currentState){
@@ -78,7 +109,6 @@
       btn.disabled = true;
       const ok = await toggleFollowRequest(viewedId, isFollowing);
       if (ok){
-        // Actualiza estado y conteos en pantalla
         isFollowing = !isFollowing;
         counts.followers += isFollowing ? 1 : -1;
         $('#followersCnt').textContent = counts.followers;
@@ -103,9 +133,11 @@
 
         $('#nameTxt').textContent = displayName(u);
         $('#emailTxt').textContent = u.email || '';
-        $('#avatarTxt').textContent = initialLetter(u);
         $('#followersCnt').textContent = counts.followers ?? 0;
         $('#followingCnt').textContent = counts.following ?? 0;
+
+        // <-- aquí pintamos avatar (foto o inicial)
+        setAvatar(u);
 
         // Mostrar botón seguir si NO es mi propio perfil
         if (me && me._id && me._id !== viewedId){
