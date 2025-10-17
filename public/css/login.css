@@ -314,3 +314,23 @@ body {
 .login-card {
   margin-left: -120px; /* mueve el login un poco a la izquierda */
 }
+
+.card {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+
+.btn.primary {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, .35); /* azul suave */
+}
+
+/* opcional, por si no lo tenías */
+.avatar { width:72px; height:72px; border-radius:50%; object-fit:cover; }
+.miniPic { width:40px; height:40px; border-radius:50%; object-fit:cover; }
