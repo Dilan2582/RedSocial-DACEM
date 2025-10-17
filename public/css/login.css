@@ -54,3 +54,263 @@ button:active{ transform: translateY(1px) }
 
 /* responsivo */
 @media (max-width:820px){ .container{ gap:28px } }
+
+:root{
+  --bg:#0f1826;
+  --card:#121e30;
+  --muted:#9aa7b8;
+  --text:#e8f0ff;
+  --primary:#377DFF;
+  --primary-600:#2f6be0;
+  --border:#22324a;
+  --error:#ff5c7a;
+  --success:#2bd889;
+}
+
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+  margin:0;
+}
+
+.page-header{max-width:1040px;margin:32px auto 0;padding:0 16px}
+.page-header h1{margin:0 0 4px}
+.subtitle{margin:0;color:var(--muted)}
+
+.auth-shell{
+  min-height:calc(100vh - 120px);
+  display:grid;
+  place-items:center;
+  padding:24px 16px 64px;
+}
+
+.card{
+  width:100%;
+  max-width:420px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+
+.login-card h2,
+.register-card h2{margin:0 0 12px}
+
+.form-group{margin:12px 0}
+.form-group label{display:block;margin:0 0 6px;color:var(--muted)}
+.form-group input{
+  width:100%;
+  background:#0b1421;
+  border:1px solid var(--border);
+  border-radius:10px;
+  color:var(--text);
+  padding:12px 14px;
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.form-group input:focus{
+  border-color:var(--primary);
+  box-shadow:0 0 0 3px #377dff25;
+}
+
+.grid-2{
+  display:grid;
+  gap:12px;
+  grid-template-columns:1fr 1fr;
+}
+@media (max-width:720px){ .grid-2{grid-template-columns:1fr} }
+
+.btn{
+  appearance:none; border:0; cursor:pointer;
+  padding:12px 16px; border-radius:10px;
+  font-weight:600; color:#fff;
+  background:#2b2f36;
+}
+.btn.primary{background:var(--primary)}
+.btn.primary:hover{background:var(--primary-600)}
+.btn.ghost{
+  background:transparent; color:var(--text);
+  border:1px solid var(--border);
+}
+.mt-24{margin-top:24px}
+
+.muted{color:var(--muted)}
+.small{font-size:.925rem}
+.link{color:#a9c7ff;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+.divider{display:flex; align-items:center; gap:10px; margin:14px 0}
+.divider::before,.divider::after{
+  content:""; height:1px; flex:1; background:var(--border);
+}
+.divider span{color:var(--muted)}
+
+.msg{margin-top:10px; font-size:.95rem}
+.msg.error{color:var(--error)}
+.msg.success{color:var(--success)}
+
+.recaptcha-slot{margin:8px 0}
+.google-slot{display:flex; justify-content:center}
+
+/* ===== Modal registro ===== */
+.modal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;                 /* siempre en flex para centrar, pero… */
+  align-items: center;
+  justify-content: center;
+
+  /* …queda oculto por defecto */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  z-index: 9999;                 /* por encima de todo */
+  transition: opacity .2s ease;
+}
+
+/* Cuando está abierto */
+.modal-backdrop[data-open="true"]{
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.modal{
+  width: min(900px, 92vw);
+  background: #0f1826;
+  color: #e8eefc;
+  border: 1px solid #1f2a3a;
+  border-radius: 14px;
+  padding: 28px;
+  box-shadow: 0 20px 60px #000a;
+  z-index: 10000;               /* por encima del backdrop */
+}
+
+.modal .header{
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.modal .header h3{ margin: 0; font-size: 1.2rem; }
+.modal .close{
+  border: none; background: #1e2a3a; color: #c9d7f2; border-radius: 10px;
+  padding: 8px 12px; cursor: pointer;
+}
+
+.modal .grid{
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.modal .grid .form-group{ display:flex; flex-direction:column; gap:8px; }
+.modal .actions{ margin-top:18px; display:flex; gap:10px; }
+
+@media (max-width: 720px){
+  .modal{ padding: 18px; }
+  .modal .grid{ grid-template-columns: 1fr; }
+}
+
+/* Evitar scroll de fondo con modal abierto */
+body.no-scroll{ overflow: hidden; }
+
+
+/* Centrado general para login y registro */
+body {
+  align-items: left;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  min-height: 100vh;   /* ocupa toda la altura */
+  margin: 10px 0 0; /* margen superior para el header */
+  background-color: #0d1117; /* tu fondo oscuro */
+  color: #fff;
+  font-family: sans-serif;
+}
+
+/* Contenedor principal */
+.container {
+  align-items: left;
+  justify-content: left;
+  width: 100%;
+  max-width: 420px; /* igual que login */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Card */
+.card {
+  justify-content: left;
+  background: #161b22;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  padding: 24px;
+}
+
+/* Botón volver */
+.card a.btn {
+  background: transparent;
+  color: #58a6ff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.card a.btn:hover {
+  text-decoration: underline;
+}
+
+/* Botones */
+.btn.primary {
+  width: 100%;
+  padding: 10px;
+  background: #2563eb;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.btn.primary:hover {
+  background: #1d4ed8;
+}
+
+/* Inputs */
+.form-group input {
+  justify-content: left;
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #0d1117;
+  color: white;
+  box-sizing: border-box;
+}
+.form-group input:focus {
+  border-color: #58a6ff;
+  outline: none;
+}
+
+/* Centrar mejor el cuadro de login */
+.container {
+  display: flex;
+  justify-content: left; /* centra horizontalmente */
+  align-items: center;     /* centra verticalmente */
+  min-height: 100vh;       /* ocupa toda la pantalla */
+  gap: 40px;               /* espacio entre login y el header */
+}
+
+.card {
+  max-width: 400px;
+  width: 100%;
+  padding: 25px;
+  background: #111827;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+/* Ajustar específicamente el cuadro de login */
+.login-card {
+  margin-left: -120px; /* mueve el login un poco a la izquierda */
+}
