@@ -9,20 +9,21 @@ const { verifyRecaptcha } = require('../middlewares/recaptcha');
 const C = require('../controllers/user');
 const { googleLogin } = require('../controllers/auth');
 
-// --- Rutas públicas (con captcha) ---
+// Públicas (con captcha)
 router.post('/register', verifyRecaptcha, C.register);
 router.post('/login',    verifyRecaptcha, C.login);
 
-// --- Google Sign-In ---
+// Google Sign-In
 router.post('/google-login', googleLogin);
 
-// --- Rutas protegidas ---
+// Avatar (leer desde GridFS cuando corresponda)
+router.get('/avatar/:id', C.streamAvatar);
+
+// Protegidas
 router.get('/me',           auth, C.me);
 router.put('/update',       auth, C.update);
 router.get('/others',       auth, C.listOthers);
 router.get('/:id/public',   auth, C.publicProfile);
-
-// Avatar (Multer memory -> Sharp -> guardar)
 router.post('/me/avatar',   auth, upload.single('avatar'), C.updateAvatar);
 
 module.exports = router;
