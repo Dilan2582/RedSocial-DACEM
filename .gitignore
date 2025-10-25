@@ -1,3 +1,7 @@
 # uploads de usuarios
 uploads/
 uploads/**
+.env
+bfg.jar
+*.bfg-report
+RedSocial-DACEM.git/
