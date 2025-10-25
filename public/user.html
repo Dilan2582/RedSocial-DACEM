@@ -3,309 +3,151 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Mi perfil – DACEM</title>
+  <title>DACEM – Inicio</title>
   <link rel="stylesheet" href="css/user.css">
-  <style>
-    /* Asegura buen recorte de imágenes */
-    .avatar{ width:72px; height:72px; border-radius:50%; object-fit:cover; display:flex; align-items:center; justify-content:center; font-weight:700 }
-    .miniPic{ width:40px; height:40px; border-radius:50%; object-fit:cover }
-    .header{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px }
-    .header-left{ display:flex; align-items:center; gap:12px }
-    .header-right{ display:flex; align-items:center; gap:10px }
-    .counts{ display:flex; gap:16px; color:#9fb0c6 }
-    .badge{ background:#1f2a44; color:#cfe0ff; padding:6px 10px; border-radius:10px; font-size:.9rem }
-    .btn{ background:#3b82f6; color:#001b36; border:0; padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer }
-    .btn.secondary{ background:#263042; color:#e6eefc }
-    .btn.danger{ background:#ef4444; color:#210e0e }
-    .wrap{ max-width:1150px; margin:0 auto; padding:18px }
-    .card{ background:#111a2a; border:1px solid #1f2a3a; border-radius:14px; padding:16px; box-shadow:0 8px 26px rgba(0,0,0,.35); margin-top:14px }
-    .users{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px }
-    .userCard{ background:#0e1726; border:1px solid #1e2a3a; border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px }
-    .userCard .topline{ display:flex; gap:10px; align-items:center }
-    .userCard .actions{ display:flex; justify-content:space-between; align-items:center }
-    .muted{ color:#9aa7b8 }
-    .name{ margin:0; font-size:28px }
-    .email{ color:#9aa7b8; margin-top:2px }
-
-    /* Modal */
-    .backdrop{ position:fixed; inset:0; background:#0007; display:none; align-items:center; justify-content:center; z-index:60 }
-    .backdrop[data-open="true"]{ display:flex }
-    .modal{ width:min(1000px, 95vw); background:#0f1826; color:#e9f0ff; border:1px solid #1f2a3a; border-radius:14px; padding:18px; box-shadow:0 20px 60px #000a }
-    .modal .top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
-    .modal .grid{ display:grid; grid-template-columns:320px 1fr; gap:16px }
-    .modal .panel{ background:#0d1422; border:1px solid #1e2a3a; border-radius:12px; padding:14px }
-    .modal .row{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-    .modal label{ display:block; margin:0 0 6px; color:#aebbd0 }
-    .modal input{ width:100%; background:#0b1421; border:1px solid #233145; border-radius:10px; color:#e8f1ff; padding:11px 12px; outline:none }
-    .modal .actions{ display:flex; gap:10px; margin-top:12px }
-    .ok{ color:#2bd889; }
-    .err{ color:#ff5c7a; }
-  </style>
 </head>
 <body>
-  <div class="wrap">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <!-- Foto real (se muestra si hay avatar) -->
-        <img id="avatarImg" class="avatar" alt="Avatar" style="display:none;">
-        <!-- Fallback con letra -->
-        <div id="avatarTxt" class="avatar" style="background:#1a2440;color:#cfe0ff">U</div>
-
-        <div>
-          <h1 class="name" id="nameTxt">Mi perfil</h1>
-          <div class="email" id="emailTxt">email@ejemplo.com</div>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <div class="counts">
-          <div><b id="followersCnt">0</b> seguidores</div>
-          <div><b id="followingCnt">0</b> seguidos</div>
-        </div>
-        <span class="badge" id="authBadge">Autenticado</span>
-        <button class="btn secondary" id="configBtn">Configurar perfil</button>
-        <button class="btn danger" id="logoutBtn">Cerrar sesión</button>
-      </div>
-    </div>
-
-    <!-- Personas -->
-    <div class="card">
-      <h3 style="margin:0 0 10px">Personas</h3>
-      <div class="users" id="usersGrid"></div>
+  <!-- Topbar -->
+ <header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">DACEM</div>
+    <div class="topbar-actions">
+      <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
     </div>
   </div>
+</header>
 
-  <!-- Modal Configurar perfil -->
-  <div class="backdrop" id="profileModal">
-    <div class="modal">
-      <div class="top">
-        <h2 style="margin:0">Configurar perfil</h2>
-        <div class="actions">
-          <button class="btn secondary" id="reloadBtn">Recargar</button>
-          <button class="btn danger" id="closeModalBtn">Cerrar</button>
+
+
+  <div class="wrap">
+    <!-- Layout 3 columnas -->
+    <div class="layout">
+      <!-- Izquierda: Sidebar -->
+      <aside class="sidebar">
+        <nav class="nav">
+          <a class="nav-item active" href="user.html">
+            <span class="nav-ico">🏠</span> Inicio
+          </a>
+          <a class="nav-item" href="profile.html">
+            <span class="nav-ico">👤</span> Mi perfil
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Centro: Feed -->
+      <main class="main">
+        <div class="card">
+          <h2 style="margin:0 0 8px">Publicaciones</h2>
+          <div class="muted">Aquí irá el feed. Lo implementamos después.</div>
         </div>
-      </div>
+      </main>
 
-      <div class="grid">
-        <!-- Panel avatar -->
-        <div class="panel" style="display:flex; flex-direction:column; align-items:center; gap:12px">
-          <img id="avatarPreview" class="avatar" style="width:180px;height:180px; border-radius:16px; object-fit:cover" alt="Avatar">
-          <input id="avatarInput" type="file" accept="image/*" style="display:none">
-          <button class="btn" id="changeAvatarBtn">Cambiar foto</button>
-          <div id="avatarMsg" class="muted"></div>
+      <!-- Derecha: Personas (sugerencias) -->
+      <aside class="aside">
+        <div class="card">
+          <h3 style="margin:0 0 12px">Personas</h3>
+          <div id="peopleList" class="people-list"></div>
         </div>
-
-        <!-- Panel datos -->
-        <div class="panel">
-          <div class="row">
-            <div>
-              <label>Nombre</label>
-              <input id="firstName" placeholder="Nombre">
-            </div>
-            <div>
-              <label>Apellido</label>
-              <input id="lastName" placeholder="Apellido">
-            </div>
-            <div>
-              <label>Apodo</label>
-              <input id="nickname" placeholder="apodo">
-            </div>
-            <div>
-              <label>Email</label>
-              <input id="email" type="email" placeholder="correo@dominio.com">
-            </div>
-            <div>
-              <label>Nueva contraseña (opcional)</label>
-              <input id="password" type="password" placeholder="••••••">
-            </div>
-            <div>
-              <label>Confirmar contraseña (opcional)</label>
-              <input id="password2" type="password" placeholder="••••••">
-            </div>
-          </div>
-
-          <div class="actions">
-            <button class="btn" id="saveBtn">Guardar cambios</button>
-            <span class="muted" id="saveMsg"></span>
-          </div>
-        </div>
-      </div>
+      </aside>
     </div>
   </div>
 
   <script>
-    // ========= Helpers / API =========
+    // ===== Helpers / API =====
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
 
-    const $  = (s)=>document.querySelector(s);
     const H  = { 'Authorization':`Bearer ${token}` };
-    const JH = { ...H, 'Content-Type':'application/json' };
+    const $  = s => document.querySelector(s);
 
-    function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
-    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
-    function absUrl(url){ if(!url) return ''; return url.startsWith('http') ? url : `${location.origin}${url}`; }
+    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || (u.nickname || 'Usuario'); }
     function resolveAvatar(u){
-      if(u.avatar) return `${absUrl(u.avatar)}?v=${Date.now()}`;
+      if(u.avatar){
+        const abs = u.avatar.startsWith('http') ? u.avatar : `${location.origin}${u.avatar.startsWith('/')?u.avatar:'/'+u.avatar}`;
+        return `${abs}?v=${Date.now()}`;
+      }
       const seed = encodeURIComponent(displayName(u) || u.nickname || 'U');
       return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
     }
 
-    // ========= ME / Perfil =========
-    let me = null;
-
-    async function loadMe(){
-      const r = await fetch(API('/user/me'), { headers:H });
-      const d = await r.json();
-      if(!d.ok){ localStorage.removeItem('token'); return location.replace('index.html'); }
-
-      me = d.user;
-
-      $('#nameTxt').textContent = displayName(me) || 'Mi perfil';
-      $('#emailTxt').textContent = me.email || '';
-      $('#followersCnt').textContent = d.counts?.followers ?? 0;
-      $('#followingCnt').textContent = d.counts?.following ?? 0;
-
-      const img = $('#avatarImg');
-      const txt = $('#avatarTxt');
-      if (me.avatar){
-        img.src = resolveAvatar(me);
-        img.style.display = 'block';
-        txt.style.display = 'none';
-      }else{
-        img.style.display = 'none';
-        txt.style.display = 'flex';
-        txt.textContent = initialLetter(me);
-      }
-
-      // Prefill modal
-      $('#firstName').value = me.firstName || '';
-      $('#lastName').value  = me.lastName  || '';
-      $('#nickname').value  = me.nickname  || '';
-      $('#email').value     = me.email     || '';
-      $('#password').value  = '';
-      $('#password2').value = '';
-      $('#avatarPreview').src = resolveAvatar(me);
-      $('#avatarMsg').textContent = '';
-      $('#saveMsg').textContent = '';
-    }
-
-    async function saveProfile(){
-      const payload = {
-        firstName: $('#firstName').value.trim(),
-        lastName : $('#lastName').value.trim(),
-        nickname : $('#nickname').value.trim(),
-        email    : $('#email').value.trim(),
-      };
-      const p1 = $('#password').value, p2 = $('#password2').value;
-      if (p1 || p2){
-        if (p1 !== p2){ $('#saveMsg').textContent = 'Las contraseñas no coinciden'; $('#saveMsg').className='muted err'; return; }
-        payload.password = p1;
-      }
-      $('#saveMsg').textContent = 'Guardando...'; $('#saveMsg').className='muted';
-
-      const r = await fetch(API('/user/update'), { method:'PUT', headers:JH, body:JSON.stringify(payload) });
-      const d = await r.json();
-      if (d.ok){
-        $('#saveMsg').textContent = 'Cambios guardados'; $('#saveMsg').className='muted ok';
-        await loadMe();
-      }else{
-        $('#saveMsg').textContent = d.message || 'Error al guardar'; $('#saveMsg').className='muted err';
-      }
-    }
-
-    // ========= Avatar upload =========
-    async function uploadAvatar(file){
-      const fd = new FormData();
-      fd.append('avatar', file);
-      $('#avatarMsg').textContent = 'Subiendo...'; $('#avatarMsg').className='muted';
-
-      const r = await fetch(API('/user/me/avatar'), { method:'POST', headers:H, body:fd });
-      const d = await r.json();
-      if (d.ok){
-        $('#avatarMsg').textContent = 'Avatar actualizado'; $('#avatarMsg').className='muted ok';
-        await loadMe();
-      }else{
-        $('#avatarMsg').textContent = d.message || 'Error subiendo imagen'; $('#avatarMsg').className='muted err';
-      }
-    }
-
-    // ========= Seguir / dejar de seguir =========
     async function toggleFollow(id, isFollowing){
-      const tryToggle = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H });
-      if (tryToggle.status !== 404) {
-        const data = await tryToggle.json();
-        return data.ok;
-      }
-      // Plan B
-      if (!isFollowing) {
+      // intenta endpoint toggle
+      try{
+        const r = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H });
+        if (r.status !== 404){ const d = await r.json(); return !!d.ok; }
+      }catch{}
+      // plan B
+      if (!isFollowing){
         const r = await fetch(API(`/follow/${id}`), { method:'POST', headers:H });
-        const d = await r.json(); return d.ok;
-      } else {
+        const d = await r.json(); return !!d.ok;
+      }else{
         const r = await fetch(API(`/follow/${id}`), { method:'DELETE', headers:H });
-        const d = await r.json(); return d.ok;
+        const d = await r.json(); return !!d.ok;
       }
     }
 
-    // ========= Otros usuarios =========
+    function personRow(u){
+      const el = document.createElement('div');
+      el.className = 'person-row';
+
+      const ava = document.createElement('div');
+      ava.className = 'p-avatar';
+      const img = document.createElement('img');
+      img.src = resolveAvatar(u);
+      ava.appendChild(img);
+
+      const info = document.createElement('div');
+      info.className = 'p-info';
+      info.innerHTML = `
+        <div class="p-name">${displayName(u)}</div>
+        <div class="p-user">@${u.nickname || 'usuario'}</div>
+      `;
+
+      const actions = document.createElement('div');
+      actions.className = 'p-actions';
+
+      const view = document.createElement('a');
+      view.className = 'btn ghost';
+      view.textContent = 'Ver perfil';
+      view.href = `profile.html?id=${u._id}`;
+
+      const follow = document.createElement('button');
+      follow.className = 'btn';
+      follow.textContent = u.isFollowing ? 'Dejar de seguir' : 'Seguir';
+
+      follow.onclick = async () => {
+        follow.disabled = true;
+        const ok = await toggleFollow(u._id, !!u.isFollowing);
+        if (ok){ u.isFollowing = !u.isFollowing; follow.textContent = u.isFollowing ? 'Dejar de seguir' : 'Seguir'; }
+        follow.disabled = false;
+      };
+
+      actions.append(view, follow);
+      el.append(ava, info, actions);
+      return el;
+    }
+
     async function loadOthers(){
-      const box = $('#usersGrid'); box.innerHTML = '';
+      const list = $('#peopleList'); list.innerHTML = '';
       const r = await fetch(API('/user/others'), { headers:H });
       const d = await r.json();
-      if(!d.ok) return;
-
-      d.users.forEach(u=>{
-        const el = document.createElement('div');
-        el.className = 'userCard';
-        el.innerHTML = `
-          <div class="topline">
-            <img class="miniPic" src="${resolveAvatar(u)}" alt="">
-            <div>
-              <div><strong>${displayName(u)}</strong></div>
-              <div class="muted">@${u.nickname || 'usuario'}</div>
-            </div>
-          </div>
-          <div class="actions">
-            <a class="btn secondary" href="profile.html?id=${u._id}">Ver perfil</a>
-            <button class="btn ${u.isFollowing?'secondary':''}" data-id="${u._id}">
-              ${u.isFollowing ? 'Dejar de seguir' : 'Seguir'}
-            </button>
-          </div>
-        `;
-        el.querySelector('button').onclick = async (ev)=>{
-          const id = ev.currentTarget.getAttribute('data-id');
-          const ok = await toggleFollow(id, u.isFollowing);
-          if(ok){ loadOthers(); loadMe(); }
-        };
-        box.appendChild(el);
-      });
+      if(!d.ok || !d.users?.length){
+        list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>';
+        return;
+      }
+      d.users.forEach(u => list.appendChild(personRow(u)));
     }
 
-    // ========= Modal =========
-    const modal = $('#profileModal');
-    $('#configBtn').onclick  = ()=>{ modal.setAttribute('data-open','true'); };
-    $('#closeModalBtn').onclick = ()=>{ modal.removeAttribute('data-open'); };
-    $('#reloadBtn').onclick  = loadMe;
-
-    $('#changeAvatarBtn').onclick = ()=> $('#avatarInput').click();
-    $('#avatarInput').addEventListener('change', (e)=>{
-      const f = e.target.files?.[0];
-      if(!f) return;
-      const reader = new FileReader();
-      reader.onload = () => $('#avatarPreview').src = reader.result;
-      reader.readAsDataURL(f);
-      uploadAvatar(f);
-      e.target.value = '';
-    });
-
-    // ========= Eventos base =========
-    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('token'); location.replace('index.html'); };
-    $('#saveBtn').onclick = saveProfile;
+    // Logout topbar
+    document.getElementById('logoutBtnTop')?.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    location.replace('index.html');
+  });
 
     // init
-    loadMe(); loadOthers();
+    loadOthers();
   </script>
 </body>
 </html>
