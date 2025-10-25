@@ -42,3 +42,5 @@ app.get('/ruta-prueba', (req, res) => {
 app.listen(puerto, () => {
   console.log(`Servidor corriendo en http://localhost:${puerto}`);
 });
+
+app.use('/api/test-upload', require('./routes/test-upload'));

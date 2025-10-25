@@ -3,160 +3,282 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Perfil público</title>
-  <link rel="stylesheet" href="css/user.css">
-
-  <!-- Estilo pequeño para el avatar con imagen -->
-  <style>
-    .avatar { position: relative; overflow: hidden; }
-    .avatar-img{
-      width:100%; height:100%; object-fit:cover; display:none; /* se muestra solo si hay foto */
-    }
-  </style>
+  <title>Perfil – DACEM</title>
+  <link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
-  <div class="wrap">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <div class="avatar" id="avatarBox">
-          <img id="avatarImg" class="avatar-img" alt="avatar">
-          <div id="avatarTxt">U</div>
-        </div>
-        <div>
-          <h1 class="name" id="nameTxt">Perfil</h1>
-          <div class="email" id="emailTxt"></div>
-        </div>
-      </div>
-
-      <div class="header-right">
-        <div class="counts">
-          <div><b id="followersCnt">0</b> seguidores</div>
-          <div><b id="followingCnt">0</b> seguidos</div>
-        </div>
-        <button class="btn" id="followBtn" style="display:none">Seguir</button>
-        <button class="btn secondary" id="backBtn">← Volver</button>
-      </div>
+  <!-- Topbar -->
+  <header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">DACEM</div>
+    <div class="topbar-actions">
+      <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
     </div>
+  </div>
+</header>
 
-    <div class="card">
-      <div class="muted" id="msg"></div>
+
+  <div class="wrap">
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <nav class="nav">
+          <a class="nav-item" href="user.html"><span class="nav-ico">🏠</span> Inicio</a>
+          <a class="nav-item active" href="profile.html"><span class="nav-ico">👤</span> Mi perfil</a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <!-- Banner -->
+        <section class="cover">
+          <div id="banner" class="cover-img"></div>
+        </section>
+
+        <!-- Header perfil -->
+        <section class="head">
+          <div class="avatar">
+            <img id="avatarImg" class="avatar-img" alt="avatar">
+            <div id="avatarTxt" class="avatar-txt">U</div>
+          </div>
+
+          <div class="who">
+            <div class="name-row">
+              <span id="nameTxt" class="name">Perfil</span>
+              <span id="verified" class="badge" title="Verificado">✔</span>
+            </div>
+            <div class="username">@<span id="usernameTxt">usuario</span></div>
+            <div class="counts">
+              <b id="followingCnt">0</b> siguiendo ·
+              <b id="followersCnt">0</b> seguidores
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="btnFollow" class="btn" style="display:none">Seguir</button>
+            <button id="btnEdit" class="btn secondary" style="display:none">Editar perfil</button>
+          </div>
+        </section>
+
+        <!-- Bio -->
+        <section class="card">
+          <div class="bio" id="bioTxt">NoBioYet</div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR PERFIL -->
+  <div id="editModal" class="backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Editar perfil</h3>
+        <button class="btn ghost" id="closeEdit">Cerrar</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Banner -->
+        <div class="banner-edit">
+          <div id="bannerPreview" class="banner-preview"></div>
+          <input id="bannerFile" type="file" accept="image/*" hidden>
+          <button class="btn" id="btnPickBanner">Cambiar banner</button>
+        </div>
+
+        <!-- Avatar -->
+        <div class="avatar-edit">
+          <div class="avatar avatar-xl">
+            <img id="avatarPreview" class="avatar-img">
+            <div id="avatarPreviewTxt" class="avatar-txt">U</div>
+          </div>
+          <input id="avatarFile" type="file" accept="image/*" hidden>
+          <button class="btn" id="btnPickAvatar">Cambiar foto</button>
+        </div>
+
+        <!-- Campos -->
+        <div class="form">
+          <label>Apodo</label>
+          <input id="nicknameInp" placeholder="tuapodo">
+
+          <label>Bio (opcional)</label>
+          <textarea id="bioInp" rows="3" maxlength="240" placeholder="Algo sobre ti..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span id="saveMsg" class="muted"></span>
+        <button class="btn" id="btnSave">Guardar cambios</button>
+      </div>
     </div>
   </div>
 
   <script>
+    // ===== Helpers / API =====
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
-    const headers = { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` };
+    const H  = { 'Authorization':`Bearer ${token}` };
+    const JH = { ...H, 'Content-Type':'application/json' };
+    const $  = s => document.querySelector(s);
+    const qs = new URLSearchParams(location.search);
+    const viewId = qs.get('id'); // si existe => perfil público
 
-    const params = new URLSearchParams(location.search);
-    const viewedId = params.get('id');  // usuario que estamos viendo
-    const me = JSON.parse(localStorage.getItem('user') || '{}'); // mi usuario (del login)
+    let me = null; let other = null; let isFollowing = false;
 
-    const $ = s => document.querySelector(s);
-    let isFollowing = false; // estado actual
-    let counts = { followers: 0, following: 0 }; // conteos actuales
-
-    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
+    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || (u.nickname || 'Usuario'); }
     function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
-    function toAbs(url){
-      if (!url) return '';
-      if (url.startsWith('http')) return url;
-      return `${location.origin}${url.startsWith('/') ? url : '/'+url}`;
+    function abs(url){ if(!url) return ''; return url.startsWith('http') ? url : `${location.origin}${url.startsWith('/')?url:'/'+url}`; }
+    function setAvatarBox(imgEl, txtEl, u){
+      if (u.avatar){ imgEl.src = abs(u.avatar); imgEl.style.display='block'; txtEl.style.display='none'; }
+      else { imgEl.removeAttribute('src'); imgEl.style.display='none'; txtEl.textContent = initialLetter(u); txtEl.style.display='flex'; }
     }
-    function setAvatar(u){
-      const img = $('#avatarImg');
-      const txt = $('#avatarTxt');
-      if (u.avatar){
-        img.src = toAbs(u.avatar);
-        img.style.display = 'block';
-        txt.style.display = 'none';
+    function paintProfile(u, counts){
+      $('#banner').style.backgroundImage = u.banner ? `url(${abs(u.banner)})` : 'none';
+      $('#nameTxt').textContent = displayName(u);
+      $('#usernameTxt').textContent = u.nickname || 'usuario';
+      $('#followersCnt').textContent = counts?.followers ?? 0;
+      $('#followingCnt').textContent = counts?.following ?? 0;
+      $('#verified').style.display = u.isVerified ? 'inline' : 'none';
+      setAvatarBox($('#avatarImg'), $('#avatarTxt'), u);
+      $('#bioTxt').textContent = (u.bio && u.bio.trim()) ? u.bio : 'NoBioYet';
+
+      const main = document.querySelector('.main');
+      const hasBanner = !!u.banner;
+
+      if (hasBanner) {
+        $('#banner').style.backgroundImage = `url(${abs(u.banner)})`;
+        main.classList.add('has-banner');
+        main.classList.remove('no-banner');
       } else {
-        img.removeAttribute('src');
-        img.style.display = 'none';
-        txt.textContent = initialLetter(u);
-        txt.style.display = 'flex';
-      }
+        $('#banner').style.backgroundImage = 'none';
+        main.classList.add('no-banner');
+        main.classList.remove('has-banner');
+  }
+
     }
 
-    // Toggle follow con plan B (por si tu API no tiene /toggle)
-    async function toggleFollowRequest(targetId, currentState){
-      // 1) Intento /toggle
-      const tryToggle = await fetch(API(`/follow/toggle/${targetId}`), { method:'POST', headers });
-      if (tryToggle.status !== 404) {
-        const data = await tryToggle.json();
-        return data.ok;
-      }
-      // 2) Plan B: POST follow / DELETE unfollow
-      if (!currentState) {
-        const r = await fetch(API(`/follow/${targetId}`), { method:'POST', headers });
-        const d = await r.json(); return d.ok;
-      } else {
-        const r = await fetch(API(`/follow/${targetId}`), { method:'DELETE', headers });
-        const d = await r.json(); return d.ok;
-      }
+    async function loadMe(){
+      const r = await fetch(API('/user/me'), { headers:H });
+      const d = await r.json();
+      if(!d.ok){ localStorage.removeItem('token'); return location.replace('index.html'); }
+      me = d.user; return { user:d.user, counts:d.counts };
     }
 
-    function paintFollowButton(){
-      const btn = $('#followBtn');
-      btn.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
-      btn.className = isFollowing ? 'btn secondary' : 'btn';
+    async function loadOther(id){
+      const r = await fetch(API(`/user/${id}/public`), { headers:H });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.message || 'No encontrado');
+      other = d.user; isFollowing = !!d.isFollowing;
+      return { user:d.user, counts:d.counts };
     }
 
-    async function onFollowClick(){
-      const btn = $('#followBtn');
-      btn.disabled = true;
-      const ok = await toggleFollowRequest(viewedId, isFollowing);
-      if (ok){
-        isFollowing = !isFollowing;
-        counts.followers += isFollowing ? 1 : -1;
-        $('#followersCnt').textContent = counts.followers;
-        paintFollowButton();
-        $('#msg').textContent = isFollowing ? 'Ahora sigues a esta persona' : 'Dejaste de seguir a esta persona';
+    // === follow ===
+    async function toggleFollow(){
+      $('#btnFollow').disabled = true;
+      const tryToggle = await fetch(API(`/follow/toggle/${other._id}`), { method:'POST', headers:H });
+      if (tryToggle.status !== 404){
+        const d = await tryToggle.json(); if (d.ok) isFollowing = !isFollowing;
       }else{
-        $('#msg').textContent = 'No se pudo actualizar el seguimiento';
+        const r = await fetch(API(`/follow/${other._id}`), { method: isFollowing ? 'DELETE' : 'POST', headers:H });
+        const d = await r.json(); if (d.ok) isFollowing = !isFollowing;
       }
-      btn.disabled = false;
+      $('#btnFollow').textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+      $('#btnFollow').disabled = false;
     }
 
-    async function loadProfile(){
-      try{
-        const r = await fetch(API(`/user/${viewedId}/public`), { headers });
-        if (r.status === 401){ localStorage.removeItem('token'); return location.replace('index.html'); }
-        const d = await r.json();
-        if(!d.ok){ $('#msg').textContent = d.message || 'No se pudo cargar el perfil'; return; }
+    // === modal edit ===
+    const modal = $('#editModal');
+    const openModal  = ()=> modal.setAttribute('data-open','true');
+    const closeModal = ()=> modal.removeAttribute('data-open');
+    $('#closeEdit').onclick = closeModal;
 
-        const u = d.user;
-        counts = d.counts || counts;
-        isFollowing = !!d.isFollowing;
+    function prefillEdit(){
+      $('#bannerPreview').style.backgroundImage = me.banner ? `url(${abs(me.banner)})` : 'none';
+      setAvatarBox($('#avatarPreview'), $('#avatarPreviewTxt'), me);
+      $('#nicknameInp').value = me.nickname || '';
+      $('#bioInp').value = me.bio || '';
+      $('#saveMsg').textContent = '';
+    }
 
-        $('#nameTxt').textContent = displayName(u);
-        $('#emailTxt').textContent = u.email || '';
-        $('#followersCnt').textContent = counts.followers ?? 0;
-        $('#followingCnt').textContent = counts.following ?? 0;
+    $('#btnPickBanner').onclick = ()=> $('#bannerFile').click();
+    $('#btnPickAvatar').onclick = ()=> $('#avatarFile').click();
 
-        // <-- aquí pintamos avatar (foto o inicial)
-        setAvatar(u);
+    $('#bannerFile').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const fd = new FormData(); fd.append('banner', f);
+      const r = await fetch(API('/user/me/banner'), { method:'PUT', headers:H, body:fd });
+      const d = await r.json();
+      if (d.ok){
+        $('#bannerPreview').style.backgroundImage = `url(${d.banner})`;
+        $('#banner').style.backgroundImage = `url(${d.banner})`;
+      }
+      e.target.value = '';
+    });
 
-        // Mostrar botón seguir si NO es mi propio perfil
-        if (me && me._id && me._id !== viewedId){
-          paintFollowButton();
-          $('#followBtn').style.display = 'inline-block';
-        } else {
-          $('#followBtn').style.display = 'none';
-        }
+    $('#avatarFile').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const fd = new FormData(); fd.append('avatar', f);
+      const r = await fetch(API('/user/me/avatar'), { method:'POST', headers:H, body:fd });
+      const d = await r.json();
+      if (d.ok){ await refreshMe(); }
+      e.target.value = '';
+    });
 
-        $('#msg').textContent = isFollowing ? 'Ya sigues a esta persona' : 'Aún no la sigues';
-      }catch(e){
-        $('#msg').textContent = 'Error de red';
+    async function refreshMe(){
+      const r = await fetch(API('/user/me'), { headers:H });
+      const d = await r.json();
+      if (d.ok){
+        me = d.user;
+        paintProfile(me, d.counts);
+        prefillEdit();
       }
     }
 
-    $('#backBtn').onclick = ()=> history.length > 1 ? history.back() : location.replace('user.html');
-    $('#followBtn').onclick = onFollowClick;
+    $('#btnSave').onclick = async ()=>{
+      $('#saveMsg').textContent = 'Guardando...';
+      const payload = {
+        nickname: $('#nicknameInp').value.trim(),
+        bio: $('#bioInp').value.trim()
+      };
+      const r = await fetch(API('/user/update'), { method:'PUT', headers:JH, body: JSON.stringify(payload) });
+      const d = await r.json();
+      if (d.ok){
+        $('#saveMsg').textContent = 'Guardado';
+        await refreshMe();
+      } else {
+        $('#saveMsg').textContent = d.message || 'Error';
+      }
+    };
 
-    if(!viewedId){ $('#msg').textContent='Falta parámetro ?id=...'; } else { loadProfile(); }
+    // === init ===
+    (async ()=>{
+      const meData = await loadMe();
+      const myId = meData.user._id?.toString?.() || meData.user.id || '';
+
+      if (viewId && viewId !== myId){
+        // perfil de otro usuario
+        const { user, counts } = await loadOther(viewId);
+        paintProfile(user, counts);
+        $('#btnEdit').style.display = 'none';
+        $('#btnFollow').style.display = 'inline-block';
+        $('#btnFollow').textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+        $('#btnFollow').onclick = toggleFollow;
+      }else{
+        // mi perfil
+        paintProfile(meData.user, meData.counts);
+        $('#btnFollow').style.display = 'none';
+        $('#btnEdit').style.display = 'inline-block';
+        $('#btnEdit').onclick = ()=>{ prefillEdit(); openModal(); };
+      }
+    })();
+
+    // Logout topbar
+    document.getElementById('logoutBtnTop')?.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    location.replace('index.html');
+  });
+
+
   </script>
 </body>
 </html>
