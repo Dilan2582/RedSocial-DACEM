@@ -9,8 +9,11 @@ const User   = require('../models/user');
 const Follow = require('../models/follow');
 const { createToken } = require('../services/jwt');
 
-// Si usarás GridFS para avatares:
+// GridFS (para avatar si usas gridfs)
 const { getBucket } = require('../services/gridfs');
+
+// S3 (para banner u otros uploads a nube)
+const { putPublicObject } = require('../services/s3');
 
 // ===== Config de almacenamiento de avatares =====
 // AVATAR_STORAGE = 'gridfs' | 'disk'
@@ -44,7 +47,7 @@ function pickUserFieldsFromBody(body = {}) {
   return { firstName, lastName, nickname, email, password };
 }
 
-// ====== Subir/actualizar avatar (disk o gridfs) ======
+/* ===================== AVATAR (disk o gridfs) ===================== */
 async function updateAvatar(req, res) {
   try {
     if (!req.file) return res.status(400).json({ ok:false, message:'No se envió imagen' });
@@ -53,36 +56,30 @@ async function updateAvatar(req, res) {
     const user   = await User.findById(userId);
     if (!user) return res.status(404).json({ ok:false, message:'Usuario no encontrado' });
 
-    // Procesa a webp 256x256
     const webpBuffer = await sharp(req.file.buffer)
       .rotate()
       .resize(256, 256, { fit:'cover' })
       .webp({ quality:85 })
       .toBuffer();
 
-    // Elimina avatar anterior (según el tipo)
+    // Elimina avatar anterior
     try {
       if (user.avatar?.startsWith('/uploads/')) {
-        // Archivo en disco
         const oldPath = path.join(__dirname, '..', user.avatar);
         fs.rmSync(oldPath, { force:true });
       } else if (user.avatar?.startsWith('/api/user/avatar/')) {
-        // Archivo en GridFS
         const oldId = user.avatar.split('/').pop();
         await getBucket().delete(new Types.ObjectId(oldId));
       }
-    } catch {}
+    } catch { /* ignore */ }
 
     if (STORAGE === 'disk') {
-      // === Guardar en DISCO ===
       const avatarsDir = path.join(__dirname, '..', 'uploads', 'avatars');
       fs.mkdirSync(avatarsDir, { recursive:true });
       const filename = `${userId}-${Date.now()}.webp`;
-      const outPath  = path.join(avatarsDir, filename);
-      fs.writeFileSync(outPath, webpBuffer);
+      fs.writeFileSync(path.join(avatarsDir, filename), webpBuffer);
       user.avatar = `/uploads/avatars/${filename}`;
     } else {
-      // === Guardar en GRIDFS ===
       const filename = `${userId}-${Date.now()}.webp`;
       const uploadStream = getBucket().openUploadStream(filename, {
         contentType: 'image/webp',
@@ -97,12 +94,11 @@ async function updateAvatar(req, res) {
     await user.save();
     res.json({ ok:true, avatar: user.avatar });
   } catch (e) {
-    console.error('[avatar] ', e);
+    console.error('[avatar]', e);
     res.status(500).json({ ok:false, message:'Error subiendo imagen' });
   }
 }
 
-// Stream de avatar en GridFS
 async function streamAvatar(req, res) {
   try {
     const fileId = new Types.ObjectId(req.params.id);
@@ -115,7 +111,30 @@ async function streamAvatar(req, res) {
   }
 }
 
-// ====== Register ======
+/* ===================== BANNER (S3) ===================== */
+async function updateBanner(req, res) {
+  try {
+    if (!req.user?.id) return res.status(401).json({ ok:false, message:'No autorizado' });
+    if (!req.file)    return res.status(400).json({ ok:false, message:'Sin archivo' });
+
+    const out = await sharp(req.file.buffer, { limitInputPixels: false })
+      .resize({ width: 1500, height: 500, fit: 'cover', position: 'attention' })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    const Key = `users/${req.user.id}/banner/${Date.now()}.webp`;
+    const url = await putPublicObject({ Key, Body: out, ContentType: 'image/webp' });
+
+    await User.findByIdAndUpdate(req.user.id, { banner: url });
+    res.json({ ok:true, banner: url });
+  } catch (e) {
+    console.error('[banner]', e);
+    res.status(500).json({ ok:false, message:'Error subiendo banner' });
+  }
+}
+
+
+/* ===================== AUTH & PERFIL ===================== */
 async function register(req, res) {
   try {
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
@@ -151,7 +170,6 @@ async function register(req, res) {
   }
 }
 
-// ====== Login ======
 async function login(req, res) {
   try {
     let identifier = normStr(req.body?.identifier);
@@ -179,7 +197,6 @@ async function login(req, res) {
   }
 }
 
-// ====== Me ======
 async function me(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
@@ -193,33 +210,52 @@ async function me(req, res) {
   }
 }
 
-// ====== Update ======
 async function update(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
     const { firstName, lastName, nickname, email, password } = pickUserFieldsFromBody(req.body);
     const updates = {};
+    const bio = typeof req.body.bio === 'string' ? req.body.bio.trim() : '';
 
+    // Campos simples
     if (firstName) updates.firstName = firstName;
     if (lastName)  updates.lastName  = lastName;
 
+    // Nickname con validaciones
     if (nickname) {
-      if (!nickValid(nickname)) return res.status(400).json({ ok:false, message:'Apodo inválido (3-20, letras/números/._-)' });
-      const taken = await User.findOne({ nickname, _id: { $ne: uid } }).lean();
-      if (taken) return res.status(409).json({ ok:false, message:'Ese apodo ya está en uso' });
+      if (!nickValid(nickname)) {
+        return res.status(400).json({ ok:false, message:'Apodo inválido (3-20, letras/números/._-)' });
+      }
+      const taken = await User.findOne({ nickname: nickname.toLowerCase(), _id: { $ne: uid } }).lean();
+      if (taken) {
+        return res.status(409).json({ ok:false, message:'Ese apodo ya está en uso' });
+      }
       updates.nickname = nickname.toLowerCase();
     }
 
+    // Email con validaciones
     if (email) {
-      if (!emailValid(email)) return res.status(400).json({ ok:false, message:'Email inválido' });
+      if (!emailValid(email)) {
+        return res.status(400).json({ ok:false, message:'Email inválido' });
+      }
       const taken = await User.findOne({ email: email.toLowerCase(), _id: { $ne: uid } }).lean();
-      if (taken) return res.status(409).json({ ok:false, message:'Ese email ya está en uso' });
+      if (taken) {
+        return res.status(409).json({ ok:false, message:'Ese email ya está en uso' });
+      }
       updates.email = email.toLowerCase();
     }
 
+    // Password
     if (password) {
-      if (password.length < 6) return res.status(400).json({ ok:false, message:'Password mínimo 6 caracteres' });
+      if (password.length < 6) {
+        return res.status(400).json({ ok:false, message:'Password mínimo 6 caracteres' });
+      }
       updates.password = await bcrypt.hash(password, 10);
+    }
+
+    // Bio (opcional)
+    if (bio || ('bio' in req.body)) {
+      updates.bio = (bio || '').slice(0, 240);
     }
 
     if (Object.keys(updates).length === 0) {
@@ -234,7 +270,7 @@ async function update(req, res) {
   }
 }
 
-// ====== Others ======
+
 async function listOthers(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
@@ -251,7 +287,6 @@ async function listOthers(req, res) {
   }
 }
 
-// ====== Public profile ======
 async function publicProfile(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
@@ -289,6 +324,9 @@ module.exports = {
   // avatar
   updateAvatar,
   streamAvatar,
+
+  // banner (S3)
+  updateBanner,
 
   // google
   googleLogin,

@@ -1,0 +1,114 @@
+:root{
+  --bg:#0f172a;--panel:#121a2a;--line:#1f2a3a;--text:#e6edf7;--muted:#94a3b8;
+  --accent:#60a5fa;--ring:rgba(96,165,250,.18);--panel2:#0b1323;
+}
+
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:50;background:#0a1222;border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center}
+.brand{font-weight:900;letter-spacing:.5px}
+
+/* Layout */
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
+.wrap{max-width:1200px;margin:24px auto;padding:0 20px}
+.layout{display:grid;grid-template-columns:220px 1fr;gap:18px}
+.sidebar{position:sticky;top:76px;height:max-content}
+.main{min-height:380px}
+
+/* Sidebar */
+.nav{display:flex;flex-direction:column;gap:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--text);text-decoration:none}
+.nav-item:hover{border-color:#2f4666}
+.nav-item.active{background:#17243a;border-color:#2a3d5c}
+.nav-ico{font-size:18px}
+
+/* Banner y cabecera perfil */
+/* Banner */
+.cover{
+  position: relative;
+  aspect-ratio: 3 / 1;
+  height: auto;
+  border-radius: 0;
+  overflow: hidden;
+  background: #111;
+  border: none;
+}
+.cover::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+}
+
+/* Cuando NO hay banner: ocultar la franja y quitar el solape del header */
+.main.no-banner .cover{ display:none; }
+.head{ margin-top: 12px; }                /* valor base */
+.main.has-banner .head{ margin-top: -48px; }  /* solapar sobre banner cuando sí hay */
+
+.cover-img{
+  position:absolute;
+  inset:0;
+  background:#111 center/cover no-repeat;
+}
+
+
+.head{display:flex;align-items:end;gap:16px;margin-top:-48px}
+.avatar{width:96px;height:96px;border-radius:50%;border:4px solid var(--bg);background:#222;overflow:hidden;flex:0 0 auto}
+.avatar-img{width:100%;height:100%;object-fit:cover;display:none}
+.avatar-txt{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#9aa4b2}
+.avatar-xl{width:120px;height:120px;border:4px solid var(--bg);border-radius:50%}
+
+.who{flex:1}
+.name-row{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:800;line-height:1}
+.badge{display:none;color:#1d9bf0;font-size:18px}
+.username{color:#9aa4b2;margin-top:4px}
+.counts{color:#c9d1d9;margin-top:10px}
+
+.actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn{padding:8px 14px;border-radius:10px;border:1px solid #2a3650;background:#13213a;color:#fff;cursor:pointer}
+.btn.secondary{background:#0f172a;border-color:#2a3650}
+.btn.ghost{background:#0f172a;border:1px solid #2a3650;color:#dbe8ff}
+
+/* Bio / tarjeta */
+.card{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.bio{white-space:pre-wrap}
+.muted{color:var(--muted)}
+
+/* Modal */
+.backdrop{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:60}
+.backdrop[data-open="true"]{display:flex}
+.modal{width:min(820px,95vw);background:#0f1826;color:#e9f0ff;border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 20px 60px #000a}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.modal-body{display:grid;grid-template-columns:1fr 260px;gap:16px}
+.modal-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.banner-preview{height:160px;border-radius:12px;border:1px solid #2a3650;background:#0c162b center/cover no-repeat;margin-bottom:8px}
+.form label{display:block;margin:10px 0 6px;color:#cbd5e1;font-size:14px}
+.form input,.form textarea{width:100%;padding:11px 12px;border-radius:10px;background:#0b1421;color:#e8f1ff;border:1px solid #233145;outline:none}
+.form input:focus,.form textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 4px rgba(96,165,250,.18)}
+
+@media(max-width:1000px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static}
+}
+
+/* === Topbar (unificada) === */
+.topbar{
+  position: sticky; top: 0; z-index: 70;
+  background: #0a1222; border-bottom: 1px solid var(--line);
+}
+.topbar-inner{
+  max-width: 1200px; margin: 0 auto;
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand{ font-weight: 900; letter-spacing: .5px; }
+.topbar-actions{ display: flex; align-items: center; gap: 10px; }
+
+/* Botón en topbar (mismas reglas en ambas páginas) */
+.topbar .btn{
+  padding: 8px 14px; border-radius: 10px;
+  border: 1px solid #2a3650; background: #13213a; color: #fff; cursor: pointer;
+}
+.topbar .btn.small{ padding: 6px 12px; font-size: .9rem; }
+.topbar .btn.danger{ background: #ef4444; border-color: #ef4444; color: #fff; }
+.topbar .btn:hover{ filter: brightness(1.05); }

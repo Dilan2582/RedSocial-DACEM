@@ -1,15 +1,26 @@
 // middlewares/upload.js
 const multer = require('multer');
 
-const storage = multer.memoryStorage(); // usaremos sharp para escribir a disco
+// Buffer en memoria: procesamos con sharp y subimos a S3 (no escribimos a disco)
+const storage = multer.memoryStorage();
+
+// Tipos permitidos (imágenes + video mp4 básico)
+const ALLOWED_MIME = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+];
 
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  // Límite razonable para imágenes y videos cortos (ajusta si necesitas)
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
   fileFilter: (req, file, cb) => {
-    const ok = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype);
+    const ok = ALLOWED_MIME.includes(file.mimetype);
     cb(ok ? null : new Error('Tipo de archivo no permitido'), ok);
-  }
+  },
 });
 
-module.exports = upload;
+module.exports = { upload };
