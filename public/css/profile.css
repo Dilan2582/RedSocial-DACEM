@@ -5,8 +5,11 @@
 
 /* Topbar */
 .topbar{position:sticky;top:0;z-index:50;background:#0a1222;border-bottom:1px solid var(--line)}
-.topbar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
 .brand{font-weight:900;letter-spacing:.5px}
+.topbar .btn{padding:8px 14px;border-radius:10px;border:1px solid #2a3650;background:#13213a;color:#fff;cursor:pointer}
+.topbar .btn.small{padding:6px 12px;font-size:.9rem}
+.topbar .btn.danger{background:#ef4444;border-color:#ef4444;color:#fff}
 
 /* Layout */
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial}
@@ -22,38 +25,51 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe
 .nav-item.active{background:#17243a;border-color:#2a3d5c}
 .nav-ico{font-size:18px}
 
-/* Banner y cabecera perfil */
-/* Banner */
+/* ==================== Banner ==================== */
+/* Marco visible SIEMPRE (haya o no imagen). Redondeado y con recorte. */
 .cover{
-  position: relative;
-  aspect-ratio: 3 / 1;
-  height: auto;
-  border-radius: 0;
-  overflow: hidden;
-  background: #111;
-  border: none;
+  position:relative;
+  width:100%;
+  aspect-ratio:3/1;          /* 1500x500 */
+  max-height:500px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:#0c162b;        /* placeholder cuando no hay imagen */
 }
+/* Capa con la imagen como background */
+.cover-img{
+  position:absolute;
+  inset:0;
+  background:#0c162b center/cover no-repeat;
+}
+/* Suave viñeta para lectura */
 .cover::after{
   content:"";
   position:absolute;
   inset:0;
-  background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.25));
 }
 
-/* Cuando NO hay banner: ocultar la franja y quitar el solape del header */
-.main.no-banner .cover{ display:none; }
-.head{ margin-top: 12px; }                /* valor base */
-.main.has-banner .head{ margin-top: -48px; }  /* solapar sobre banner cuando sí hay */
-
-.cover-img{
-  position:absolute;
-  inset:0;
-  background:#111 center/cover no-repeat;
+/* ==================== Cabecera/Avatar ==================== */
+/* Por defecto (sin banner) el header NO se superpone */
+.head{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-end;
+  gap:16px;
+  margin-top:12px;            /* sin superposición */
 }
+/* Si hay banner, superponemos un poco el avatar */
+.main.has-banner .head{ margin-top:-48px; }
 
-
-.head{display:flex;align-items:end;gap:16px;margin-top:-48px}
-.avatar{width:96px;height:96px;border-radius:50%;border:4px solid var(--bg);background:#222;overflow:hidden;flex:0 0 auto}
+.avatar{
+  width:96px;height:96px;border-radius:50%;
+  overflow:hidden;background:#222;flex:0 0 auto;
+  border:4px solid var(--bg); /* anillo para que nunca lo tape el banner */
+}
 .avatar-img{width:100%;height:100%;object-fit:cover;display:none}
 .avatar-txt{display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;color:#9aa4b2}
 .avatar-xl{width:120px;height:120px;border:4px solid var(--bg);border-radius:50%}
@@ -83,32 +99,10 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe
 .modal-foot{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
 .banner-preview{height:160px;border-radius:12px;border:1px solid #2a3650;background:#0c162b center/cover no-repeat;margin-bottom:8px}
 .form label{display:block;margin:10px 0 6px;color:#cbd5e1;font-size:14px}
-.form input,.form textarea{width:100%;padding:11px 12px;border-radius:10px;background:#0b1421;color:#e8f1ff;border:1px solid #233145;outline:none}
-.form input:focus,.form textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 4px rgba(96,165,250,.18)}
+.form input,.form textarea{width:100%;padding:11px 12px;border-radius:10px;background:var(--panel2);color:#e8f1ff;border:1px solid #233145;outline:none}
+.form input:focus,.form textarea:focus{border-color:#60a5fa;box-shadow:0 0 0 4px var(--ring)}
 
 @media(max-width:1000px){
   .layout{grid-template-columns:1fr}
   .sidebar{position:static}
 }
-
-/* === Topbar (unificada) === */
-.topbar{
-  position: sticky; top: 0; z-index: 70;
-  background: #0a1222; border-bottom: 1px solid var(--line);
-}
-.topbar-inner{
-  max-width: 1200px; margin: 0 auto;
-  padding: 10px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.brand{ font-weight: 900; letter-spacing: .5px; }
-.topbar-actions{ display: flex; align-items: center; gap: 10px; }
-
-/* Botón en topbar (mismas reglas en ambas páginas) */
-.topbar .btn{
-  padding: 8px 14px; border-radius: 10px;
-  border: 1px solid #2a3650; background: #13213a; color: #fff; cursor: pointer;
-}
-.topbar .btn.small{ padding: 6px 12px; font-size: .9rem; }
-.topbar .btn.danger{ background: #ef4444; border-color: #ef4444; color: #fff; }
-.topbar .btn:hover{ filter: brightness(1.05); }
