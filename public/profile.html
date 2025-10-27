@@ -9,14 +9,13 @@
 <body>
   <!-- Topbar -->
   <header class="topbar">
-  <div class="topbar-inner">
-    <div class="brand">DACEM</div>
-    <div class="topbar-actions">
-      <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
+    <div class="topbar-inner">
+      <div class="brand">DACEM</div>
+      <div class="topbar-actions">
+        <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
+      </div>
     </div>
-  </div>
-</header>
-
+  </header>
 
   <div class="wrap">
     <div class="layout">
@@ -30,7 +29,7 @@
 
       <!-- Main -->
       <main class="main">
-        <!-- Banner -->
+        <!-- Banner (marco siempre visible; imagen opcional) -->
         <section class="cover">
           <div id="banner" class="cover-img"></div>
         </section>
@@ -87,7 +86,7 @@
         <!-- Avatar -->
         <div class="avatar-edit">
           <div class="avatar avatar-xl">
-            <img id="avatarPreview" class="avatar-img">
+            <img id="avatarPreview" class="avatar-img" alt="">
             <div id="avatarPreviewTxt" class="avatar-txt">U</div>
           </div>
           <input id="avatarFile" type="file" accept="image/*" hidden>
@@ -124,15 +123,24 @@
 
     let me = null; let other = null; let isFollowing = false;
 
-    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || (u.nickname || 'Usuario'); }
-    function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
-    function abs(url){ if(!url) return ''; return url.startsWith('http') ? url : `${location.origin}${url.startsWith('/')?url:'/'+url}`; }
+    const displayName = (u)=> u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || (u.nickname || 'Usuario');
+    const initialLetter= (u)=> (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase();
+    const abs = (url)=>!url ? '' : (url.startsWith('http') ? url : `${location.origin}${url.startsWith('/')?url:'/'+url}`);
+
     function setAvatarBox(imgEl, txtEl, u){
       if (u.avatar){ imgEl.src = abs(u.avatar); imgEl.style.display='block'; txtEl.style.display='none'; }
       else { imgEl.removeAttribute('src'); imgEl.style.display='none'; txtEl.textContent = initialLetter(u); txtEl.style.display='flex'; }
     }
+
     function paintProfile(u, counts){
-      $('#banner').style.backgroundImage = u.banner ? `url(${abs(u.banner)})` : 'none';
+      // Banner (imagen opcional; el marco siempre se ve)
+      const hasBanner = !!u.banner;
+      $('#banner').style.backgroundImage = hasBanner ? `url(${abs(u.banner)})` : 'none';
+
+      // Ajuste de solape del avatar
+      const main = document.querySelector('.main');
+      main.classList.toggle('has-banner', hasBanner);
+
       $('#nameTxt').textContent = displayName(u);
       $('#usernameTxt').textContent = u.nickname || 'usuario';
       $('#followersCnt').textContent = counts?.followers ?? 0;
@@ -140,20 +148,6 @@
       $('#verified').style.display = u.isVerified ? 'inline' : 'none';
       setAvatarBox($('#avatarImg'), $('#avatarTxt'), u);
       $('#bioTxt').textContent = (u.bio && u.bio.trim()) ? u.bio : 'NoBioYet';
-
-      const main = document.querySelector('.main');
-      const hasBanner = !!u.banner;
-
-      if (hasBanner) {
-        $('#banner').style.backgroundImage = `url(${abs(u.banner)})`;
-        main.classList.add('has-banner');
-        main.classList.remove('no-banner');
-      } else {
-        $('#banner').style.backgroundImage = 'none';
-        main.classList.add('no-banner');
-        main.classList.remove('has-banner');
-  }
-
     }
 
     async function loadMe(){
@@ -210,6 +204,7 @@
       if (d.ok){
         $('#bannerPreview').style.backgroundImage = `url(${d.banner})`;
         $('#banner').style.backgroundImage = `url(${d.banner})`;
+        document.querySelector('.main').classList.add('has-banner');
       }
       e.target.value = '';
     });
@@ -273,12 +268,10 @@
 
     // Logout topbar
     document.getElementById('logoutBtnTop')?.addEventListener('click', () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    location.replace('index.html');
-  });
-
-
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      location.replace('index.html');
+    });
   </script>
 </body>
 </html>
