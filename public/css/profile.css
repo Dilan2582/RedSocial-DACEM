@@ -106,3 +106,155 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe
   .layout{grid-template-columns:1fr}
   .sidebar{position:static}
 }
+
+/* ===== Grid IG ===== */
+.grid-ig{
+  display:grid; gap:6px;
+  grid-template-columns: repeat(3, 1fr);
+}
+.ig-item{ position:relative; display:block; background:#0b1323; border-radius:8px; overflow:hidden; }
+.ig-item::before{ content:""; display:block; aspect-ratio:1/1; }
+.ig-item img{
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+}
+
+/* ===== Lightbox/visor ===== */
+.lightbox[aria-hidden="true"]{ display:none; }
+.lightbox{
+  position:fixed; inset:0; backdrop-filter: blur(4px);
+  background:rgba(0,0,0,.65); display:flex; align-items:center; justify-content:center; z-index:90;
+}
+.lb-content{
+  width:min(900px, 92vw); background:#0f1826; border:1px solid #1f2a3a;
+  border-radius:16px; box-shadow:0 20px 80px #000a; overflow:hidden;
+}
+.lb-close{ position:absolute; right:18px; top:14px; }
+
+.post-card .post-media{ background:#0b1323; position:relative; }
+.post-card .post-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.post-card .post-media.ratio-portrait{ aspect-ratio:4/5; max-height:80vh; }
+.post-card .post-media.ratio-square{ aspect-ratio:1/1; max-height:80vh; }
+.post-card .post-media.ratio-landscape{ aspect-ratio:16/9; max-height:80vh; }
+
+/* === IG grid (3 columnas, ancho 935px) === */
+#profilePosts { max-width: 935px; margin: 0 auto; }
+.grid-ig{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.ig-item{
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--panel2);
+}
+.ig-item img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 1024px){
+  #profilePosts{ max-width: 90vw; }
+}
+
+/* === Modal estilo Instagram === */
+.lightbox{
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.6);
+  z-index: 60;
+}
+.lightbox[aria-hidden="false"]{ display: flex; }
+
+.lb-content{
+  position: relative;
+  width: min(935px, 96vw);
+  height: min(90vh, 820px);
+  display: flex;
+  background: var(--panel);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+.lb-media{
+  flex: 1 1 65%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lb-media img{
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.lb-side{
+  flex: 1 1 35%;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* header lado derecho */
+.lb-head{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.lb-ava{
+  width: 36px; height: 36px;
+  border-radius: 999px; object-fit: cover;
+}
+
+/* comentarios */
+.lb-body{
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+.lb-cmt{ margin-bottom: 10px; line-height: 1.35; }
+.lb-cmt .nm{ font-weight: 600; margin-right: 8px; }
+.lb-cmt .dt{ color: var(--muted); font-size: 12px; margin-left: 8px; }
+
+/* caja escribir */
+.lb-input{
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+.lb-input input{
+  flex: 1; padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: var(--panel2);
+  color: var(--text);
+  border-radius: 10px;
+}
+.lb-input button{ white-space: nowrap; }
+
+/* cerrar */
+.lb-close{
+  position: absolute;
+  top: 8px; right: 8px;
+}
+
+.list-users { display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow:auto; }
+.user-row { display:flex; align-items:center; gap:12px; padding:8px; border-radius:10px; background:var(--panel2); }
+.user-row img { width:40px; height:40px; border-radius:999px; object-fit:cover; }
+.user-row .u-info { flex:1; min-width:0; }
+.user-row .u-name { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-row .u-nick { color:var(--muted); font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.user-row .u-actions { display:flex; gap:8px; }
+.tabs .active { background: var(--line); }

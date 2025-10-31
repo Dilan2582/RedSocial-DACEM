@@ -1,31 +1,39 @@
 // routes/user.js
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 
 const C = require('../controllers/user');
+const { googleLogin } = require('../controllers/auth'); // si lo usas
 
+// ---- Auth middleware (compatibilidad con ambos estilos de export) ----
+const authMod = require('../middlewares/auth');
+const ensureAuth =
+  typeof authMod === 'function'
+    ? authMod
+    : (authMod.ensureAuth || authMod.auth);
 
-const { googleLogin } = require('../controllers/auth');
+// ---- Upload y reCAPTCHA (tus middlewares existentes) ----
+const { upload } = require('../middlewares/upload');
+const { verifyRecaptcha } = require('../middlewares/recaptcha');
 
-const auth = require('../middlewares/auth');          
-const { upload } = require('../middlewares/upload');   
-const { verifyRecaptcha } = require('../middlewares/recaptcha'); 
-
-// Públicas (con captcha)
+// =================== Rutas públicas ===================
+// Con reCAPTCHA según tu implementación actual
 router.post('/register', verifyRecaptcha, C.register);
 router.post('/login',    verifyRecaptcha, C.login);
 
-// Avatar (stream desde GridFS) — poner antes de '/:id/public'
+// (Opcional) login con Google, si lo quieres habilitar
+// router.post('/login/google', verifyRecaptcha, googleLogin);
+
+// Avatar (stream desde GridFS) — importante que esté ANTES de '/:id/public'
 router.get('/avatar/:id', C.streamAvatar);
 
-// Protegidas
-router.get('/me',         auth, C.me);
-router.put('/update',     auth, C.update);
-router.get('/others',     auth, C.listOthers);
-router.get('/:id/public', auth, C.publicProfile);
+// =================== Rutas protegidas ===================
+router.get('/me',         ensureAuth, C.me);
+router.put('/update',     ensureAuth, C.update);
+router.get('/others',     ensureAuth, C.listOthers);
+router.get('/:id/public', ensureAuth, C.publicProfile);
 
-// Subidas
-router.post('/me/avatar', auth, upload.single('avatar'), C.updateAvatar);
-router.put('/me/banner',  auth, upload.single('banner'), C.updateBanner);
+// Subidas (avatar/banner) usando tu middleware `upload`
+router.post('/me/avatar', ensureAuth, upload.single('avatar'), C.updateAvatar);
+router.put('/me/banner',  ensureAuth, upload.single('banner'),  C.updateBanner);
 
 module.exports = router;

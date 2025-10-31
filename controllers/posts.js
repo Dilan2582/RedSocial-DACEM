@@ -12,6 +12,7 @@ function ensureAuthUser(req) {
   return req.user.id;
 }
 
+/* ----------------------------- CREATE POST ----------------------------- */
 async function createPost(req, res) {
   try {
     const userId = ensureAuthUser(req);
@@ -94,31 +95,98 @@ async function createPost(req, res) {
   }
 }
 
-// ====== Feed paginado (cursor por fecha) ======
+/* ----------------------------- HELPERS LIST ---------------------------- */
+async function collectViewerLikes(userId, postRows) {
+  if (!userId || !postRows?.length) return new Set();
+  const ids = postRows.map(p => p._id);
+  const liked = await Like.find({ userId, postId: { $in: ids } }).select('postId').lean();
+  return new Set(liked.map(l => String(l.postId)));
+}
+
+/* ------------------------------- FEED/LIST ----------------------------- */
+// GET /api/posts?limit=10&cursor=ISO_DATE&userId=<id>
 async function getFeed(req, res) {
-  const limit = Math.min(Number(req.query.limit || 10), 50);
-  const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
+  try {
+    const limit = Math.min(Number(req.query.limit || 10), 50);
 
-  const q = cursor ? { createdAt: { $lt: cursor } } : {};
-  const rows = await Post.find(q).sort({ createdAt: -1 }).limit(limit).lean();
+    // cursor seguro
+    let cursor = null;
+    if (req.query.cursor) {
+      const d = new Date(req.query.cursor);
+      if (!isNaN(d)) cursor = d;
+    }
 
-  const posts = rows.map(serializePost);
-  const nextCursor = rows.length ? rows[rows.length - 1].createdAt.toISOString() : null;
-  res.json({ ok: true, posts, nextCursor });
+    // userId seguro
+    let userId = null;
+    if (req.query.userId) {
+      if (!Types.ObjectId.isValid(req.query.userId)) {
+        return res.status(400).json({ ok:false, message:'userId inválido' });
+      }
+      userId = new Types.ObjectId(req.query.userId);
+    }
+
+    const q = {};
+    if (cursor) q.createdAt = { $lt: cursor };
+    if (userId) q.userId = userId;
+
+    const rows = await Post.find(q).sort({ createdAt: -1 }).limit(limit).lean();
+
+    // Marca viewerLiked si hay usuario autenticado
+    const viewerId = req.user?.id ? String(req.user.id) : null;
+    const likedSet = await collectViewerLikes(viewerId, rows);
+
+    const posts = rows.map(p => {
+      const sp = serializePost(p);
+      sp.viewerLiked = likedSet.has(String(p._id));
+      return sp;
+    });
+
+    const nextCursor = rows.length ? rows[rows.length - 1].createdAt.toISOString() : null;
+    res.json({ ok: true, posts, nextCursor });
+  } catch (e) {
+    console.error('[getFeed] error', e);
+    res.status(500).json({ ok:false, message:'Error listando posts' });
+  }
 }
 
-// ====== Detalle ======
+/* -------------------------------- DETAIL ------------------------------- */
 async function getPostById(req, res) {
-  const post = await Post.findById(req.params.id).lean();
-  if (!post) return res.status(404).json({ ok: false, message: 'No encontrado' });
-  res.json({ ok: true, post: serializePost(post, { includeVariants: true }) });
+  try {
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok:false, message:'ID inválido' });
+    }
+
+    const post = await Post.findById(id).lean();
+    if (!post) return res.status(404).json({ ok: false, message: 'No encontrado' });
+
+    const includeVariants = req.query.variants === '1';
+    const data = serializePost(post, { includeVariants });
+
+    // viewerLiked si hay auth
+    if (req.user?.id) {
+      const liked = await Like.findOne({ userId: req.user.id, postId: id }).lean();
+      data.viewerLiked = !!liked;
+    } else {
+      data.viewerLiked = false;
+    }
+
+    res.json({ ok: true, post: data });
+  } catch (e) {
+    console.error('[getPostById] error', e);
+    res.status(500).json({ ok:false, message:'Error obteniendo post' });
+  }
 }
 
-// ====== Likes (toggle) ======
+/* -------------------------------- LIKES -------------------------------- */
 async function toggleLike(req, res) {
   try {
     const userId = ensureAuthUser(req);
-    const postId = req.params.id;
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok:false, message:'ID inválido' });
+    }
+    const postId = id;
 
     const exists = await Like.findOne({ postId, userId });
     if (exists) {
@@ -130,35 +198,68 @@ async function toggleLike(req, res) {
     await Post.updateOne({ _id: postId }, { $inc: { 'counts.likes': 1 } });
     return res.json({ ok: true, liked: true });
   } catch (e) {
+    console.error('[toggleLike] error', e);
     return res.status(500).json({ ok:false, message:'Error like/unlike' });
   }
 }
 
-// ====== Comments ======
+/* ------------------------------ COMMENTS ------------------------------- */
 async function listComments(req, res) {
-  const limit = Math.min(Number(req.query.limit || 20), 100);
-  const rows = await Comment.find({ postId: req.params.id })
-    .sort({ createdAt: -1 }).limit(limit).lean();
-  res.json({ ok: true, comments: rows });
+  try {
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok:false, message:'ID inválido' });
+    }
+
+    const limit = Math.min(Number(req.query.limit || 20), 100);
+    const rows = await Comment.find({ postId: id })
+      .sort({ createdAt: -1 }).limit(limit).lean();
+    res.json({ ok: true, comments: rows });
+  } catch (e) {
+    console.error('[listComments] error', e);
+    res.status(500).json({ ok:false, message:'Error listando comentarios' });
+  }
 }
 
 async function addComment(req, res) {
   try {
     const userId = ensureAuthUser(req);
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok:false, message:'ID inválido' });
+    }
+
     const text = (req.body.text || '').trim();
     if (!text) return res.status(400).json({ ok:false, message:'Comentario vacío' });
 
-    const c = await Comment.create({ postId: req.params.id, userId, text });
-    await Post.updateOne({ _id: req.params.id }, { $inc: { 'counts.comments': 1 } });
+    const c = await Comment.create({ postId: id, userId, text });
+    await Post.updateOne({ _id: id }, { $inc: { 'counts.comments': 1 } });
     res.json({ ok: true, comment: c });
   } catch (e) {
+    console.error('[addComment] error', e);
     res.status(500).json({ ok:false, message:'Error comentando' });
   }
 }
 
-// ====== Helpers ======
+/* --------------------------------- UTIL -------------------------------- */
 function serializePost(post, opts = {}) {
   const base = (k) => publicUrl(k);
+  const variants = post.media?.variants || {};
+  const include = !!opts.includeVariants;
+
+  const media = {
+    original: base(post.media.keyOriginal),
+    thumb:    base(post.media.keyThumb),
+    width: post.media.width,
+    height: post.media.height,
+    mime: post.media.mime
+  };
+  if (include) {
+    if (variants.t1) media.t1 = base(variants.t1);
+    if (variants.t2) media.t2 = base(variants.t2);
+    if (variants.t3) media.t3 = base(variants.t3);
+  }
+
   return {
     id: String(post._id),
     userId: String(post.userId),
@@ -166,20 +267,15 @@ function serializePost(post, opts = {}) {
     createdAt: post.createdAt,
     counts: post.counts || { likes: 0, comments: 0 },
     status: post.status || 'ready',
-    media: {
-      original: base(post.media.keyOriginal),
-      thumb:    base(post.media.keyThumb),
-      ...(opts.includeVariants ? {
-        t1: base(post.media.variants.t1),
-        t2: base(post.media.variants.t2),
-        t3: base(post.media.variants.t3),
-      } : {}),
-      width: post.media.width, height: post.media.height, mime: post.media.mime
-    }
+    media
   };
 }
 
 module.exports = {
-  createPost, getFeed, getPostById,
-  toggleLike, listComments, addComment
+  createPost,
+  getFeed,
+  getPostById,
+  toggleLike,
+  listComments,
+  addComment
 };
