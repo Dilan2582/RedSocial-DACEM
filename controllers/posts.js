@@ -6,6 +6,8 @@ const Comment = require('../models/comment');
 const { env } = require('../config/env');
 const { buildPostKey, uploadBuffer, publicUrl } = require('../services/s3');
 const { readMeta, makeThumb, varT1, varT2, varT3 } = require('../services/image');
+const { analyzeS3Image } = require('../services/vision');
+
 
 function ensureAuthUser(req) {
   if (!req.user || !req.user.id) throw new Error('NO_AUTH');
@@ -278,4 +280,29 @@ module.exports = {
   toggleLike,
   listComments,
   addComment
+};
+
+async function getAnalysis(req, res) {
+  try {
+    const { id } = req.params;
+    if (!Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok:false, message:'ID inválido' });
+    }
+    const post = await Post.findById(id).select('tags nsfw faceCount visionRaw').lean();
+    if (!post) return res.status(404).json({ ok:false, message:'No encontrado' });
+    res.json({ ok:true, analysis: post });
+  } catch (e) {
+    console.error('[getAnalysis] error', e);
+    res.status(500).json({ ok:false, message:'Error obteniendo análisis' });
+  }
+}
+
+module.exports = {
+  createPost,
+  getFeed,
+  getPostById,
+  toggleLike,
+  listComments,
+  addComment,
+  getAnalysis // <-- exporta
 };

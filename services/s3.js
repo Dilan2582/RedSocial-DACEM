@@ -74,3 +74,52 @@ module.exports = {
   putPublicObject,
   publicUrl,
 };
+
+// 4) Sube todo a S3
+await Promise.all([
+  uploadBuffer({ Key: keyOriginal, Body: buffer,   ContentType: meta.mime }),
+  uploadBuffer({ Key: keyThumb,    Body: thumbBuf, ContentType: 'image/jpeg' }),
+  uploadBuffer({ Key: keyT1,       Body: t1Buf,    ContentType: 'image/jpeg' }),
+  uploadBuffer({ Key: keyT2,       Body: t2Buf,    ContentType: 'image/jpeg' }),
+  uploadBuffer({ Key: keyT3,       Body: t3Buf,    ContentType: 'image/jpeg' }),
+]);
+
+// 4.5) *** NUEVO: Análisis de visión sobre el ORIGINAL ***
+const analysis = await analyzeS3Image({
+  bucket: env.aws.bucket,
+  key: keyOriginal
+});
+
+// 5) Crea el documento completo
+const post = await Post.create({
+  _id: postId,
+  userId: new Types.ObjectId(userId),
+  caption: (req.body.caption || '').trim(),
+  media: {
+    keyOriginal,
+    keyThumb,
+    variants: { t1: keyT1, t2: keyT2, t3: keyT3 },
+    width: meta.width,
+    height: meta.height,
+    mime: meta.mime,
+    size: buffer.length
+  },
+  // *** NUEVO: guarda resultados de visión ***
+  tags: analysis.tags,
+  nsfw: analysis.nsfw,
+  faceCount: analysis.faceCount,
+  visionRaw: analysis.raw,
+
+  status: 'ready'
+});
+
+res.json({
+  ok: true,
+  post: {
+    // ...
+    tags: post.tags,
+    nsfw: post.nsfw,
+    faceCount: post.faceCount,
+    // ...
+  }
+});
