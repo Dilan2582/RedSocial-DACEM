@@ -23,10 +23,16 @@ const PostSchema = new Schema({
     likes:    { type: Number, default: 0 },
     comments: { type: Number, default: 0 },
   },
+  tags:       [{ type: String, index: true }],
+  nsfw:       { type: Boolean, default: false, index: true },
+  faceCount:  { type: Number, default: 0 },
+  visionRaw:  { type: Object },
   status:   { type: String, enum: ['processing', 'ready'], default: 'ready' },
   createdAt:{ type: Date, default: Date.now, index: true }
 });
 
 PostSchema.index({ userId: 1, createdAt: -1 });
+
+
 
 module.exports = model('Post', PostSchema);
