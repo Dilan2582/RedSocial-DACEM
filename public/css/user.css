@@ -1,48 +1,125 @@
 :root{
-  --bg:#0f172a;--panel:#121a2a;--line:#1f2a3a;--text:#e6edf7;--muted:#94a3b8;
-  --accent:#60a5fa;--ring:rgba(96,165,250,.18);--panel2:#0b1323;
+  --bg:#0f172a; --panel:#121a2a; --line:#1f2a3a; --text:#e6edf7; --muted:#94a3b8;
+  --accent:#60a5fa; --ring:rgba(96,165,250,.18); --panel2:#0b1323;
 }
 
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);
-     font-family:system-ui,Segoe UI,Roboto,Arial}
-.wrap{max-width:1100px;margin:28px auto;padding:0 20px}
+/* Reset básico */
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--text); font-family:system-ui, Segoe UI, Roboto, Arial }
 
-/* Cabecera */
-.header{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:18px
+/* ==================== Topbar (única versión) ==================== */
+.topbar{ position:sticky; top:0; z-index:70; background:#0a1222; border-bottom:1px solid var(--line) }
+.topbar-inner{ max-width:1200px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; justify-content:space-between }
+.brand{ font-weight:900; letter-spacing:.5px }
+.topbar-actions{ display:flex; align-items:center; gap:10px }
+.topbar .btn{ padding:8px 14px; border-radius:10px; border:1px solid #2a3650; background:#13213a; color:#fff; cursor:pointer }
+.topbar .btn.small{ padding:6px 12px; font-size:.9rem }
+.topbar .btn.danger{ background:#ef4444; border-color:#ef4444; color:#fff }
+.topbar .btn:hover{ filter:brightness(1.05) }
+
+/* ==================== Contenedor / Layout ==================== */
+.wrap{ max-width:1200px; margin:24px auto; padding:0 20px }
+.layout{ display:grid; grid-template-columns:220px 1fr 320px; gap:18px }
+.sidebar{ position:sticky; top:76px; height:max-content }
+.aside{ position:sticky; top:76px; height:max-content }
+.main{ min-height:380px }
+
+@media (max-width:1000px){
+  .layout{ grid-template-columns:1fr }
+  .sidebar, .aside{ position:static }
 }
-.header-left{display:flex;gap:14px;align-items:center}
-.avatar{width:80px;height:80px;border-radius:999px;background:#0b1323;border:1px solid var(--line);
-        display:grid;place-items:center;font-weight:800;color:#7aa7ff;font-size:26px}
-.name{margin:0 0 4px;font-size:32px}
-.email{color:var(--muted)}
-.header-right{display:flex;align-items:center;gap:10px}
-.badge{font-size:.85rem;background:#19314f;border:1px solid var(--line);padding:6px 10px;border-radius:999px;color:#8ec1ff}
-.btn{background:#3b82f6;color:#001b36;font-weight:700;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
-.btn.secondary{background:#334459;color:#dbe8ff}
-.btn.danger{background:#ef4444;color:#fff}
 
-/* contadores a la derecha */
-.counts{
-  display:flex;gap:22px;margin-right:10px;color:#cfe4ff;white-space:nowrap
+/* ==================== Navegación lateral ==================== */
+.nav{ display:flex; flex-direction:column; gap:8px }
+.nav-item{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:var(--panel); border:1px solid var(--line); color:var(--text); text-decoration:none }
+.nav-item:hover{ border-color:#2f4666 }
+.nav-item.active{ background:#17243a; border-color:#2a3d5c }
+.nav-ico{ font-size:18px }
+
+/* ==================== Botones / Tarjetas ==================== */
+.btn{ background:#3b82f6; color:#001b36; font-weight:700; border:0; border-radius:10px; padding:10px 14px; cursor:pointer }
+.btn.primary{ background:#3b82f6 }
+.btn.ghost{ background:transparent; border:1px solid #2a3650; color:#dbe8ff }
+.btn.small{ padding:6px 12px; font-size:.9rem }
+.card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; margin-bottom:16px; box-shadow:0 8px 22px rgba(0,0,0,.25) }
+.muted{ color:var(--muted) }
+.spacer{ flex:1 }
+
+/* ==================== Personas (aside) ==================== */
+.people-list{ display:flex; flex-direction:column; gap:12px }
+.person-row{
+  display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:center;
+  border:1px solid var(--line); background:#0c162b; padding:12px; border-radius:10px
 }
-.counts b{color:#fff}
+.p-avatar{ width:40px; height:40px; border-radius:50%; background:#1b2742; overflow:hidden; border:1px solid var(--line) }
+.p-avatar img{ width:100%; height:100%; object-fit:cover; display:block }
+.p-info{ min-width:0 }                 /* <- permite elipsis */
+.p-name{ font-weight:700; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.p-user{ color:#9aa4b2; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.p-actions{ display:flex; gap:8px }
 
-/* Tarjetas y formularios */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 8px 22px rgba(0,0,0,.25)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-label{display:block;margin:10px 0 6px;color:#cbd5e1;font-size:14px}
-input{width:100%;padding:11px 12px;border-radius:10px;background:var(--panel2);color:var(--text);border:1px solid #233144;outline:none;transition:border-color .15s, box-shadow .15s}
-input:hover{border-color:#2f4666}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
-.muted{color:var(--muted)}
+/* ==================== Composer ==================== */
+.composer{ padding:16px }
+.cmp-row{ display:flex; gap:12px }
+.cmp-avatar{ width:44px; height:44px; border-radius:999px; object-fit:cover }
+.cmp-input{
+  flex:1; resize:vertical; min-height:44px; border:1px solid #1f2a3a;
+  background:#0b1323; color:#e6edf7; border-radius:12px; padding:10px 12px;
+}
+.cmp-preview{ margin-top:10px; display:flex; align-items:flex-start; gap:10px }
+.cmp-preview img{ max-height:200px; border-radius:12px; object-fit:cover }
+.cmp-tools{ margin-top:10px; display:flex; align-items:center; gap:10px }
+.cmp-msg{ margin-top:6px; font-size:12px }
 
-/* Listado de personas */
-.users{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
-.userCard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
-.userCard .topline{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.mini{width:40px;height:40px;border-radius:999px;background:#0f172a;border:1px solid var(--line);display:grid;place-items:center;color:#8bb3ff;font-weight:800}
-a.link{color:#8ec1ff;text-decoration:none}
-.actions{display:flex;justify-content:space-between;gap:10px}
-@media(max-width:860px){.row{grid-template-columns:1fr}}
+/* ==================== Post card ==================== */
+.feed{ display:flex; flex-direction:column; gap:16px }
+.post-card{ background:#0f1826; border:1px solid #1f2a3a; border-radius:14px; overflow:hidden }
+.post-head{ display:flex; align-items:center; gap:12px; padding:12px }
+.post-ava{ width:36px; height:36px; border-radius:999px; object-fit:cover; flex:0 0 36px }
+.post-user{ min-width:0; display:flex; flex-direction:column }
+.post-name{
+  display:block; max-width:260px; font-weight:700; line-height:1.1;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.post-userid{
+  font-size:12px; color:#94a3b8; max-width:260px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.post-media{ background:#0b1323; position:relative; width:100% }
+.post-media img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover }
+
+/* Ratios */
+.post-media.ratio-portrait{ aspect-ratio:4/5; max-height:700px }
+.post-media.ratio-square{   aspect-ratio:1/1; max-height:700px }
+.post-media.ratio-landscape{aspect-ratio:16/9; max-height:700px }
+
+.post-actions{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-top:1px solid #1f2a3a }
+.btn-icon{ border:none; background:transparent; cursor:pointer; padding:6px; color:#c9d7f2 }
+.btn-icon:hover{ color:#60a5fa }
+.btn-icon[aria-pressed="true"]{ color:#ff6b6b }
+.post-counts{ color:#94a3b8; font-size:14px }
+.post-caption{ padding:0 12px 12px; color:#e6edf7 }
+
+/* ==================== IG grid (perfil, se reutiliza) ==================== */
+#profilePosts{ max-width:935px; margin:0 auto }
+.grid-ig{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px }
+.ig-item{ position:relative; aspect-ratio:1/1; overflow:hidden; border-radius:12px; background:var(--panel2) }
+.ig-item img{ width:100%; height:100%; object-fit:cover; display:block }
+@media (max-width:1024px){ #profilePosts{ max-width:90vw } }
+
+/* ==================== Lightbox (post + comentarios) ==================== */
+.lightbox{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:60 }
+.lightbox[aria-hidden="false"]{ display:flex }
+.lb-content{ position:relative; width:min(935px,96vw); height:min(90vh,820px); display:flex; background:var(--panel); border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.35) }
+.lb-media{ flex:1 1 65%; background:#000; display:flex; align-items:center; justify-content:center }
+.lb-media img{ max-width:100%; max-height:100%; object-fit:contain; display:block }
+.lb-side{ flex:1 1 35%; display:flex; flex-direction:column; border-left:1px solid var(--line); background:var(--panel) }
+.lb-head{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--line) }
+.lb-ava{ width:36px; height:36px; border-radius:999px; object-fit:cover }
+.lb-body{ flex:1; overflow:auto; padding:12px }
+.lb-cmt{ margin-bottom:10px; line-height:1.35 }
+.lb-cmt .nm{ font-weight:600; margin-right:8px }
+.lb-cmt .dt{ color:var(--muted); font-size:12px; margin-left:8px }
+.lb-input{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--line) }
+.lb-input input{ flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:10px }
+.lb-close{ position:absolute; top:8px; right:8px }

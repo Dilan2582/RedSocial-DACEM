@@ -3,191 +3,304 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Módulo de Usuario</title>
+  <title>DACEM – Inicio</title>
   <link rel="stylesheet" href="css/user.css">
 </head>
 <body>
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">DACEM</div>
+      <div class="topbar-actions">
+        <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
   <div class="wrap">
-    <!-- Header -->
-    <div class="header">
-      <div class="header-left">
-        <div class="avatar" id="avatarTxt">U</div>
-        <div>
-          <h1 class="name" id="nameTxt">Mi perfil</h1>
-          <div class="email" id="emailTxt">email@ejemplo.com</div>
-        </div>
-      </div>
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <nav class="nav">
+          <a class="nav-item active" href="user.html"><span class="nav-ico">🏠</span> Inicio</a>
+          <a class="nav-item" href="profile.html"><span class="nav-ico">👤</span> Mi perfil</a>
+        </nav>
+      </aside>
 
-      <div class="header-right">
-        <div class="counts">
-          <div><b id="followersCnt">0</b> seguidores</div>
-          <div><b id="followingCnt">0</b> seguidos</div>
+      <!-- Centro -->
+      <main class="main">
+        <!-- Composer -->
+        <section class="card composer" id="composer">
+          <div class="cmp-row">
+            <img id="cmpAvatar" class="cmp-avatar" alt="yo">
+            <textarea id="cmpText" class="cmp-input" rows="2" placeholder="¿Qué estás pensando? (opcional)"></textarea>
+          </div>
+
+          <div id="cmpPreview" class="cmp-preview" style="display:none">
+            <img id="cmpPreviewImg" alt="preview">
+            <button id="cmpRemoveImg" class="btn ghost small">Quitar</button>
+          </div>
+
+          <div class="cmp-tools">
+            <input id="cmpFile" type="file" accept="image/*" hidden>
+            <button id="cmpPick" class="btn ghost small">📷 Imagen</button>
+            <div class="spacer"></div>
+            <button id="cmpPost" class="btn primary">Publicar</button>
+          </div>
+          <div class="cmp-msg muted" id="cmpMsg"></div>
+        </section>
+
+        <!-- Feed -->
+        <section class="feed" id="feed"></section>
+
+        <div class="card" style="text-align:center">
+          <button id="btnMore" class="btn">Cargar más</button>
         </div>
-        <span class="badge" id="authBadge">Autenticado</span>
-        <button class="btn danger" id="logoutBtn">Cerrar sesión</button>
-      </div>
+      </main>
+
+      <!-- Aside: Personas -->
+      <aside class="aside">
+        <div class="card">
+          <h3 style="margin:0 0 12px">Personas</h3>
+          <div id="peopleList" class="people-list"></div>
+        </div>
+      </aside>
     </div>
+  </div>
 
-    <!-- Editar perfil -->
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <h3 style="margin:0">Editar perfil</h3>
-        <button class="btn secondary" id="loadMeBtn" title="Recargar mis datos">Recargar</button>
-      </div>
+  <!-- Lightbox Post -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
+      <button class="btn ghost small lb-close" id="lbClose">✕</button>
 
-      <div class="row">
-        <div>
-          <label>Nombre</label>
-          <input id="firstName" placeholder="Nombre">
-        </div>
-        <div>
-          <label>Apellido</label>
-          <input id="lastName" placeholder="Apellido">
-        </div>
-        <div>
-          <label>Apodo</label>
-          <input id="nickname" placeholder="apodo">
-        </div>
-        <div>
-          <label>Email</label>
-          <input id="email" type="email" placeholder="correo@dominio.com">
-        </div>
-        <div>
-          <label>Nueva contraseña (opcional)</label>
-          <input id="password" type="password" placeholder="••••••">
-        </div>
-        <div>
-          <label>Confirmar contraseña (opcional)</label>
-          <input id="password2" type="password" placeholder="••••••">
-        </div>
-      </div>
+      <div class="lb-media"><img id="lbImg" alt=""></div>
 
-      <div style="margin-top:12px">
-        <button class="btn" id="saveBtn">Guardar cambios</button>
-        <span class="muted" id="saveMsg"></span>
-      </div>
-    </div>
-
-    <!-- Otros usuarios -->
-    <div class="card">
-      <h3 style="margin-top:0">Personas</h3>
-      <div class="users" id="usersGrid"></div>
+      <aside class="lb-side">
+        <header class="lb-head">
+          <img id="lbAva" class="lb-ava" alt="">
+          <div>
+            <div id="lbName" style="font-weight:700"></div>
+            <div id="lbUser" class="muted" style="font-size:12px"></div>
+          </div>
+        </header>
+        <div class="lb-body" id="lbComments"></div>
+        <div class="lb-input">
+          <input id="lbInp" placeholder="Añade un comentario…">
+          <button id="lbSend" class="btn">Publicar</button>
+        </div>
+      </aside>
     </div>
   </div>
 
   <script>
+    // ===== Helpers / API =====
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
 
-    const $ = s => document.querySelector(s);
-    const headers = { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` };
+    const H  = { 'Authorization':`Bearer ${token}` };
+    const $  = s => document.querySelector(s);
 
-    function initialLetter(u){ return (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase(); }
-    function displayName(u){ return u.name || `${u.firstName||''} ${u.lastName||''}`.trim(); }
-
-    // ---- ME
-    async function loadMe(){
-      const r = await fetch(API('/user/me'), { headers });
-      const d = await r.json();
-      if(!d.ok){ localStorage.removeItem('token'); return location.replace('index.html'); }
-
-      const u = d.user;
-      $('#nameTxt').textContent = displayName(u) || 'Mi perfil';
-      $('#emailTxt').textContent = u.email;
-      $('#avatarTxt').textContent = initialLetter(u);
-
-      $('#followersCnt').textContent = d.counts?.followers ?? 0;
-      $('#followingCnt').textContent = d.counts?.following ?? 0;
-
-      // Prefill form
-      $('#firstName').value = u.firstName || '';
-      $('#lastName').value  = u.lastName  || '';
-      $('#nickname').value  = u.nickname  || '';
-      $('#email').value     = u.email     || '';
-      $('#password').value  = '';
-      $('#password2').value = '';
+    function displayName(u){ return u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario'); }
+    function abs(url){ return url?.startsWith('http') ? url : `${location.origin}${url?.startsWith('/')?url:'/'+url}`; }
+    function resolveAvatar(u){
+      if(u?.avatar) return abs(u.avatar);
+      const seed = encodeURIComponent(displayName(u) || u?.nickname || 'U');
+      return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
+    }
+    function timeAgo(iso){
+      try{ const d=new Date(iso); const s=(Date.now()-d)/1000;
+        if(s<60) return 'ahora'; if(s<3600) return Math.floor(s/60)+' min';
+        if(s<86400) return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d';
+      }catch{ return ''; }
     }
 
-    async function saveProfile(){
-      const payload = {
-        firstName: $('#firstName').value.trim(),
-        lastName : $('#lastName').value.trim(),
-        nickname : $('#nickname').value.trim(),
-        email    : $('#email').value.trim(),
-      };
-      const p1 = $('#password').value, p2 = $('#password2').value;
-      if (p1 || p2){
-        if (p1 !== p2){ $('#saveMsg').textContent = 'Las contraseñas no coinciden'; return; }
-        payload.password = p1;
-      }
-      $('#saveMsg').textContent = 'Guardando...';
-      const r = await fetch(API('/user/update'), { method:'PUT', headers, body: JSON.stringify(payload) });
-      const d = await r.json();
-      $('#saveMsg').textContent = d.ok ? 'Cambios guardados' : (d.message || 'Error');
-      if(d.ok) loadMe();
-    }
-
-    // ---- FOLLOW (toggle con plan B)
+    // ===== Sugerencias =====
     async function toggleFollow(id, isFollowing){
-      // 1) Intento toggle
-      const tryToggle = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers });
-      if (tryToggle.status !== 404) {
-        const data = await tryToggle.json();
-        return data.ok;
-      }
-      // 2) Plan B: POST follow / DELETE unfollow
-      if (!isFollowing) {
-        const r = await fetch(API(`/follow/${id}`), { method:'POST', headers });
-        const d = await r.json(); return d.ok;
-      } else {
-        const r = await fetch(API(`/follow/${id}`), { method:'DELETE', headers });
-        const d = await r.json(); return d.ok;
+      try{
+        const r = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H });
+        if (r.status !== 404){ const d = await r.json(); return !!d.ok; }
+      }catch{}
+      if (!isFollowing){
+        const r = await fetch(API(`/follow/${id}`), { method:'POST', headers:H });
+        const d = await r.json(); return !!d.ok;
+      }else{
+        const r = await fetch(API(`/follow/${id}`), { method:'DELETE', headers:H });
+        const d = await r.json(); return !!d.ok;
       }
     }
-
-    // ---- Otros usuarios
+    function personRow(u){
+      const el = document.createElement('div');
+      el.className = 'person-row';
+      el.innerHTML = `
+        <div class="p-avatar"><img src="${resolveAvatar(u)}" alt=""></div>
+        <div class="p-info">
+          <div class="p-name" title="${displayName(u)}">${displayName(u)}</div>
+          <div class="p-user" title="@${u.nickname || 'usuario'}">@${u.nickname || 'usuario'}</div>
+        </div>
+        <div class="p-actions">
+          <a class="btn ghost small" href="profile.html?id=${u._id}">Ver perfil</a>
+          <button class="btn small">${u.isFollowing?'Dejar de seguir':'Seguir'}</button>
+        </div>`;
+      const btn = el.querySelector('button');
+      btn.onclick = async () => {
+        btn.disabled = true;
+        const ok = await toggleFollow(u._id, !!u.isFollowing);
+        if (ok){ u.isFollowing=!u.isFollowing; btn.textContent = u.isFollowing?'Dejar de seguir':'Seguir'; }
+        btn.disabled = false;
+      };
+      return el;
+    }
     async function loadOthers(){
-      const box = $('#usersGrid'); box.innerHTML = '';
-      const r = await fetch(API('/user/others'), { headers });
+      const list = $('#peopleList'); if (!list) return;
+      list.innerHTML = '';
+      const r = await fetch(API('/user/others'), { headers:H });
       const d = await r.json();
-      if(!d.ok) return;
-
-      d.users.forEach(u=>{
-        const el = document.createElement('div');
-        el.className = 'userCard';
-        el.innerHTML = `
-          <div class="topline">
-            <div class="mini">${initialLetter(u)}</div>
-            <div>
-              <div><strong>${displayName(u)}</strong></div>
-              <div class="muted">@${u.nickname || 'usuario'}</div>
-            </div>
-          </div>
-          <div class="actions">
-            <a class="link" href="profile.html?id=${u._id}">Ver perfil</a>
-            <button class="btn ${u.isFollowing?'secondary':''}" data-id="${u._id}">
-              ${u.isFollowing ? 'Dejar de seguir' : 'Seguir'}
-            </button>
-          </div>
-        `;
-        el.querySelector('button').onclick = async (ev)=>{
-          const id = ev.currentTarget.getAttribute('data-id');
-          const ok = await toggleFollow(id, u.isFollowing);
-          if(ok){ loadOthers(); loadMe(); }
-        };
-        box.appendChild(el);
-      });
+      if(!d.ok || !d.users?.length){ list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>'; return; }
+      d.users.forEach(u => list.appendChild(personRow(u)));
     }
 
-    // ---- Eventos
-    $('#logoutBtn').onclick = ()=>{ localStorage.removeItem('token'); location.replace('index.html'); };
-    $('#saveBtn').onclick = saveProfile;
-    $('#loadMeBtn').onclick = loadMe;
+    // ===== Composer =====
+    let me = null; const userCache = new Map();
+    async function loadMe(){
+      const r = await fetch(API('/user/me'), { headers:H });
+      const d = await r.json(); if(!d.ok){ localStorage.clear(); return location.replace('index.html'); }
+      me = d.user; userCache.set(me._id, me);
+      $('#cmpAvatar').src = resolveAvatar(me);
+    }
 
-    // init
-    loadMe(); loadOthers();
+    const cmp = {
+      fileEl: $('#cmpFile'), pick: $('#cmpPick'), imgBox: $('#cmpPreview'),
+      img: $('#cmpPreviewImg'), rm: $('#cmpRemoveImg'), txt: $('#cmpText'),
+      post: $('#cmpPost'), msg: $('#cmpMsg')
+    };
+    let selectedFile = null;
+
+    cmp.pick.onclick = ()=> cmp.fileEl.click();
+    cmp.fileEl.onchange = e=>{
+      const f = e.target.files?.[0];
+      if(!f){ selectedFile=null; cmp.imgBox.style.display='none'; return; }
+      selectedFile = f; cmp.img.src = URL.createObjectURL(f); cmp.imgBox.style.display='flex';
+    };
+    cmp.rm.onclick = ()=>{ selectedFile=null; cmp.fileEl.value=''; cmp.imgBox.style.display='none'; cmp.img.removeAttribute('src'); };
+
+    async function publish(){
+      cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
+      try{
+        const fd = new FormData();
+        if (selectedFile) fd.append('image', selectedFile);
+        if (cmp.txt.value.trim()) fd.append('caption', cmp.txt.value.trim());
+        const r = await fetch(API('/posts'), { method:'POST', headers:H, body:fd });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.message||'Error');
+        prependPost(d.post);
+        cmp.msg.textContent = '¡Publicado!'; cmp.txt.value=''; cmp.rm.click();
+        setTimeout(()=>cmp.msg.textContent='', 1200);
+      }catch{ cmp.msg.textContent = 'No se pudo publicar'; }
+      finally{ cmp.post.disabled=false; }
+    }
+    cmp.post.onclick = publish;
+
+    // ===== Feed =====
+    const feedEl = $('#feed');
+    let nextCursor = null, loading = false;
+
+    function iconComment(){ return `<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0-9-9c0 1.488.36 2.89 1 4.127L3 21l4.873-1c1.236.639 2.64 1 4.127 1m0-11.999v6m-3-3h6"/></svg>`; }
+    function iconLike(){ return `<svg aria-hidden="true" width="22" height="22" viewBox="0 0 48 48"><path fill="currentColor" d="M34 9c-4.2 0-7.9 2.1-10 5.4C21.9 11.1 18.2 9 14 9C7.4 9 2 14.4 2 21c0 11.9 22 24 22 24s22-12 22-24c0-6.6-5.4-12-12-12"/></svg>`; }
+    function ratioClass(w,h){ const r=w/h; if(r<0.95) return 'ratio-portrait'; if(r>1.6) return 'ratio-landscape'; return 'ratio-square'; }
+
+    async function getUserCached(id){
+      if (userCache.has(id)) return userCache.get(id);
+      const r = await fetch(API(`/user/${id}/public`), { headers:H });
+      const d = await r.json(); if (d.ok){ userCache.set(id,d.user); return d.user; }
+      return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
+    }
+
+    // Lightbox helpers
+    const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
+    const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
+    const lbName = document.getElementById('lbName'), lbUser = document.getElementById('lbUser');
+    const lbBody = document.getElementById('lbComments'), lbInp = document.getElementById('lbInp'), lbSend = document.getElementById('lbSend');
+
+    async function listPostComments(postId){
+      const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
+      const d = await r.json(); return d.ok ? d.comments : [];
+    }
+    async function addPostComment(postId, text){
+      const r = await fetch(API(`/posts/${postId}/comments`), { method:'POST', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify({ text }) });
+      const d = await r.json(); return d.ok ? d.comment : null;
+    }
+    async function renderComments(list){
+      lbBody.innerHTML=''; for (const c of list) if (!userCache.has(c.userId)) await getUserCached(c.userId);
+      list.forEach(c=>{ const u=userCache.get(c.userId), nm=displayName(u)||'usuario';
+        const row=document.createElement('div'); row.className='lb-cmt';
+        row.innerHTML=`<span class="nm">${nm}</span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
+        lbBody.appendChild(row);
+      }); lbBody.scrollTop = lbBody.scrollHeight;
+    }
+    async function openPostModal(p){
+      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
+      const u = await getUserCached(p.userId);
+      lbAva.src = resolveAvatar(u); lbName.textContent = displayName(u); lbUser.textContent = `@${u.nickname || 'usuario'}`;
+      const comments = await listPostComments(p.id); await renderComments(comments);
+      lbSend.onclick = async ()=>{ const t = lbInp.value.trim(); if(!t) return;
+        const c = await addPostComment(p.id, t); if(c){ lbInp.value=''; comments.push(c); await renderComments(comments); } };
+      lb.setAttribute('aria-hidden','false');
+    }
+    function closePostModal(){ lb.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML=''; }
+    lbClose.onclick = closePostModal;
+    lb.addEventListener('click', (e)=>{ if(e.target===lb) closePostModal(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && lb.getAttribute('aria-hidden')==='false') closePostModal(); });
+
+    function postCard(p){
+      const cls = ratioClass(p.media.width, p.media.height);
+      const el = document.createElement('article'); el.className='post-card';
+      const author = userCache.get(p.userId) || {};
+      el.innerHTML = `
+        <header class="post-head">
+          <img class="post-ava" src="${resolveAvatar(author)}" alt="">
+          <div class="post-user">
+            <a class="post-name" href="profile.html?id=${p.userId}">${displayName(author)}</a>
+            <div class="post-userid">@${author.nickname || 'usuario'}</div>
+          </div>
+        </header>
+        <div class="post-media ${cls}"><img class="post-img" src="${p.media.thumb}" alt=""></div>
+        <div class="post-actions">
+          <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta">${iconLike()}</button>
+          <button class="btn-icon btn-comment" title="Comentar">${iconComment()}</button>
+          <div class="spacer"></div>
+          <div class="post-counts"><span class="likes">${p.counts?.likes||0}</span> · <span class="comments">${p.counts?.comments||0}</span></div>
+        </div>
+        ${p.caption ? `<div class="post-caption">${p.caption}</div>` : '' }`;
+
+      const likeBtn = el.querySelector('.btn-like'); const likesEl = el.querySelector('.likes');
+      likeBtn.onclick = async ()=>{ const pressed = likeBtn.getAttribute('aria-pressed')==='true';
+        likeBtn.setAttribute('aria-pressed',(!pressed)+''); likesEl.textContent=(+likesEl.textContent+(pressed?-1:1));
+        try{ const r=await fetch(API(`/posts/${p.id}/likes/toggle`), {method:'POST', headers:H}); const d=await r.json(); if(!d.ok) throw 0; }
+        catch{ likeBtn.setAttribute('aria-pressed',pressed+''); likesEl.textContent=(+likesEl.textContent+(pressed?1:-1)); } };
+
+      el.querySelector('.btn-comment').onclick = ()=> openPostModal(p);
+      el.querySelector('.post-img').onclick   = ()=> openPostModal(p);
+      return el;
+    }
+    async function renderPost(p){ if(!userCache.has(p.userId)) await getUserCached(p.userId); feedEl.appendChild(postCard(p)); }
+    function prependPost(p){ if(!userCache.has(p.userId)) userCache.set(p.userId, me); feedEl.prepend(postCard(p)); }
+
+    async function loadFeed(first=false){
+      if (loading) return; loading=true;
+      try{
+        const url = new URL(API('/posts')); url.searchParams.set('limit','10');
+        if (nextCursor) url.searchParams.set('cursor', nextCursor);
+        const r = await fetch(url.toString(), { headers:H }); const d = await r.json(); if(!d.ok) return;
+        for(const p of d.posts||[]) await renderPost(p); nextCursor = d.nextCursor || null;
+        $('#btnMore').style.display = nextCursor ? 'inline-block' : 'none';
+      } finally { loading=false; }
+    }
+
+    // ===== Init =====
+    document.getElementById('logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); localStorage.removeItem('user'); location.replace('index.html'); });
+    (async ()=>{ await loadMe(); await loadOthers(); await loadFeed(true); })();
+    $('#btnMore').onclick = ()=> loadFeed();
   </script>
 </body>
 </html>
-

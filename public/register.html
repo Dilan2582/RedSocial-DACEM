@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crear cuenta – DACEM</title>
+  <link rel="stylesheet" href="css/login.css" />
+
+  <!-- Animaciones (clases tipo animate__fadeIn, animate__shakeX, etc.) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- AOS: revelado en scroll -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Mi Red Social DACEM</h1>
+    <p>Crea tu cuenta.</p>
+  </header>
+
+  <main class="container" style="max-width: 980px;">
+    <section class="card animate__animated" id="registerCard" data-aos="fade-up">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 style="margin:0;">Crear cuenta</h2>
+        <a class="btn" href="index.html">← Volver al login</a>
+      </div>
+
+      <div class="grid">
+        <div class="form-group">
+          <label for="firstName">Nombre</label>
+          <input id="firstName" type="text" placeholder=" " />
+        </div>
+        <div class="form-group">
+          <label for="lastName">Apellido</label>
+          <input id="lastName" type="text" placeholder=" " />
+        </div>
+        <div class="form-group">
+          <label for="nickname">Apodo</label>
+          <input id="nickname" type="text" placeholder=" " />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" placeholder=" " />
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input id="password" type="password" placeholder=" " />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar contraseña</label>
+          <input id="confirmPassword" type="password" placeholder=" " />
+        </div>
+      </div>
+
+      <!-- reCAPTCHA (registro) -->
+      <div id="recaptcha-register" style="margin:12px 0"></div>
+
+      <button class="btn primary" onclick="register()">Registrarme</button>
+      <div id="registerMsg" class="msg"></div>
+    </section>
+  </main>
+
+  <script>
+    // ====== Config ======
+    const API_USER = `${location.origin}/api/user`;
+    // usa tu misma site key que ya funciona:
+    const RECAPTCHA_SITE_KEY = "6LcMNc8rAAAAADgevHmG75S_cJPmydAOFEfo8lib";
+
+    let widgetRegister = null;
+
+    function initRecaptcha() {
+      try {
+        widgetRegister = grecaptcha.render("recaptcha-register", {
+          sitekey: RECAPTCHA_SITE_KEY,
+          theme: "light"
+        });
+      } catch(e) {
+        console.warn("[reCAPTCHA] aún no disponible:", e);
+      }
+    }
+
+    function setMsg(el, text, isError=false) {
+      el.textContent = text;
+      el.className = "msg " + (isError ? "error" : "success");
+
+      // ✨ Shake del card en caso de error (sin tocar el resto del flujo)
+      if (isError) {
+        const card = document.getElementById('registerCard');
+        if (card) {
+          card.classList.remove('animate__shakeX'); // reset
+          void card.offsetWidth;                     // reflow
+          card.classList.add('animate__shakeX');     // dispara animación
+        }
+      }
+    }
+
+    async function register() {
+      const firstName = document.getElementById("firstName").value.trim();
+      const lastName  = document.getElementById("lastName").value.trim();
+      const nickname  = document.getElementById("nickname").value.trim();
+      const email     = document.getElementById("email").value.trim();
+      const password  = document.getElementById("password").value;
+      const confirm   = document.getElementById("confirmPassword").value;
+      const msg = document.getElementById("registerMsg");
+
+      if (!firstName || !lastName || !nickname || !email || !password || !confirm) {
+        return setMsg(msg, "Todos los campos son obligatorios", true);
+      }
+      if (password !== confirm) {
+        return setMsg(msg, "Las contraseñas no coinciden.", true);
+      }
+
+      const recaptchaToken = grecaptcha.getResponse(widgetRegister);
+      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
+
+      try {
+        const res = await fetch(`${API_USER}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ firstName, lastName, nickname, email, password, recaptchaToken })
+        });
+        const data = await res.json().catch(() => ({}));
+        console.log("[REGISTER] status", res.status, "data", data);
+
+        if (res.ok && data.ok) {
+          setMsg(msg, "Usuario registrado ✅ Redirigiendo al login…");
+          setTimeout(() => location.href = "index.html", 900);
+        } else {
+          setMsg(msg, data.message || `Error ${res.status}`, true);
+          if (data.details) console.warn("[REGISTER] recaptcha details:", data.details);
+          grecaptcha.reset(widgetRegister);
+        }
+      } catch (e) {
+        console.error("[REGISTER] fetch error:", e);
+        setMsg(msg, "Error de conexión.", true);
+        grecaptcha.reset(widgetRegister);
+      }
+    }
+  </script>
+
+  <!-- AOS JS + init -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init({
+      once: true,
+      duration: 700,
+      easing: 'ease-out'
+    });
+  </script>
+
+  <!-- reCAPTCHA solo (esta página no necesita el SDK de Google) -->
+  <script src="https://www.google.com/recaptcha/api.js?onload=initRecaptcha&render=explicit" async defer></script>
+</body>
+</html>
