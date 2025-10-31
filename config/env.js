@@ -1,10 +1,13 @@
 // config/env.js
 require('dotenv').config();
 
-function need(k) {
-  const v = process.env[k];
-  if (!v) throw new Error(`Falta variable ${k}`);
-  return v;
+function need(k){ const v = process.env[k]; if(!v) throw new Error(`Falta variable ${k}`); return v; }
+function cleanBase(b){
+  if(!b) return '';
+  let base = String(b).trim();
+  // quita slash final si existe
+  if(base.endsWith('/')) base = base.slice(0, -1);
+  return base;
 }
 
 const env = {
@@ -17,11 +20,12 @@ const env = {
     bucket: need('S3_BUCKET'),
     accessKeyId: need('AWS_ACCESS_KEY_ID'),
     secretAccessKey: need('AWS_SECRET_ACCESS_KEY'),
-    publicBaseUrl: process.env.S3_PUBLIC_BASE_URL || '',
+    // admite S3_PUBLIC_BASE_URL o S3_PUBLIC_BASE
+    publicBaseUrl: cleanBase(process.env.S3_PUBLIC_BASE_URL || process.env.S3_PUBLIC_BASE || ''),
     prefixes: {
       avatars: process.env.S3_UPLOAD_PREFIX_AVATARS || 'avatars/',
       banners: process.env.S3_UPLOAD_PREFIX_BANNERS || 'banners/',
-      posts: process.env.S3_UPLOAD_PREFIX_POSTS || 'posts/',
+      posts:   process.env.S3_UPLOAD_PREFIX_POSTS   || 'posts/',
     },
   },
 
