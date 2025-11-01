@@ -123,3 +123,11 @@ body{ margin:0; background:var(--bg); color:var(--text); font-family:system-ui, 
 .lb-input{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--line) }
 .lb-input input{ flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:10px }
 .lb-close{ position:absolute; top:8px; right:8px }
+
+.nav-ico{
+  width:20px;height:20px;display:inline-flex;
+  margin-right:10px;align-items:center;justify-content:center;
+}
+.nav-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.nav-item.active .nav-ico svg{stroke:var(--primary)}
+
