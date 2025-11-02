@@ -44,6 +44,7 @@ app.use("/api/follow", require("./routes/follow"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/test-upload", require("./routes/test-upload"));
 app.use("/api/posts", require("./routes/posts"));
+app.use("/api/messages", require("./routes/messages"));
 
 // Ruta de prueba
 app.get("/ruta-prueba", (_req, res) => {
