@@ -1,35 +1,23 @@
 // middlewares/auth.js
-const jwt = require('jwt-simple');
-const moment = require('moment');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-module.exports = (req, res, next) => {
+function auth(req, res, next) {
   try {
-    // 1) Header
-    const auth = req.headers.authorization || '';
-    if (!auth) return res.status(401).json({ ok: false, message: 'Falta token' });
+    const h = req.headers.authorization || '';
+    const token = h.startsWith('Bearer ') ? h.slice(7).trim() : h.trim();
+    if (!token) return res.status(401).json({ ok:false, message:'Falta token' });
 
-    // Soportar "Bearer <token>" o solo "<token>"
-    const parts = auth.split(' ');
-    const token = parts.length === 2 ? parts[1] : parts[0];
+    const payload = jwt.verify(token, JWT_SECRET);
+    const id = payload.id || payload._id || payload.uid || payload.sub;
+    if (!id) return res.status(401).json({ ok:false, message:'Token sin id' });
 
-    // 2) Decodificar
-    const payload = jwt.decode(token, JWT_SECRET);
-
-    // 3) Expiración (opcional si pones exp en el token)
-    if (payload.exp && payload.exp <= moment().unix()) {
-      return res.status(401).json({ ok: false, message: 'Token expirado' });
-    }
-
-    // 4) Adjuntar usuario al request
-    req.user = {
-      sub: payload.sub,
-      role: payload.role || 'user',
-    };
-
-    return next();
-  } catch (e) {
-    return res.status(401).json({ ok: false, message: 'Token inválido' });
+    req.user = { ...payload, id, sub: id };
+    next();
+  } catch {
+    res.status(401).json({ ok:false, message:'Token inválido' });
   }
-};
+}
+
+const ensureAuth = auth;
+module.exports = { auth, ensureAuth };

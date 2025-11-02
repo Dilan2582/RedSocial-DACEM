@@ -1,23 +1,39 @@
 // routes/user.js
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 
-const auth = require('../middlewares/auth');
+const C = require('../controllers/user');
+const { googleLogin } = require('../controllers/auth'); // si lo usas
+
+// ---- Auth middleware (compatibilidad con ambos estilos de export) ----
+const authMod = require('../middlewares/auth');
+const ensureAuth =
+  typeof authMod === 'function'
+    ? authMod
+    : (authMod.ensureAuth || authMod.auth);
+
+// ---- Upload y reCAPTCHA (tus middlewares existentes) ----
+const { upload } = require('../middlewares/upload');
 const { verifyRecaptcha } = require('../middlewares/recaptcha');
-const C = require('../controllers/user');          // usa un solo alias del controlador
-const { googleLogin } = require('../controllers/auth');
 
-// --- Rutas públicas (con captcha) ---
+// =================== Rutas públicas ===================
+// Con reCAPTCHA según tu implementación actual
 router.post('/register', verifyRecaptcha, C.register);
 router.post('/login',    verifyRecaptcha, C.login);
 
-// --- Google Sign-In ---
-router.post('/google-login', googleLogin); // o C.googleLogin si lo tienes ahí
+// (Opcional) login con Google, si lo quieres habilitar
+// router.post('/login/google', verifyRecaptcha, googleLogin);
 
-// --- Rutas protegidas ---
-router.get('/me',      auth, C.me);
-router.put('/update',  auth, C.update);
-router.get('/others',  auth, C.listOthers);
-router.get('/:id/public', auth, C.publicProfile);
+// Avatar (stream desde GridFS) — importante que esté ANTES de '/:id/public'
+router.get('/avatar/:id', C.streamAvatar);
+
+// =================== Rutas protegidas ===================
+router.get('/me',         ensureAuth, C.me);
+router.put('/update',     ensureAuth, C.update);
+router.get('/others',     ensureAuth, C.listOthers);
+router.get('/:id/public', ensureAuth, C.publicProfile);
+
+// Subidas (avatar/banner) usando tu middleware `upload`
+router.post('/me/avatar', ensureAuth, upload.single('avatar'), C.updateAvatar);
+router.put('/me/banner',  ensureAuth, upload.single('banner'),  C.updateBanner);
 
 module.exports = router;

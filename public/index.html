@@ -1,67 +1,70 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mi Red Social</title>
-  <link rel="stylesheet" href="css/login.css" />
+  <title>DACEM</title>
+
+  <!-- Tus estilos generales -->
+  <link rel="stylesheet" href="css/login.css"/>
+
+  <!-- Animaciones listas (clases tipo animate__fadeIn, animate__shakeX, etc.) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- AOS: revelado en scroll -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
+
+  <!-- Estilos del modal (ligeros, específicos) -->
+  <style>
+    .modal-backdrop{
+      position:fixed; inset:0; background:#0008;
+      display:none; align-items:center; justify-content:center; z-index:60;
+    }
+    .modal{
+      width:min(900px, 92vw); background:#0f1826; color:#e8eefc;
+      border:1px solid #1f2a3a; border-radius:14px; padding:28px; box-shadow:0 20px 60px #000a;
+    }
+    .modal .header{
+      display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+    }
+    .modal .header h3{ margin:0; font-size:1.2rem; }
+    .modal .close{
+      border:none; background:#1e2a3a; color:#c9d7f2; border-radius:10px; padding:8px 12px; cursor:pointer;
+    }
+    .modal .grid{
+      display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    }
+    .modal .grid .form-group{ display:flex; flex-direction:column; gap:8px; }
+    .modal .actions{ margin-top:18px; display:flex; gap:10px; }
+    @media (max-width: 720px){
+      .modal{ padding:18px; }
+      .modal .grid{ grid-template-columns:1fr; }
+    }
+  </style>
 </head>
 <body>
   <header class="page-header">
     <h1>Mi Red Social DACEM</h1>
-    <p>Bienvenido.</p>
+    <p> </p>
   </header>
 
   <main class="container">
-    <!-- Registro -->
-    <section class="card">
-      <h2>Crear cuenta</h2>
-
-      <div class="grid">
-        <div class="form-group">
-          <label for="firstName">Nombre</label>
-          <input id="firstName" type="text" placeholder="Ej: Juan" />
-        </div>
-        <div class="form-group">
-          <label for="lastName">Apellido</label>
-          <input id="lastName" type="text" placeholder="Ej: Pérez" />
-        </div>
-        <div class="form-group">
-          <label for="nickname">Apodo</label>
-          <input id="nickname" type="text" placeholder="Ej: juanito" />
-        </div>
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input id="email" type="email" placeholder="Ej: juan@example.com" />
-        </div>
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input id="password" type="password" placeholder="******" />
-        </div>
-        <div class="form-group">
-          <label for="confirmPassword">Confirmar contraseña</label>
-          <input id="confirmPassword" type="password" placeholder="******" />
-        </div>
-      </div>
-
-      <!-- reCAPTCHA (registro) -->
-      <div id="recaptcha-register" style="margin:8px 0"></div>
-
-      <button class="btn primary" onclick="register()">Registrarme</button>
-      <div id="registerMsg" class="msg"></div>
-    </section>
-
-    <!-- Login -->
-    <section class="card">
+    <!-- Tarjeta de LOGIN -->
+    <section
+      class="card login-card animate__animated"
+      id="loginCard"
+      data-aos="fade-up"
+    >
       <h2>Iniciar sesión</h2>
 
       <div class="form-group">
         <label for="identifier">Apodo o Email</label>
-        <input id="identifier" type="text" placeholder="tu apodo o email" />
+        <input id="identifier" type="text" placeholder="tu apodo o email"/>
       </div>
+
       <div class="form-group">
         <label for="loginPassword">Contraseña</label>
-        <input id="loginPassword" type="password" placeholder="******" />
+        <input id="loginPassword" type="password" placeholder="******"/>
       </div>
 
       <!-- reCAPTCHA (login) -->
@@ -87,6 +90,10 @@
            data-shape="rectangular"
            data-logo_alignment="left">
       </div>
+
+      <p class="muted">
+        ¿No tienes cuenta? <a href="register.html">Crear cuenta</a>
+      </p>
     </section>
   </main>
 
@@ -95,36 +102,75 @@
     const API_USER = `${location.origin}/api/user`;
     const API_AUTH = `${location.origin}/api/auth`;
 
-    // Site key REAL (v2 checkbox)
+    // Tu site key de reCAPTCHA v2 (la misma que ya usabas y te funciona)
     const RECAPTCHA_SITE_KEY = "6LcMNc8rAAAAADgevHmG75S_cJPmydAOFEfo8lib";
 
-    // ====== reCAPTCHA: render explícito (2 widgets) ======
-    let widgetRegister = null;
+    // ====== reCAPTCHA: login y registro (render explícito) ======
     let widgetLogin = null;
+    let widgetRegister = null;
+    let registerRendered = false;
 
     function initRecaptcha() {
       try {
-        widgetRegister = grecaptcha.render("recaptcha-register", {
-          sitekey: RECAPTCHA_SITE_KEY,
-          theme: "light"
-        });
+        // Render del login inmediatamente
         widgetLogin = grecaptcha.render("recaptcha-login", {
           sitekey: RECAPTCHA_SITE_KEY,
           theme: "light"
         });
-        console.log("[reCAPTCHA] widgets", { widgetRegister, widgetLogin });
       } catch (e) {
-        console.warn("[reCAPTCHA] aún no disponible:", e);
+        console.warn("[reCAPTCHA] login aún no disponible:", e);
       }
+    }
+
+    function ensureRegisterRecaptcha() {
+      if (registerRendered) return;
+      if (!window.grecaptcha || !grecaptcha.render) return;
+      widgetRegister = grecaptcha.render("recaptcha-register", {
+        sitekey: RECAPTCHA_SITE_KEY,
+        theme: "light"
+      });
+      registerRendered = true;
+    }
+
+    // ---------- Modal helpers ----------
+    function openRegisterModal() {
+      const bd = document.getElementById('register-backdrop');
+      bd.setAttribute('data-open', 'true');
+      document.body.classList.add('no-scroll');
+      ensureRegisterRecaptcha(); // monta el captcha del modal si falta
+    }
+
+    function closeRegisterModal() {
+      const bd = document.getElementById('register-backdrop');
+      bd.removeAttribute('data-open');
+      document.body.classList.remove('no-scroll');
+
+      // reset visual + mensajes del modal
+      if (registerRendered && widgetRegister !== null) {
+        try { grecaptcha.reset(widgetRegister); } catch {}
+      }
+      const msg = document.getElementById('registerMsg');
+      msg.textContent = '';
+      msg.className = 'msg';
     }
 
     // ---------- Utilidad mensajes ----------
     function setMsg(el, text, isError = false) {
       el.textContent = text;
       el.className = "msg " + (isError ? "error" : "success");
+
+      // ✨ Animación de "shake" en error sin tocar el resto del flujo
+      if (isError) {
+        const card = document.getElementById('loginCard');
+        if (card) {
+          card.classList.remove('animate__shakeX'); // reset
+          void card.offsetWidth;                    // reflow para reiniciar la animación
+          card.classList.add('animate__shakeX');    // dispara animación
+        }
+      }
     }
 
-    // ---------- Registro ----------
+    // ---------- Registro (en modal) ----------
     async function register() {
       const firstName = document.getElementById("firstName").value.trim();
       const lastName  = document.getElementById("lastName").value.trim();
@@ -141,7 +187,9 @@
         return setMsg(msg, "Las contraseñas no coinciden.", true);
       }
 
-      const recaptchaToken = grecaptcha.getResponse(widgetRegister);
+      const recaptchaToken = (registerRendered && widgetRegister !== null)
+        ? grecaptcha.getResponse(widgetRegister)
+        : "";
       if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
 
       try {
@@ -153,8 +201,11 @@
         const data = await res.json().catch(() => ({}));
         console.log("[REGISTER] status", res.status, "data", data);
 
-        if (res.ok && data.ok) setMsg(msg, "Usuario registrado ✅");
-        else {
+        if (res.ok && data.ok) {
+          setMsg(msg, "Usuario registrado ✅");
+          // opcional: cerrar modal a los 700ms
+          setTimeout(closeRegisterModal, 700);
+        } else {
           setMsg(msg, data.message || `Error ${res.status}`, true);
           if (data.details) console.warn("[REGISTER] recaptcha details:", data.details);
         }
@@ -162,7 +213,9 @@
         console.error("[REGISTER] fetch error:", e);
         setMsg(msg, "Error de conexión.", true);
       } finally {
-        grecaptcha.reset(widgetRegister);
+        if (registerRendered && widgetRegister !== null) {
+          try { grecaptcha.reset(widgetRegister); } catch {}
+        }
       }
     }
 
@@ -176,7 +229,7 @@
         return setMsg(msg, "Ingresa apodo/email y contraseña", true);
       }
 
-      const recaptchaToken = grecaptcha.getResponse(widgetLogin);
+      const recaptchaToken = widgetLogin !== null ? grecaptcha.getResponse(widgetLogin) : "";
       if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
 
       try {
@@ -201,7 +254,9 @@
         console.error("[LOGIN] fetch error:", e);
         setMsg(msg, "Error de conexión.", true);
       } finally {
-        grecaptcha.reset(widgetLogin);
+        if (widgetLogin !== null) {
+          try { grecaptcha.reset(widgetLogin); } catch {}
+        }
       }
     }
 
@@ -228,9 +283,18 @@
     }
   </script>
 
+  <!-- AOS JS + init -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init({
+      once: true,
+      duration: 700,
+      easing: 'ease-out'
+    });
+  </script>
+
   <!-- Cargar scripts UNA sola vez y al final -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://www.google.com/recaptcha/api.js?onload=initRecaptcha&render=explicit" async defer></script>
 </body>
 </html>
-
