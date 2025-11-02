@@ -1,698 +1,570 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Perfil - DACEM</title>
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      background: #fafafa;
-      color: #000;
-      font-family: 'Segoe UI', system-ui, Roboto, Arial, sans-serif;
-    }
-
-    [data-theme="dark"] {
-      --bg: #000;
-      --panel: #262626;
-      --card: #262626;
-      --line: rgba(255,255,255,.15);
-      --text: #fff;
-      --muted: #a8a8a8;
-    }
-
-    :root {
-      --bg: #fafafa;
-      --panel: #fff;
-      --card: #fff;
-      --line: rgba(0,0,0,.1);
-      --text: #000;
-      --muted: #65676b;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-    }
-
-    /* ====== TOPBAR ====== */
-    .topbar {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: var(--panel);
-      border-bottom: 1px solid var(--line);
-      padding: 12px 20px;
-    }
-
-    .topbar-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 1.3rem;
-    }
-
-    .brand i {
-      font-size: 1.5rem;
-      background: linear-gradient(45deg, #feda75, #fa7e1e, #d92e7f, #9b36b7, #515bd4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .topbar-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      appearance: none;
-      border: none;
-      background: var(--panel);
-      color: var(--text);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: .2s ease;
-      font-size: .9rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .btn:hover {
-      background: var(--muted);
-      opacity: .7;
-    }
-
-    .btn.danger {
-      background: #ff4458;
-      color: white;
-    }
-
-    .btn.danger:hover {
-      background: #e63946;
-      opacity: 1;
-    }
-
-    .btn.primary {
-      background: #0095f6;
-      color: white;
-    }
-
-    /* ====== LAYOUT ====== */
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 40px 20px;
-    }
-
-    .profile-header {
-      display: grid;
-      grid-template-columns: 150px 1fr;
-      gap: 40px;
-      margin-bottom: 60px;
-      align-items: start;
-    }
-
-    .profile-avatar {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--line);
-    }
-
-    .profile-info {
-      display: grid;
-      gap: 16px;
-    }
-
-    .profile-header-top {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .profile-header-top h1 {
-      font-size: 32px;
-      font-weight: 700;
-      margin: 0;
-    }
-
-    .profile-stats {
-      display: flex;
-      gap: 40px;
-      font-size: 15px;
-      margin: 20px 0;
-    }
-
-    .stat {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .stat span {
-      color: var(--muted);
-    }
-
-    .profile-bio {
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    .profile-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .profile-actions .btn {
-      min-width: 100px;
-    }
-
-    /* ====== POSTS GRID ====== */
-    .posts-section h2 {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 20px;
-    }
-
-    .posts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 12px;
-      margin-bottom: 40px;
-    }
-
-    .post-item {
-      aspect-ratio: 1;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-      position: relative;
-      background: var(--line);
-      transition: all 0.3s ease;
-    }
-
-    .post-item:hover {
-      transform: scale(1.02);
-    }
-
-    .post-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .post-item-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      color: white;
-      font-weight: 600;
-      transition: background 0.3s ease;
-    }
-
-    .post-item:hover .post-item-overlay {
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    .stat-overlay {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 16px;
-    }
-
-    /* ====== LIGHTBOX ====== */
-    .lightbox {
-      position: fixed;
-      inset: 0;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, .8);
-      z-index: 100;
-    }
-
-    .lightbox[aria-hidden="false"] {
-      display: flex;
-    }
-
-    .lb-content {
-      position: relative;
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 0;
-      background: var(--card);
-      border-radius: 8px;
-      max-height: 85vh;
-      width: 90%;
-      max-width: 1000px;
-      overflow: hidden;
-    }
-
-    @media (max-width: 768px) {
-      .lb-content {
-        grid-template-columns: 1fr;
-        max-width: 95vw;
-      }
-    }
-
-    .lb-close {
-      position: absolute;
-      right: 12px;
-      top: 12px;
-      background: rgba(0, 0, 0, .5);
-      border: none;
-      color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 20px;
-      z-index: 101;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .lb-media {
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 500px;
-    }
-
-    .lb-media img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .lb-side {
-      display: flex;
-      flex-direction: column;
-      border-left: 1px solid var(--line);
-      background: var(--card);
-    }
-
-    .lb-head {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .lb-ava {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .lb-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 12px 14px;
-    }
-
-    .lb-cmt {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      line-height: 1.4;
-    }
-
-    .lb-cmt .nm {
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    .lb-cmt .dt {
-      color: var(--muted);
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-
-    .lb-input {
-      display: flex;
-      gap: 8px;
-      padding: 12px 14px;
-      border-top: 1px solid var(--line);
-    }
-
-    .lb-input input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--line);
-      border-radius: 20px;
-      background: var(--bg);
-      color: var(--text);
-      font-family: inherit;
-    }
-
-    .lb-input button {
-      padding: 8px 16px;
-      background: #0095f6;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    /* ====== RESPONSIVE ====== */
-    @media (max-width: 768px) {
-      .profile-header {
-        grid-template-columns: 100px 1fr;
-        gap: 20px;
-      }
-
-      .profile-avatar {
-        width: 100px;
-        height: 100px;
-      }
-
-      .profile-header-top h1 {
-        font-size: 24px;
-      }
-
-      .profile-stats {
-        gap: 30px;
-      }
-
-      .posts-grid {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      }
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--line);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--muted);
-    }
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Perfil – DACEM</title>
+  
+  <!-- Fuente Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  
+  <!-- Pre-aplica el tema para evitar FOUC -->
+  <script>
+    (function(){
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="css/profile.css">
 </head>
-<body>
+<body class="profile-page">
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <i class="fas fa-circle"></i> DACEM
+        <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM"></span>
+        DACEM
       </div>
       <div class="topbar-actions">
-        <button id="logoutBtn" class="btn danger">
-          <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
+          <i data-lucide="moon" style="width:18px;height:18px"></i>
         </button>
+        <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
       </div>
     </div>
   </header>
 
-  <!-- Perfil -->
-  <div class="container">
-    <div class="profile-header">
-      <img id="avatarImg" class="profile-avatar" alt="Avatar">
+  <div class="wrap">
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <nav class="nav">
+          <a class="nav-item" href="user.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Inicio
+          </a>
+          <a class="nav-item active" href="profile.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Mi perfil
+          </a>
+        </nav>
+      </aside>
 
-      <div class="profile-info">
-        <div class="profile-header-top">
-          <h1 id="userName">Usuario</h1>
-          <div class="profile-actions">
-            <button id="btnFollow" class="btn" style="display:none;">
-              <i class="fas fa-user-plus"></i> Seguir
-            </button>
-            <button id="btnEdit" class="btn" style="display:none;">
-              <i class="fas fa-edit"></i> Editar
-            </button>
-          </div>
-        </div>
+      <!-- Main -->
+      <main class="main">
+        <!-- Header moradito con banner -->
+        <section class="profile-header">
+          <div class="banner" id="banner"></div>
 
-        <div class="profile-stats">
-          <div class="stat">
-            <strong id="postCount">0</strong>
-            <span>publicaciones</span>
-          </div>
-          <div class="stat">
-            <strong id="followerCount">0</strong>
-            <span>seguidores</span>
-          </div>
-          <div class="stat">
-            <strong id="followingCount">0</strong>
-            <span>siguiendo</span>
-          </div>
-        </div>
+          <div class="profile-info">
+            <div class="profile-header-top">
+              <img id="avatarImg" class="profile-avatar" alt="Avatar">
+              <div>
+                <h1 id="nameTxt">Perfil</h1>
+                <div class="profile-username">
+                  @<span id="usernameTxt">usuario</span>
+                  <span id="verified" class="badge" title="Verificado" style="display:none;">✔</span>
+                </div>
 
-        <div class="profile-bio" id="bioDTxt">Sin biografía</div>
-      </div>
+                <div class="profile-stats">
+                  <div class="stat">
+                    <strong id="followingCnt">0</strong>
+                    <span>siguiendo</span>
+                  </div>
+                  <div class="stat">
+                    <strong id="followersCnt">0</strong>
+                    <span>seguidores</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-actions">
+                <button id="btnFollow" class="btn" style="display:none">Seguir</button>
+                <button id="btnEdit" class="btn ghost" style="display:none">Editar perfil</button>
+              </div>
+            </div>
+
+            <div class="profile-bio" id="bioTxt">NoBioYet</div>
+          </div>
+        </section>
+
+        <!-- Publicaciones (moradito sutil) -->
+        <section class="posts-section" id="profilePosts">
+          <h2>Publicaciones</h2>
+          <div class="posts-grid grid-ig" id="gridIg"></div>
+        </section>
+      </main>
     </div>
-
-    <!-- Posts Grid -->
-    <section class="posts-section">
-      <h2><i class="fas fa-th"></i> Publicaciones</h2>
-      <div class="posts-grid" id="postsGrid"></div>
-    </section>
   </div>
 
-  <!-- Lightbox para ver posts -->
+  <!-- Visor post -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
-    <button class="lb-close" id="lbClose">
-      <i class="fas fa-times"></i>
-    </button>
-    <div class="lb-content" role="dialog" aria-modal="true">
-      <div class="lb-media">
-        <img id="lbImg" alt="Post">
-      </div>
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
+      <button class="btn ghost small lb-close" id="lbClose">✕</button>
+      <div class="lb-media"><img id="lbImg" alt=""></div>
       <aside class="lb-side">
         <header class="lb-head">
-          <img id="lbAva" class="lb-ava" alt="Avatar">
+          <img id="lbAva" class="lb-ava" alt="">
           <div>
-            <strong id="lbName">Usuario</strong>
-            <div style="font-size: 12px; color: var(--muted);" id="lbTime">Ahora</div>
+            <div id="lbName" style="font-weight:700"></div>
+            <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
         </header>
         <div class="lb-body" id="lbComments"></div>
         <div class="lb-input">
-          <input id="lbInputComment" placeholder="Añade un comentario...">
-          <button id="lbSendComment">
-            <i class="fas fa-paper-plane"></i>
-          </button>
+          <input id="lbInp" placeholder="Añade un comentario…">
+          <button id="lbSend" class="btn">Publicar</button>
         </div>
       </aside>
     </div>
   </div>
 
+  <!-- Modal Editar Perfil -->
+  <div id="editModal" class="backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Editar perfil</h3>
+        <button class="btn ghost" id="closeEdit">Cerrar</button>
+      </div>
+
+      <div class="modal-body">
+        <div>
+          <div id="bannerPreview" class="banner-preview"></div>
+          <input id="bannerFile" type="file" accept="image/*" hidden>
+          <button class="btn" id="btnPickBanner">Cambiar banner</button>
+        </div>
+
+        <div>
+          <div class="avatar avatar-xl">
+            <img id="avatarPreview" class="avatar-img" alt="">
+            <div id="avatarPreviewTxt" class="avatar-txt">U</div>
+          </div>
+          <input id="avatarFile" type="file" accept="image/*" hidden>
+          <button class="btn" id="btnPickAvatar">Cambiar foto</button>
+        </div>
+
+        <div class="form">
+          <label>Apodo</label>
+          <input id="nicknameInp" placeholder="tuapodo">
+          <label>Bio (opcional)</label>
+          <textarea id="bioInp" rows="3" maxlength="240" placeholder="Algo sobre ti..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-foot">
+        <span id="saveMsg" class="muted"></span>
+        <button class="btn" id="btnSave">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Seguidores / Siguiendo -->
+  <div id="followModal" class="backdrop">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-head" style="justify-content:space-between; gap:12px;">
+        <div class="tabs" id="followTabs">
+          <button class="btn ghost small active" data-tab="followers">Seguidores</button>
+          <button class="btn ghost small" data-tab="following">Siguiendo</button>
+        </div>
+        <button class="btn ghost" id="closeFollow">Cerrar</button>
+      </div>
+
+      <div class="modal-body" style="display:flex; flex-direction:column; gap:12px;">
+        <input id="followSearch" placeholder="Buscar" class="input" />
+        <div id="followList" class="list-users"></div>
+        <div style="text-align:center;">
+          <button id="followMore" class="btn" style="display:none">Cargar más</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS (idéntico al tuyo, solo funciona con los mismos IDs) -->
   <script>
-    const API = (p) => `${location.origin}/api${p}`;
-    const token = localStorage.getItem('token');
-    if (!token) location.replace('index.html');
-
-    const H = { 'Authorization': `Bearer ${token}` };
-    let currentUserId = null;
-    let currentPost = null;
-
-    function timeAgo(iso) {
-      try {
-        const d = new Date(iso);
-        const s = (Date.now() - d) / 1000;
-        if (s < 60) return 'ahora';
-        if (s < 3600) return Math.floor(s / 60) + ' min';
-        if (s < 86400) return Math.floor(s / 3600) + ' h';
-        return Math.floor(s / 86400) + ' d';
-      } catch { return ''; }
-    }
-
-    function resolveAvatar(u) {
-      if (u?.avatar) return u.avatar;
-      const seed = encodeURIComponent(u?.firstName + ' ' + u?.lastName || u?.nickname || 'U');
-      return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50`;
-    }
-
-    async function loadProfile() {
-      const userId = new URLSearchParams(location.search).get('id');
-      currentUserId = userId;
-
-      if (!userId) {
-        const r = await fetch(API('/user/me'), { headers: H });
-        const d = await r.json();
-        if (!d.ok) return location.replace('index.html');
-        currentUserId = d.user._id;
-        renderProfile(d.user, true);
-      } else {
-        const r = await fetch(API(`/user/${userId}/public`), { headers: H });
-        const d = await r.json();
-        if (!d.ok) return alert('Perfil no encontrado');
-        renderProfile(d.user, false);
+    // Toggle tema
+    const themeBtn = document.getElementById('themeToggle');
+    function applyTheme(t){
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      const icon = themeBtn?.querySelector('[data-lucide]');
+      if(icon){
+        icon.setAttribute('data-lucide', t==='dark' ? 'sun' : 'moon');
+        if(window.lucide) lucide.createIcons();
       }
     }
+    themeBtn?.addEventListener('click', ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current==='dark' ? 'light' : 'dark');
+    });
+    // Inicializar icono correcto
+    (function(){ 
+      const t=document.documentElement.getAttribute('data-theme'); 
+      if(t==='dark'){
+        const icon = themeBtn?.querySelector('[data-lucide]');
+        if(icon) icon.setAttribute('data-lucide','sun');
+      }
+      if(window.lucide) lucide.createIcons();
+    })();
 
-    function renderProfile(user, isOwner) {
-      document.getElementById('userName').textContent = user.firstName + ' ' + user.lastName || user.nickname;
-      document.getElementById('avatarImg').src = resolveAvatar(user);
-      document.getElementById('bioDTxt').textContent = user.bio || 'Sin biografía';
-      document.getElementById('postCount').textContent = user.postCount || 0;
-      document.getElementById('followerCount').textContent = user.followerCount || 0;
-      document.getElementById('followingCount').textContent = user.followingCount || 0;
+    const API = (p)=>`${location.origin}/api${p}`;
+    const token = localStorage.getItem('token');
+    if(!token){ location.replace('index.html'); }
+    const H  = { 'Authorization':`Bearer ${token}` };
+    const JH = { ...H, 'Content-Type':'application/json' };
+    const $  = s => document.querySelector(s);
+    const qs = new URLSearchParams(location.search);
+    const viewId = qs.get('id');
 
-      const btnFollow = document.getElementById('btnFollow');
-      const btnEdit = document.getElementById('btnEdit');
+    let me=null, other=null, isFollowing=false;
 
-      if (isOwner) {
-        btnEdit.style.display = 'flex';
-        btnEdit.onclick = () => alert('Editar perfil (próximamente)');
-      } else {
-        btnFollow.style.display = 'flex';
-        btnFollow.textContent = user.isFollowing ? '✓ Siguiendo' : '+ Seguir';
-        btnFollow.onclick = async () => {
-          const r = await fetch(API(`/follow/${user._id}`), {
-            method: user.isFollowing ? 'DELETE' : 'POST',
-            headers: H
-          });
-          const d = await r.json();
-          if (d.ok) {
-            user.isFollowing = !user.isFollowing;
-            btnFollow.textContent = user.isFollowing ? '✓ Siguiendo' : '+ Seguir';
+    const displayName = (u)=> u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario');
+    const initialLetter= (u)=> (u?.firstName?.[0] || u?.name?.[0] || u?.nickname?.[0] || 'U').toUpperCase();
+    const abs = (url)=>!url ? '' : (url.startsWith('http') ? url : `${location.origin}${url.startsWith('/')?url:'/'+url}`);
+
+    function setAvatarBox(imgEl, txtEl, u){
+      if (u?.avatar){ imgEl.src = abs(u.avatar); imgEl.style.display='block'; if(txtEl) txtEl.style.display='none'; }
+      else { imgEl.removeAttribute('src'); imgEl.style.display='none'; if(txtEl){ txtEl.textContent = initialLetter(u); txtEl.style.display='flex'; } }
+    }
+    function resolveAvatar(u){
+      if (!u) return `https://api.dicebear.com/8.x/initials/svg?seed=U&radius=50&scale=110&fontWeight=700`;
+      if (u.avatar) return u.avatar.startsWith('http') ? u.avatar : `${location.origin}${u.avatar.startsWith('/')?u.avatar:'/'+u.avatar}`;
+      const seed = encodeURIComponent((u.firstName || u.name || u.nickname || 'U'));
+      return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
+    }
+
+    /* ---------- Follow modal (idéntico a tu versión) ---------- */
+    const followModal  = document.getElementById('followModal');
+    const followTabs   = document.getElementById('followTabs');
+    const followList   = document.getElementById('followList');
+    const followMore   = document.getElementById('followMore');
+    const followSearch = document.getElementById('followSearch');
+    document.getElementById('closeFollow').onclick = ()=> followModal.removeAttribute('data-open');
+
+    const REL_STATE = new Map();
+    let FOLLOW_STATE = { tab:'followers', userId:null, cursor:null, cache:[] };
+
+    function openFollowModal(tab, userId){
+      FOLLOW_STATE = { tab, userId, cursor:null, cache:[] };
+      [...followTabs.querySelectorAll('button')].forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+      followSearch.value = '';
+      followList.innerHTML = '<div class="muted">Cargando...</div>';
+      followModal.setAttribute('data-open','true');
+      loadFollowPage(true);
+    }
+
+    async function loadFollowPage(first=false){
+      const limit = 20;
+      const url = new URL(API(`/follow/${FOLLOW_STATE.userId}/${FOLLOW_STATE.tab}`));
+      url.searchParams.set('limit', String(limit));
+      if (FOLLOW_STATE.cursor) url.searchParams.set('cursor', FOLLOW_STATE.cursor);
+      const r = await fetch(url.toString(), { headers:H });
+      const d = await r.json();
+      if (!d.ok){ followList.innerHTML = '<div class="muted">No disponible</div>'; return; }
+      if (first) { followList.innerHTML = ''; FOLLOW_STATE.cache = []; }
+      (d.users || []).forEach(u => FOLLOW_STATE.cache.push(u));
+      FOLLOW_STATE.cursor = d.nextCursor || null;
+      followMore.style.display = FOLLOW_STATE.cursor ? 'inline-block' : 'none';
+      renderFollowList();
+    }
+
+    async function ensureFollowFlag(id){
+      if (REL_STATE.has(id)) return REL_STATE.get(id);
+      try{
+        const rr = await fetch(API(`/user/${id}/public`), { headers:H });
+        const dd = await rr.json();
+        const val = !!dd.isFollowing;
+        REL_STATE.set(id, val);
+        return val;
+      }catch{ return false; }
+    }
+
+    function rowTemplate(u, followingNow){
+      const row = document.createElement('div');
+      row.className='user-row';
+      row.innerHTML = `
+        <img src="${resolveAvatar(u)}" alt="">
+        <div class="u-info">
+          <div class="u-name">${displayName(u)}</div>
+          <div class="u-nick">@${u.nickname || 'usuario'}</div>
+        </div>
+        <div class="u-actions">
+          <a class="btn ghost small" href="profile.html?id=${u.id}">Ver</a>
+          <button class="btn small follow-toggle">${followingNow ? 'Dejar de seguir' : 'Seguir'}</button>
+        </div>`;
+      return row;
+    }
+
+    async function renderFollowList(){
+      const q = followSearch.value.trim().toLowerCase();
+      followList.innerHTML = '';
+      const rows = FOLLOW_STATE.cache.filter(u => {
+        if (!q) return true;
+        const s = `${u.firstName||''} ${u.lastName||''} ${u.nickname||''}`.toLowerCase();
+        return s.includes(q);
+      });
+      if (!rows.length){ followList.innerHTML = '<div class="muted">Sin resultados</div>'; return; }
+
+      for (const u of rows){
+        let followingNow = FOLLOW_STATE.tab === 'following' ? true : REL_STATE.get(u.id);
+        const row = rowTemplate(u, !!followingNow);
+        const btn = row.querySelector('.follow-toggle');
+        if (FOLLOW_STATE.tab === 'followers' && followingNow === undefined){
+          ensureFollowFlag(u.id).then(()=>{ btn.textContent = (REL_STATE.get(u.id) ? 'Dejar de seguir' : 'Seguir'); });
+        }
+        btn.onclick = async ()=>{
+          btn.disabled = true;
+          try{
+            const r = await fetch(API(`/follow/toggle/${u.id}`), { method:'POST', headers:H });
+            if (r.status !== 404){
+              const d = await r.json(); if (d.ok) REL_STATE.set(u.id, !!d.following);
+            }else{
+              const currently = FOLLOW_STATE.tab==='following' ? true : (REL_STATE.get(u.id) || false);
+              const m = currently ? 'DELETE' : 'POST';
+              const r2 = await fetch(API(`/follow/${u.id}`), { method:m, headers:H });
+              const d2 = await r2.json(); if (d2.ok) REL_STATE.set(u.id, !currently);
+            }
+          } finally {
+            const now = REL_STATE.get(u.id) || false;
+            if (FOLLOW_STATE.tab==='following' && !now){
+              row.remove();
+              const cntEl = document.getElementById('followingCnt');
+              if (cntEl) cntEl.textContent = Math.max(0, (+cntEl.textContent||1) - 1);
+            }else{
+              btn.textContent = now ? 'Dejar de seguir' : 'Seguir';
+            }
+            btn.disabled = false;
           }
         };
+        followList.appendChild(row);
       }
-
-      loadPosts(user._id);
     }
 
-    async function loadPosts(userId) {
-      const r = await fetch(API(`/user/${userId}/posts`), { headers: H });
-      const d = await r.json();
+    followMore.onclick = ()=> loadFollowPage(false);
+    followSearch.oninput = ()=> renderFollowList();
+    followTabs.addEventListener('click', (e)=>{
+      const b=e.target.closest('button[data-tab]'); if(!b) return;
+      openFollowModal(b.dataset.tab, FOLLOW_STATE.userId);
+    });
 
-      const grid = document.getElementById('postsGrid');
-      grid.innerHTML = '';
+    document.getElementById('btnOpenFollowers')?.addEventListener('click', ()=>{
+      const uid = (viewId && viewId!==(me?._id||'')) ? viewId : (me?._id || '');
+      openFollowModal('followers', uid);
+    });
+    document.getElementById('btnOpenFollowing')?.addEventListener('click', ()=>{
+      const uid = (viewId && viewId!==(me?._id||'')) ? viewId : (me?._id || '');
+      openFollowModal('following', uid);
+    });
 
-      if (!d.posts || d.posts.length === 0) {
-        grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color: var(--muted);">Sin publicaciones</p>';
-        return;
-      }
-
-      d.posts.forEach(post => {
-        const item = document.createElement('div');
-        item.className = 'post-item';
-        item.innerHTML = `
-          <img src="${post.media?.thumb}" alt="">
-          <div class="post-item-overlay">
-            <div class="stat-overlay">
-              <i class="fas fa-heart"></i> ${post.counts?.likes || 0}
-            </div>
-            <div class="stat-overlay">
-              <i class="fas fa-comment"></i> ${post.counts?.comments || 0}
-            </div>
-          </div>
-        `;
-        item.onclick = () => openPostModal(post, post.userId);
-        grid.appendChild(item);
-      });
+    /* ---------- Perfil ---------- */
+    function paintProfile(u, counts){
+      const hasBanner = !!u.banner;
+      document.getElementById('banner').style.backgroundImage = hasBanner ? `url(${abs(u.banner)})` : 'none';
+      document.querySelector('.main').classList.toggle('has-banner', hasBanner); // inofensivo
+      document.getElementById('nameTxt').textContent = displayName(u);
+      document.getElementById('usernameTxt').textContent = u.nickname || 'usuario';
+      document.getElementById('followersCnt').textContent = counts?.followers ?? 0;
+      document.getElementById('followingCnt').textContent = counts?.following ?? 0;
+      document.getElementById('verified').style.display = u.isVerified ? 'inline' : 'none';
+      setAvatarBox(document.getElementById('avatarImg'), null, u);
+      document.getElementById('bioTxt').textContent = (u.bio && u.bio.trim()) ? u.bio : 'NoBioYet';
     }
 
-    async function openPostModal(post, userId) {
-      currentPost = post;
-      const user = await fetch(API(`/user/${userId}/public`), { headers: H }).then(r => r.json()).then(d => d.user);
-
-      document.getElementById('lbImg').src = post.media?.t1 || post.media?.original || post.media?.thumb;
-      document.getElementById('lbName').textContent = user.firstName + ' ' + user.lastName || user.nickname;
-      document.getElementById('lbTime').textContent = timeAgo(post.createdAt);
-      document.getElementById('lbAva').src = resolveAvatar(user);
-
-      const r = await fetch(API(`/posts/${post.id}/comments`), { headers: H });
+    async function loadMe(){
+      const r = await fetch(API('/user/me'), { headers:H });
       const d = await r.json();
-      const comments = d.comments || [];
+      if(!d.ok){ localStorage.removeItem('token'); return location.replace('index.html'); }
+      me = d.user; return { user:d.user, counts:d.counts };
+    }
+    async function loadOther(id){
+      const r = await fetch(API(`/user/${id}/public`), { headers:H });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.message || 'No encontrado');
+      other = d.user; isFollowing = !!d.isFollowing;
+      return { user:d.user, counts:d.counts };
+    }
 
-      const cBody = document.getElementById('lbComments');
-      cBody.innerHTML = '';
-      comments.forEach(c => {
+    async function toggleFollow(){
+      const btn = document.getElementById('btnFollow');
+      btn.disabled = true;
+      const tryToggle = await fetch(API(`/follow/toggle/${other._id}`), { method:'POST', headers:H });
+      if (tryToggle.status !== 404){
+        const d = await tryToggle.json(); if (d.ok) isFollowing = !isFollowing;
+      }else{
+        const r = await fetch(API(`/follow/${other._id}`), { method: isFollowing ? 'DELETE' : 'POST', headers:H });
+        const d = await r.json(); if (d.ok) isFollowing = !isFollowing;
+      }
+      btn.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+      btn.disabled = false;
+    }
+
+    /* ---------- Editar perfil ---------- */
+    const modal = document.getElementById('editModal');
+    const openModal  = ()=> modal.setAttribute('data-open','true');
+    const closeModal = ()=> modal.removeAttribute('data-open');
+    document.getElementById('closeEdit').onclick = closeModal;
+
+    function prefillEdit(){
+      document.getElementById('bannerPreview').style.backgroundImage = me.banner ? `url(${abs(me.banner)})` : 'none';
+      setAvatarBox(document.getElementById('avatarPreview'), document.getElementById('avatarPreviewTxt'), me);
+      document.getElementById('nicknameInp').value = me.nickname || '';
+      document.getElementById('bioInp').value = me.bio || '';
+      document.getElementById('saveMsg').textContent = '';
+    }
+    document.getElementById('btnPickBanner').onclick = ()=> document.getElementById('bannerFile').click();
+    document.getElementById('btnPickAvatar').onclick = ()=> document.getElementById('avatarFile').click();
+
+    document.getElementById('bannerFile').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const fd = new FormData(); fd.append('banner', f);
+      const r = await fetch(API('/user/me/banner'), { method:'PUT', headers:H, body:fd });
+      const d = await r.json();
+      if (d.ok){
+        document.getElementById('bannerPreview').style.backgroundImage = `url(${d.banner})`;
+        document.getElementById('banner').style.backgroundImage = `url(${d.banner})`;
+      }
+      e.target.value = '';
+    });
+
+    document.getElementById('avatarFile').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const fd = new FormData(); fd.append('avatar', f);
+      const r = await fetch(API('/user/me/avatar'), { method:'POST', headers:H, body:fd });
+      const d = await r.json();
+      if (d.ok){ await refreshMe(); }
+      e.target.value = '';
+    });
+
+    async function refreshMe(){
+      const r = await fetch(API('/user/me'), { headers:H });
+      const d = await r.json();
+      if (d.ok){ me = d.user; paintProfile(me, d.counts); prefillEdit(); }
+    }
+    document.getElementById('btnSave').onclick = async ()=>{
+      document.getElementById('saveMsg').textContent = 'Guardando...';
+      const payload = { nickname: document.getElementById('nicknameInp').value.trim(), bio: document.getElementById('bioInp').value.trim() };
+      const r = await fetch(API('/user/update'), { method:'PUT', headers:JH, body:JSON.stringify(payload) });
+      const d = await r.json();
+      document.getElementById('saveMsg').textContent = d.ok ? 'Guardado' : (d.message || 'Error');
+      if (d.ok) await refreshMe();
+    };
+
+    /* ---------- Init ---------- */
+    (async ()=>{
+      const meData = await loadMe();
+      const myId = meData.user._id?.toString?.() || meData.user.id || '';
+      if (viewId && viewId !== myId){
+        const { user, counts } = await loadOther(viewId);
+        paintProfile(user, counts);
+        document.getElementById('btnEdit').style.display = 'none';
+        const bf = document.getElementById('btnFollow');
+        bf.style.display = 'inline-block';
+        bf.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+        bf.onclick = toggleFollow;
+      }else{
+        paintProfile(meData.user, meData.counts);
+        document.getElementById('btnFollow').style.display = 'none';
+        const be = document.getElementById('btnEdit');
+        be.style.display = 'inline-block';
+        be.onclick = ()=>{ prefillEdit(); openModal(); };
+      }
+    })();
+
+    // Logout
+    document.getElementById('logoutBtnTop')?.addEventListener('click', ()=>{
+      localStorage.removeItem('token'); localStorage.removeItem('user'); location.replace('index.html');
+    });
+
+    /* ---------- Grid + modal de post ---------- */
+    const grid = document.getElementById('gridIg');
+    const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
+    const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
+    const lbName = document.getElementById('lbName'), lbUser = document.getElementById('lbUser');
+    const lbBody = document.getElementById('lbComments'), lbInp = document.getElementById('lbInp'), lbSend = document.getElementById('lbSend');
+
+    const userCache = new Map();
+    async function getUserPublic(uId){
+      if (userCache.has(uId)) return userCache.get(uId);
+      if (other && String(other._id) === String(uId)) { userCache.set(uId, other); return other; }
+      if (me && String(me._id) === String(uId))       { userCache.set(uId, me);    return me;    }
+      const r = await fetch(API(`/user/${uId}/public`), { headers:H });
+      const d = await r.json();
+      if (d.ok){ userCache.set(uId, d.user); return d.user; }
+      return null;
+    }
+    async function listPostComments(postId){
+      const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
+      const d = await r.json();
+      return d.ok ? d.comments : [];
+    }
+    async function addPostComment(postId, text){
+      const r = await fetch(API(`/posts/${postId}/comments`), { method:'POST', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify({ text }) });
+      const d = await r.json(); return d.ok ? d.comment : null;
+    }
+    function renderComments(list, authorMap){
+      lbBody.innerHTML = '';
+      list.forEach(c=>{
+        const u = authorMap.get(String(c.userId));
+        const nm = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'usuario';
         const row = document.createElement('div');
         row.className = 'lb-cmt';
-        row.innerHTML = `<span class="nm">${c.userId}</span><span>${c.text}</span><span class="dt">${timeAgo(c.createdAt)}</span>`;
-        cBody.appendChild(row);
+        row.innerHTML = `<span class="nm">${nm}</span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
+        lbBody.appendChild(row);
       });
+      lbBody.scrollTop = lbBody.scrollHeight;
+    }
+    function timeAgo(iso){ try{ const d=new Date(iso); const s=(Date.now()-d)/1000;
+      if(s<60) return 'ahora'; if(s<3600) return Math.floor(s/60)+' min';
+      if(s<86400) return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d';
+    }catch{ return ''; } }
 
-      document.getElementById('lbSendComment').onclick = async () => {
-        const text = document.getElementById('lbInputComment').value.trim();
-        if (!text) return;
-
-        const r2 = await fetch(API(`/posts/${post.id}/comments`), {
-          method: 'POST',
-          headers: { ...H, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-
-        if (r2.ok) {
-          document.getElementById('lbInputComment').value = '';
-          const newC = await r2.json();
-          const row = document.createElement('div');
-          row.className = 'lb-cmt';
-          row.innerHTML = `<span class="nm">Tú</span><span>${text}</span><span class="dt">ahora</span>`;
-          cBody.appendChild(row);
-          cBody.scrollTop = cBody.scrollHeight;
-        }
-      };
-
-      document.getElementById('lightbox').setAttribute('aria-hidden', 'false');
+    async function loadProfilePostsIG(uid){
+      const url = new URL(API('/posts')); url.searchParams.set('userId', uid); url.searchParams.set('limit', '36');
+      const r = await fetch(url, { headers:H }); const d = await r.json(); grid.innerHTML='';
+      if (!d.ok || !d.posts?.length){ grid.innerHTML = '<div class="muted">Aún no hay publicaciones.</div>'; return; }
+      d.posts.forEach(p=>{
+        const a=document.createElement('a'); a.href='#'; a.className='ig-item';
+        a.innerHTML=`<img src="${p.media.thumb}" alt="">`;
+        a.addEventListener('click', ev=>{ ev.preventDefault(); openPostModal(p); });
+        grid.appendChild(a);
+      });
     }
 
-    document.getElementById('lbClose').onclick = () => {
-      document.getElementById('lightbox').setAttribute('aria-hidden', 'true');
-    };
+    async function openPostModal(p){
+      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
+      const u = await getUserPublic(p.userId);
+      const display = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'Usuario';
+      lbAva.src  = resolveAvatar(u); lbName.textContent = display; lbUser.textContent = u ? `@${u.nickname || 'usuario'}` : '';
+      const comments = await listPostComments(p.id); const authors = new Map(); if (u) authors.set(String(p.userId), u);
+      renderComments(comments, authors);
+      lbSend.onclick = async ()=>{
+        const t = lbInp.value.trim(); if (!t) return;
+        const c = await addPostComment(p.id, t);
+        if (c){ lbInp.value=''; comments.push(c); renderComments(comments, authors); }
+      };
+      lb.setAttribute('aria-hidden','false');
+    }
+    function closePostModal(){ lb.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML=''; }
+    lbClose.onclick = closePostModal;
+    lb.addEventListener('click',(e)=>{ if(e.target===lb) closePostModal(); });
+    document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && lb.getAttribute('aria-hidden')==='false') closePostModal(); });
 
-    document.getElementById('logoutBtn').onclick = () => {
-      localStorage.clear();
-      location.replace('index.html');
-    };
-
-    loadProfile();
+    (async ()=>{
+      const meResp = await fetch(API('/user/me'), { headers:H });
+      const meData = await meResp.json();
+      const myId = meData?.user?._id || '';
+      const uid  = (viewId && viewId!==myId) ? viewId : myId;
+      await loadProfilePostsIG(uid);
+    })();
   </script>
 </body>
 </html>
