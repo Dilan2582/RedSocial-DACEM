@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Iconos Lucide -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
   <!-- Tema inicial para evitar FOUC -->
   <script>
@@ -133,6 +133,7 @@
     .btn-icon:hover{background:rgba(124,92,252,.08)}
     .btn-icon:active{background:rgba(124,92,252,.15);transform:scale(0.95)}
     .btn-icon i,.btn-icon svg{width:24px;height:24px}
+    .btn-icon svg{stroke: currentColor; fill: none; stroke-width: 2;}
     .btn-icon[aria-pressed="true"]{color:var(--accent)}
     .post-counts{color:var(--muted);font-size:.9rem;font-weight:600}
     .post-caption{padding:0 16px 16px;color:var(--text);line-height:1.5;font-size:.95rem}
@@ -167,6 +168,31 @@
     .lb-input{display:flex;gap:10px;padding:16px;border-top:1px solid var(--line)}
     .lb-input input{flex:1;background:#0b0f1d;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px}
     .lb-input input:focus{box-shadow:0 0 0 3px var(--ring)}
+    /* Barra de acciones del modal */
+    .lb-actions{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px 16px;
+      border-top:1px solid var(--line);
+      background:var(--panel);
+      flex-wrap:nowrap;            /* evita que salte a otra línea */
+    }
+
+    /* Empuja y alinea el recuento a la derecha en una sola línea */
+    .lb-actions .post-counts{
+      margin-left:auto;            /* lo manda a la derecha (no depende del .spacer) */
+      white-space:nowrap;          /* evita salto 2 · 1 */
+      line-height:1;
+      display:flex;
+      gap:6px;                     /* pequeño espacio entre números y separador */
+    }
+
+    /* Tamaño/alineación de los íconos */
+    .lb-actions .btn-icon{ width:42px; height:38px }
+    .lb-actions .btn-icon svg{ width:22px; height:22px; vertical-align:middle }
+
+
 
     /* Responsive */
     @media(max-width:1080px){
@@ -287,6 +313,18 @@
           </div>
         </header>
         <div class="lb-body" id="lbComments"></div>
+        <div class="lb-actions">
+          <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta">
+            <i data-lucide="heart"></i>
+          </button>
+          <button id="lbComment" class="btn-icon" title="Comentar">
+            <i data-lucide="message-circle"></i>
+          </button>
+          <div class="spacer"></div>
+          <div class="post-counts">
+            <span id="lbLikes">0</span> · <span id="lbCommentsCount">0</span>
+          </div>
+        </div>
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
           <button id="lbSend" class="btn"><i class="nav-ico" data-lucide="send"></i></button>
@@ -449,6 +487,8 @@
     cmp.post.onclick = publish;
 
     const feedEl = document.querySelector('#feed');
+    const refreshIcons = () => { try { if (window.lucide) window.lucide.createIcons(); } catch(_){} };
+
     let nextCursor = null, loading = false;
 
     function ratioClass(w,h){ const r=w/h; if(r<0.95) return 'ratio-portrait'; if(r>1.6) return 'ratio-landscape'; return 'ratio-square'; }
@@ -465,6 +505,13 @@
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
     const lbName = document.getElementById('lbName'), lbUser = document.getElementById('lbUser');
     const lbBody = document.getElementById('lbComments'), lbInp = document.getElementById('lbInp'), lbSend = document.getElementById('lbSend');
+    const lbLike = document.getElementById('lbLike');
+    const lbComment = document.getElementById('lbComment');
+    const lbLikes = document.getElementById('lbLikes');
+    const lbCommentsCount = document.getElementById('lbCommentsCount');
+
+    let currentPost = null;
+
 
     async function listPostComments(postId){
       const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
@@ -486,15 +533,70 @@
       lbBody.scrollTop = lbBody.scrollHeight;
     }
     async function openPostModal(p){
+      currentPost = p;
+
       lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
+
       const u = await getUserCached(p.userId);
-      lbAva.src = resolveAvatar(u); lbName.textContent = displayName(u); lbUser.textContent = `@${u.nickname || 'usuario'}`;
-      const comments = await listPostComments(p.id); await renderComments(comments);
-      lbSend.onclick = async ()=>{ const t = lbInp.value.trim(); if(!t) return;
-        const c = await addPostComment(p.id, t); if(c){ lbInp.value=''; comments.push(c); await renderComments(comments); } };
+      lbAva.src = resolveAvatar(u);
+      lbName.textContent = displayName(u);
+      lbUser.textContent = `@${u.nickname || 'usuario'}`;
+
+      // Estado inicial de acciones
+      lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
+      lbLikes.textContent = p.counts?.likes || 0;
+      lbCommentsCount.textContent = p.counts?.comments || 0;
+
+      // Cargar y renderizar comentarios
+      const comments = await listPostComments(p.id);
+      await renderComments(comments);
+      lbCommentsCount.textContent = comments.length;
+
+      // Enviar comentario
+      lbSend.onclick = async ()=>{
+        const t = lbInp.value.trim();
+        if(!t) return;
+        const c = await addPostComment(p.id, t);
+        if(c){
+          lbInp.value = '';
+          comments.push(c);
+          await renderComments(comments);
+          lbCommentsCount.textContent = comments.length;
+        }
+      };
+
+      // Like toggle
+      lbLike.onclick = async ()=>{
+        const pressed = lbLike.getAttribute('aria-pressed') === 'true';
+        lbLike.setAttribute('aria-pressed', (!pressed) + '');
+        lbLikes.textContent = (+lbLikes.textContent + (pressed ? -1 : 1));
+        try{
+          const r = await fetch(API(`/posts/${p.id}/likes/toggle`), { method:'POST', headers:H });
+          const d = await r.json();
+          if(!d.ok) throw 0;
+        }catch{
+          // revertir si falla
+          lbLike.setAttribute('aria-pressed', pressed + '');
+          lbLikes.textContent = (+lbLikes.textContent + (pressed ? 1 : -1));
+        }
+      };
+
+      // Botón comentar: enfoca el input
+      lbComment.onclick = ()=>{
+        lbInp.focus();
+        lbBody.scrollTop = lbBody.scrollHeight;
+      };
+
       lb.setAttribute('aria-hidden','false');
+      if (window.lucide) lucide.createIcons();
     }
-    function closePostModal(){ lb.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML=''; }
+    function closePostModal(){
+      lb.setAttribute('aria-hidden','true');
+      lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML='';
+      lbLike.setAttribute('aria-pressed','false');
+      lbLikes.textContent = '0'; lbCommentsCount.textContent = '0';
+      currentPost = null;
+    }
     lbClose.onclick = closePostModal;
     lb.addEventListener('click', (e)=>{ if(e.target===lb) closePostModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && lb.getAttribute('aria-hidden')==='false') closePostModal(); });
@@ -544,11 +646,15 @@
     async function renderPost(p){
       if(!userCache.has(p.userId)) await getUserCached(p.userId);
       feedEl.appendChild(postCard(p));
+      refreshIcons(); // ← aquí
     }
+
     function prependPost(p){
       if(!userCache.has(p.userId)) userCache.set(p.userId, me);
       feedEl.prepend(postCard(p));
+      refreshIcons(); // ← aquí
     }
+
 
     async function loadFeed(first=false){
       if (loading) return; loading=true;
