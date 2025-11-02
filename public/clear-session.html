@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limpiar Sesión - DACEM</title>
+  <style>
+    body {
+      font-family: system-ui;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+    }
+    .container {
+      background: #1e293b;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      text-align: center;
+      max-width: 500px;
+    }
+    h1 {
+      margin: 0 0 20px;
+      color: #8b5cf6;
+    }
+    button {
+      background: linear-gradient(135deg, #8b5cf6, #a855f7);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    button.danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    .info {
+      background: #334155;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      text-align: left;
+    }
+    .info p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .success {
+      color: #22c55e;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Limpiar Sesión de DACEM</h1>
+    
+    <div class="info" id="info">
+      <p><strong>Token actual:</strong> <span id="token">-</span></p>
+      <p><strong>Usuario guardado:</strong> <span id="user">-</span></p>
+    </div>
+
+    <button onclick="clearSession()" class="danger">
+      🗑️ Limpiar Todo (localStorage + cookies)
+    </button>
+
+    <button onclick="clearToken()">
+      🔑 Solo limpiar token
+    </button>
+
+    <button onclick="location.href='index.html'">
+      ↩️ Volver al login
+    </button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // Mostrar datos actuales
+    function showCurrent() {
+      const token = localStorage.getItem('token');
+      const user = localStorage.getItem('user');
+      
+      document.getElementById('token').textContent = token ? 
+        token.substring(0, 30) + '...' : 'Ninguno';
+      document.getElementById('user').textContent = user || 'Ninguno';
+    }
+
+    // Limpiar solo token
+    function clearToken() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      document.getElementById('result').innerHTML = 
+        '<p class="success">✅ Token eliminado. Recarga la página.</p>';
+      
+      setTimeout(() => {
+        showCurrent();
+        document.getElementById('result').innerHTML = '';
+      }, 2000);
+    }
+
+    // Limpiar todo
+    function clearSession() {
+      // Limpiar localStorage
+      localStorage.clear();
+      
+      // Limpiar sessionStorage
+      sessionStorage.clear();
+      
+      // Limpiar cookies
+      document.cookie.split(";").forEach(c => {
+        document.cookie = c.replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      document.getElementById('result').innerHTML = 
+        '<p class="success">✅ Todo limpio! Redirigiendo al login...</p>';
+      
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 1500);
+    }
+
+    // Mostrar datos al cargar
+    showCurrent();
+  </script>
+</body>
+</html>
