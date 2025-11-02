@@ -26,7 +26,8 @@ const PostSchema = new Schema({
   tags:       [{ type: String, index: true }],
   nsfw:       { type: Boolean, default: false, index: true },
   faceCount:  { type: Number, default: 0 },
-  visionRaw:  { type: Object },
+  visionRaw:  { type: Object },  // AWS Rekognition
+  faceApiData: { type: Object }, // Face-API.js (local, gratis)
   status:   { type: String, enum: ['processing', 'ready'], default: 'ready' },
   createdAt:{ type: Date, default: Date.now, index: true }
 });

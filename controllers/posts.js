@@ -7,6 +7,8 @@ const { env } = require('../config/env');
 const { buildPostKey, uploadBuffer, publicUrl } = require('../services/s3');
 const { readMeta, makeThumb, varT1, varT2, varT3 } = require('../services/image');
 const { analyzeS3Image } = require('../services/vision');
+// TODO: Face-API requiere TensorFlow compilado en Windows - deshabilitado temporalmente
+// const { analyzeFaces } = require('../services/faceapi');
 
 
 function ensureAuthUser(req) {
@@ -51,7 +53,40 @@ async function createPost(req, res) {
       uploadBuffer({ Key: keyT3,       Body: t3Buf,    ContentType: 'image/jpeg' }),
     ]);
 
-    // 5) Ahora sí, crea el documento completo (cumple los required)
+    // 5) Analizar imagen con Rekognition (si está habilitado)
+    let visionData = { tags: [], nsfw: false, faceCount: 0, raw: null };
+    
+    if (env.rekognition.enabled) {
+      try {
+        if (env.rekognition.mode === 'lite') {
+          const { analyzeS3ImageLite } = require('../services/vision');
+          visionData = await analyzeS3ImageLite({ 
+            bucket: env.aws.s3Bucket, 
+            key: keyOriginal 
+          });
+          console.log('✅ Rekognition (Lite) completado:', visionData.tags.length, 'tags');
+        } else {
+          visionData = await analyzeS3Image({ 
+            bucket: env.aws.s3Bucket, 
+            key: keyOriginal 
+          });
+          console.log('✅ Rekognition análisis completado:', {
+            tags: visionData.tags.length,
+            nsfw: visionData.nsfw,
+            faces: visionData.faceCount
+          });
+        }
+      } catch (visionErr) {
+        console.error('⚠️  Error en Rekognition (continuando):', visionErr.message);
+      }
+    } else {
+      console.log('⏭️  Rekognition deshabilitado en configuración');
+    }
+    
+    // TODO: Integrar Face-API.js cuando esté disponible para Windows
+    // const faceApiData = await analyzeFaces(buffer);
+
+    // 6) Ahora sí, crea el documento completo (cumple los required)
     const post = await Post.create({
       _id: postId,
       userId: new Types.ObjectId(userId),
@@ -65,10 +100,15 @@ async function createPost(req, res) {
         mime: meta.mime,
         size: buffer.length
       },
+      tags: visionData.tags,
+      nsfw: visionData.nsfw,
+      faceCount: visionData.faceCount,
+      visionRaw: visionData.raw,
+      // faceApiData: null,  // TODO: Agregar cuando Face-API funcione
       status: 'ready'
     });
 
-    // 6) Respuesta
+    // 7) Respuesta
     res.json({
       ok: true,
       post: {
@@ -78,6 +118,9 @@ async function createPost(req, res) {
         createdAt: post.createdAt,
         counts: post.counts || { likes: 0, comments: 0 },
         status: post.status,
+        tags: post.tags || [],
+        nsfw: post.nsfw || false,
+        faceCount: post.faceCount || 0,
         media: {
           original: publicUrl(keyOriginal),
           thumb:    publicUrl(keyThumb),
@@ -269,31 +312,133 @@ function serializePost(post, opts = {}) {
     createdAt: post.createdAt,
     counts: post.counts || { likes: 0, comments: 0 },
     status: post.status || 'ready',
+    tags: post.tags || [],
+    nsfw: post.nsfw || false,
+    faceCount: post.faceCount || 0,
     media
   };
 }
 
-module.exports = {
-  createPost,
-  getFeed,
-  getPostById,
-  toggleLike,
-  listComments,
-  addComment
-};
-
-async function getAnalysis(req, res) {
+/* ----------------------------- RE-ANALYZE POST ----------------------------- */
+async function reanalyzePost(req, res) {
   try {
-    const { id } = req.params;
-    if (!Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok:false, message:'ID inválido' });
+    const userId = ensureAuthUser(req);
+    const postId = req.params.id;
+
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ ok: false, message: 'Post no encontrado' });
+    if (String(post.userId) !== String(userId)) {
+      return res.status(403).json({ ok: false, message: 'No autorizado' });
     }
-    const post = await Post.findById(id).select('tags nsfw faceCount visionRaw').lean();
-    if (!post) return res.status(404).json({ ok:false, message:'No encontrado' });
-    res.json({ ok:true, analysis: post });
-  } catch (e) {
-    console.error('[getAnalysis] error', e);
-    res.status(500).json({ ok:false, message:'Error obteniendo análisis' });
+
+    // Analizar con Rekognition
+    const visionData = await analyzeS3Image({
+      bucket: env.aws.s3Bucket,
+      key: post.media.keyOriginal
+    });
+
+    // Actualizar post
+    post.tags = visionData.tags;
+    post.nsfw = visionData.nsfw;
+    post.faceCount = visionData.faceCount;
+    post.visionRaw = visionData.raw;
+    await post.save();
+
+    console.log('✅ Post re-analizado:', postId);
+
+    res.json({
+      ok: true,
+      analysis: {
+        tags: visionData.tags,
+        nsfw: visionData.nsfw,
+        faceCount: visionData.faceCount
+      }
+    });
+  } catch (err) {
+    if (err.message === 'NO_AUTH') return res.status(401).json({ ok: false, message: 'No autenticado' });
+    console.error('[reanalyzePost] error', err);
+    res.status(500).json({ ok: false, message: 'Error al analizar post' });
+  }
+}
+
+/* ----------------------------- DELETE POST ----------------------------- */
+async function deletePost(req, res) {
+  try {
+    const userId = ensureAuthUser(req);
+    const postId = req.params.id;
+
+    if (!Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ ok: false, message: 'ID inválido' });
+    }
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ ok: false, message: 'Post no encontrado' });
+    }
+
+    // Verificar que sea el dueño del post
+    if (String(post.userId) !== String(userId)) {
+      return res.status(403).json({ ok: false, message: 'No autorizado' });
+    }
+
+    // Eliminar likes asociados
+    await Like.deleteMany({ postId: new Types.ObjectId(postId) });
+
+    // Eliminar comentarios asociados
+    await Comment.deleteMany({ postId: new Types.ObjectId(postId) });
+
+    // Eliminar el post
+    await Post.findByIdAndDelete(postId);
+
+    console.log('✅ Post eliminado:', postId);
+
+    res.json({ ok: true, message: 'Post eliminado correctamente' });
+  } catch (err) {
+    if (err.message === 'NO_AUTH') return res.status(401).json({ ok: false, message: 'No autenticado' });
+    console.error('[deletePost] error', err);
+    res.status(500).json({ ok: false, message: 'Error al eliminar post' });
+  }
+}
+
+/* ----------------------------- DELETE COMMENT ----------------------------- */
+async function deleteComment(req, res) {
+  try {
+    const userId = ensureAuthUser(req);
+    const { postId, commentId } = req.params;
+
+    if (!Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ ok: false, message: 'ID de comentario inválido' });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({ ok: false, message: 'Comentario no encontrado' });
+    }
+
+    // Verificar que sea el dueño del comentario O del post
+    const post = await Post.findById(postId);
+    const isCommentOwner = String(comment.userId) === String(userId);
+    const isPostOwner = post && String(post.userId) === String(userId);
+
+    if (!isCommentOwner && !isPostOwner) {
+      return res.status(403).json({ ok: false, message: 'No autorizado' });
+    }
+
+    await Comment.findByIdAndDelete(commentId);
+
+    // Actualizar contador en el post
+    if (post) {
+      post.counts.comments = Math.max(0, (post.counts.comments || 0) - 1);
+      await post.save();
+    }
+
+    console.log('✅ Comentario eliminado:', commentId);
+
+    res.json({ ok: true, message: 'Comentario eliminado' });
+  } catch (err) {
+    if (err.message === 'NO_AUTH') return res.status(401).json({ ok: false, message: 'No autenticado' });
+    console.error('[deleteComment] error', err);
+    res.status(500).json({ ok: false, message: 'Error al eliminar comentario' });
   }
 }
 
@@ -304,5 +449,7 @@ module.exports = {
   toggleLike,
   listComments,
   addComment,
-  getAnalysis // <-- exporta
+  deletePost,
+  deleteComment,
+  reanalyzePost
 };
