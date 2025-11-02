@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- Iconos Lucide -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   
   <!-- Pre-aplica el tema para evitar FOUC -->
   <script>
@@ -33,7 +33,8 @@
       </div>
       <div class="topbar-actions">
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
-          <i data-lucide="moon" style="width:18px;height:18px"></i>
+          <i class="nav-ico" data-lucide="moon"></i>
+          <span id="themeTxt">Modo oscuro</span>
         </button>
         <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
       </div>
@@ -193,27 +194,37 @@
   <script>
     // Toggle tema
     const themeBtn = document.getElementById('themeToggle');
+    const themeTxt = document.getElementById('themeTxt');
+
+    const labelFor = (t) => (t === 'dark' ? 'Modo claro' : 'Modo oscuro');
+
     function applyTheme(t){
       document.documentElement.setAttribute('data-theme', t);
       localStorage.setItem('theme', t);
+
       const icon = themeBtn?.querySelector('[data-lucide]');
-      if(icon){
-        icon.setAttribute('data-lucide', t==='dark' ? 'sun' : 'moon');
-        if(window.lucide) lucide.createIcons();
-      }
+      if (icon) icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
+
+      if (themeTxt) themeTxt.textContent = labelFor(t);
+      if (window.lucide) lucide.createIcons();
     }
+
     themeBtn?.addEventListener('click', ()=>{
       const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      applyTheme(current==='dark' ? 'light' : 'dark');
+      applyTheme(current === 'dark' ? 'light' : 'dark');
     });
-    // Inicializar icono correcto
-    (function(){ 
-      const t=document.documentElement.getAttribute('data-theme'); 
-      if(t==='dark'){
-        const icon = themeBtn?.querySelector('[data-lucide]');
-        if(icon) icon.setAttribute('data-lucide','sun');
-      }
-      if(window.lucide) lucide.createIcons();
+
+    // Inicializar icono + texto correctos al cargar
+    (function(){
+      const saved = localStorage.getItem('theme')
+        || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', saved);
+
+      const icon = themeBtn?.querySelector('[data-lucide]');
+      if (icon) icon.setAttribute('data-lucide', saved === 'dark' ? 'sun' : 'moon');
+
+      if (themeTxt) themeTxt.textContent = labelFor(saved);
+      if (window.lucide) lucide.createIcons();
     })();
 
     const API = (p)=>`${location.origin}/api${p}`;
