@@ -1,7 +1,6 @@
 // routes/auth.js
-const express = require('express');
+const router = require('express').Router();
 const { googleLogin } = require('../controllers/auth');
-const router = express.Router();
 
 router.post('/google', googleLogin);
 
