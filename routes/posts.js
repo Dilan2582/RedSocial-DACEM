@@ -1,30 +1,33 @@
-// routes/posts.js
 const express = require('express');
-const multer = require('multer');
 const { env } = require('../config/env');
 const ctrl = require('../controllers/posts');
+const auth = require('../middlewares/auth');
+const ensureAuth = auth.ensureAuth || auth;
 
-// Usa tu middleware real; ajusta el nombre si es distinto
-const auth = require('../middlewares/auth'); // ej. exporta ensureAuth
-const ensureAuth = auth.ensureAuth || auth;  // fallback
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: env.upload.maxMB * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (!env.upload.allowed.includes(file.mimetype)) {
-      return cb(new Error('MIME no permitido'));
-    }
-    cb(null, true);
-  }
-});
+// usa el middleware centralizado
+const { upload } = require('../middlewares/upload');
 
 const router = express.Router();
-router.post('/', ensureAuth, upload.single('image'), ctrl.createPost);
+
+// Obtener feed de posts (con paginación)
 router.get('/', ensureAuth, ctrl.getFeed);
+
+// Crear un nuevo post
+router.post('/', ensureAuth, upload.single('image'), ctrl.createPost);
+
+// Obtener un post específico
 router.get('/:id', ensureAuth, ctrl.getPostById);
+
+// Toggle like en un post
 router.post('/:id/likes/toggle', ensureAuth, ctrl.toggleLike);
+
+// Obtener comentarios de un post
 router.get('/:id/comments', ensureAuth, ctrl.listComments);
+
+// Agregar comentario a un post
 router.post('/:id/comments', ensureAuth, ctrl.addComment);
+
+// Análisis de imagen
+router.get('/:id/analysis', ensureAuth, ctrl.getAnalysis);
 
 module.exports = router;

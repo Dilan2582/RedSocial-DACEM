@@ -271,6 +271,8 @@ async function update(req, res) {
 }
 
 
+
+
 async function listOthers(req, res) {
   try {
     const uid = req.user?.id || req.user?.sub;
@@ -308,6 +310,32 @@ async function publicProfile(req, res) {
     return res.status(500).json({ ok:false, message:'Error al obtener perfil', error: e.message });
   }
 }
+// ✅ Helper para cargar ESM solo cuando se necesite
+async function getOAuth2Client() {
+  const mod = await import('google-auth-library');
+  return mod.OAuth2Client;
+}
+
+// Ejemplo de uso dentro de tu handler:
+async function loginWithGoogle(req, res) {
+  try {
+    const OAuth2Client = await getOAuth2Client();
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await client.verifyIdToken({
+      idToken: req.body.idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    // ... tu lógica con payload ...
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error('[loginWithGoogle]', e);
+    return res.status(500).json({ ok: false, message: 'Error en login con Google' });
+  }
+}
+
 
 // ---- re-export handler Google (si lo tienes) ----
 const { googleLogin } = require('./auth');

@@ -1,177 +1,407 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="es" data-theme="dark">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>DACEM</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>DACEM – Iniciar sesión</title>
 
-  <!-- Tus estilos generales -->
-  <link rel="stylesheet" href="css/login.css"/>
+  <!-- Fuente especial para el tagline -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&display=swap" rel="stylesheet">
 
-  <!-- Animaciones listas (clases tipo animate__fadeIn, animate__shakeX, etc.) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
-  <!-- AOS: revelado en scroll -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
-
-  <!-- Estilos del modal (ligeros, específicos) -->
   <style>
+    :root,[data-theme="dark"]{
+      --bg:#0b0f1a; --panel:#121a2a; --panel2:#0b1323;
+      --text:#e6edf7; --muted:#93a4bc; --line:#1f2a3a;
+      --accent:#60a5fa; --ring:rgba(96,165,250,.18);
+      --ok:#22c55e; --err:#ef4444;
+
+      /* Opción: GIF de burbujas (coloca img/bubbles.gif) */
+      --bubbles-gif:url("img/bubbles.gif");
+    }
+    [data-theme="light"]{
+      --bg:#f3f5fb; --panel:#ffffff; --panel2:#f7f9ff;
+      --text:#172033; --muted:#6b778c; --line:#dbe2f0;
+      --accent:#3b82f6; --ring:rgba(59,130,246,.18);
+      --ok:#16a34a; --err:#dc2626;
+      --bubbles-gif:none;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0}
+    body.auth-page{
+      background:var(--bg); color:var(--text);
+      font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      min-height:100svh;
+      display:grid !important;
+      place-items:center !important;
+      padding:12px !important;
+      overflow-y:auto;
+    }
+
+    /* ================= FONDO CON BURBUJAS ================= */
+    .fx-layer{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background:
+        radial-gradient(1200px 800px at 50% 100%, #0a1b35 0%, transparent 70%),
+        radial-gradient(800px 600px at 10% 10%,  rgba(124,92,252,.18) 0%, transparent 60%),
+        radial-gradient(900px 600px at 90% 20%, rgba(96,165,250,.14) 0%, transparent 60%);
+    }
+    /* Capa GIF opcional */
+    .fx-layer::after{
+      content:""; position:absolute; inset:0; opacity:.18; mix-blend-mode:screen;
+      background: var(--bubbles-gif) center/cover no-repeat;
+    }
+    /* Burbujas CSS */
+    .fx-bubbles{position:absolute; inset:0; overflow:hidden; filter:blur(.3px)}
+    .fx-bubbles span{
+      position:absolute; bottom:-80px; width:8px; height:8px; border-radius:999px;
+      background:radial-gradient(circle at 30% 30%, #cfe4ff, #7cc7ff 55%, #2a99ff 80%);
+      opacity:.9; animation:floatUp linear infinite;
+    }
+    /* 12 burbujas con variaciones */
+    .fx-bubbles span:nth-child(1){left:6%;  animation-duration:9s;  width:7px; height:7px}
+    .fx-bubbles span:nth-child(2){left:14%; animation-duration:11s; width:9px; height:9px}
+    .fx-bubbles span:nth-child(3){left:22%; animation-duration:10s; width:6px; height:6px}
+    .fx-bubbles span:nth-child(4){left:30%; animation-duration:12s; width:8px; height:8px}
+    .fx-bubbles span:nth-child(5){left:38%; animation-duration:9.5s; width:10px; height:10px}
+    .fx-bubbles span:nth-child(6){left:46%; animation-duration:13s; width:6px; height:6px}
+    .fx-bubbles span:nth-child(7){left:54%; animation-duration:10.5s; width:9px; height:9px}
+    .fx-bubbles span:nth-child(8){left:62%; animation-duration:12.5s; width:7px; height:7px}
+    .fx-bubbles span:nth-child(9){left:70%; animation-duration:11.5s; width:8px; height:8px}
+    .fx-bubbles span:nth-child(10){left:78%; animation-duration:9.8s; width:6px; height:6px}
+    .fx-bubbles span:nth-child(11){left:86%; animation-duration:12.2s; width:8px; height:8px}
+    .fx-bubbles span:nth-child(12){left:94%; animation-duration:10.2s; width:7px; height:7px}
+
+    @keyframes floatUp{
+      0%{transform:translateY(0) translateX(0) scale(1); opacity:.0}
+      10%{opacity:.9}
+      50%{transform:translateY(-45vh) translateX(12px) scale(1.05)}
+      100%{transform:translateY(-96vh) translateX(-8px) scale(1.1); opacity:0}
+    }
+
+    /* ================= Card de Login ================= */
+    .auth-shell{ 
+      width:100%; 
+      max-width:380px;
+      display:grid; 
+      place-items:center; 
+      position:relative; 
+      z-index:1;
+      margin:0;
+    }
+    .card{
+      width:min(380px, 100%); background:linear-gradient(180deg, rgba(139,92,246,.10), var(--panel) 28%);
+      border:1px solid rgba(132,94,247,.28);
+      border-radius:16px; padding:22px 20px;
+      box-shadow:
+        0 0 0 1px rgba(132,94,247,.06) inset,
+        0 18px 60px rgba(12,18,35,.8),
+        0 12px 36px rgba(124,92,252,.16);
+      animation:slideUp .45s ease both; position:relative;
+      backdrop-filter:saturate(120%) blur(6px);
+    }
+    .logo{display:grid; place-items:center; gap:10px; margin-bottom:12px}
+    .logo-badge{
+      width:100px;height:100px;border-radius:24px;
+      background:linear-gradient(135deg,#5aa0ff 0%,#7c6aff 60%,#a78bfa 100%);
+      display:grid;place-items:center; color:white; font-weight:800; font-size:18px;
+      box-shadow:0 16px 40px rgba(0,0,0,.45), 0 0 0 10px rgba(124,92,252,.08);
+      overflow:hidden; position:relative;
+    }
+    .logo-badge img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+    .logo-badge::after{
+      content:"";position:absolute;inset:0;border-radius:inherit;
+      box-shadow:inset 0 0 0 2px rgba(255,255,255,.06);
+    }
+    h2{margin:2px 0 8px; font-size:28px}
+    .tagline{
+      margin:8px 0 0; 
+      color:var(--text); 
+      text-align:center;
+      font-family:'Covered By Your Grace', cursive;
+      font-size:1.5rem;
+      font-weight:400;
+      letter-spacing:0.5px;
+      opacity:0.95;
+    }
+    p.muted{margin:6px 0 0; color:var(--muted); text-align:center}
+
+    label{display:block; margin:14px 0 6px; color:var(--muted); font-size:.95rem}
+    .input-wrap{position:relative}
+    .input-wrap svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.6}
+    input{
+      width:100%; padding:13px 12px 13px 42px; border-radius:12px; background:var(--panel2); color:var(--text);
+      border:1px solid var(--line); outline:none; transition:border-color .15s, box-shadow .15s, background .15s;
+      font-size:1rem;
+    }
+    input:focus{ border-color:var(--accent); box-shadow:0 0 0 4px var(--ring) }
+
+    /* Botón principal “Entrar” */
+    .btn{
+      appearance:none; border:0; cursor:pointer; width:100%;
+      padding:12px 16px; border-radius:999px; font-weight:700; color:#0c1220;
+      background:linear-gradient(135deg,#6aa8ff 0%,#7a66ff 50%,#a78bfa 100%);
+      box-shadow:0 8px 24px rgba(96,165,250,.20), 0 0 0 1px rgba(255,255,255,.04) inset;
+      transition:transform .08s ease, filter .15s ease, box-shadow .15s ease;
+      margin-top:10px;
+    }
+    .btn:hover{ filter:brightness(1.04); box-shadow:0 10px 28px rgba(96,165,250,.28), 0 0 0 1px rgba(255,255,255,.06) inset }
+    .btn:active{ transform:translateY(1px) }
+
+    .divider{display:flex; align-items:center; gap:10px; margin:16px 0; color:var(--muted)}
+    .divider::before,.divider::after{content:""; height:1px; flex:1; background:var(--line)}
+
+    .links{display:flex; justify-content:space-between; align-items:center; margin-top:12px}
+    .link{color:#a9c7ff; text-decoration:none}
+    .link:hover{text-decoration:underline}
+
+    #recaptcha-login, #recaptcha-register{ display:flex; justify-content:center; margin:8px 0; transform:scale(0.92) }
+
+    /* Modal registro */
     .modal-backdrop{
-      position:fixed; inset:0; background:#0008;
-      display:none; align-items:center; justify-content:center; z-index:60;
+      position:fixed; inset:0; background:#0008; display:none; align-items:center; justify-content:center; z-index:60;
     }
+    .modal-backdrop[data-open="true"]{ display:flex }
     .modal{
-      width:min(900px, 92vw); background:#0f1826; color:#e8eefc;
-      border:1px solid #1f2a3a; border-radius:14px; padding:28px; box-shadow:0 20px 60px #000a;
+      width:min(520px, 92vw); background:var(--panel); color:var(--text); border:1px solid var(--line);
+      border-radius:16px; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,.4); max-height:92vh; overflow:auto
     }
-    .modal .header{
-      display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+    .modal-head{display:flex; align-items:center; gap:8px; margin-bottom:10px}
+    .modal-head h3{margin:0; font-size:1.2rem}
+    .modal-close{margin-left:auto}
+    .grid-2{display:grid; gap:10px; grid-template-columns:1fr 1fr}
+    @media (max-width:680px){ .grid-2{ grid-template-columns:1fr } }
+    
+    /* Responsive para logo y tagline */
+    @media (max-width:480px){
+      .logo-badge{ width:85px; height:85px; border-radius:20px }
+      h2{ font-size:22px }
+      .tagline{ font-size:1.2rem }
+      .card{ padding:18px 16px }
     }
-    .modal .header h3{ margin:0; font-size:1.2rem; }
-    .modal .close{
-      border:none; background:#1e2a3a; color:#c9d7f2; border-radius:10px; padding:8px 12px; cursor:pointer;
+    @media (max-width:360px){
+      .logo-badge{ width:75px; height:75px; border-radius:18px }
+      h2{ font-size:20px }
+      .tagline{ font-size:1.1rem }
+      .card{ padding:16px 14px }
     }
-    .modal .grid{
-      display:grid; grid-template-columns:1fr 1fr; gap:14px;
+
+    @keyframes slideUp{from{opacity:0; transform:translateY(22px)} to{opacity:1; transform:none}}
+    @keyframes shakeX {
+      0%,100%{transform:translateX(0)}
+      10%,30%,50%,70%,90%{transform:translateX(-5px)}
+      20%,40%,60%,80%{transform:translateX(5px)}
     }
-    .modal .grid .form-group{ display:flex; flex-direction:column; gap:8px; }
-    .modal .actions{ margin-top:18px; display:flex; gap:10px; }
-    @media (max-width: 720px){
-      .modal{ padding:18px; }
-      .modal .grid{ grid-template-columns:1fr; }
-    }
+    .shake{animation:shakeX .45s}
   </style>
 </head>
-<body>
-  <header class="page-header">
-    <h1>Mi Red Social DACEM</h1>
-    <p> </p>
-  </header>
+<body class="auth-page">
+  <!-- FONDO EFECTO BURBUJAS -->
+  <div class="fx-layer">
+    <div class="fx-bubbles">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+  </div>
 
-  <main class="container">
-    <!-- Tarjeta de LOGIN -->
-    <section
-      class="card login-card animate__animated"
-      id="loginCard"
-      data-aos="fade-up"
-    >
-      <h2>Iniciar sesión</h2>
+  <main class="auth-shell">
+    <section class="card" id="loginCard">
+      <!-- Tema -->
+      <button id="themeToggle" style="position:absolute;top:16px;right:16px;background:transparent;border:1px solid var(--line);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s ease" title="Cambiar tema">
+        <span id="themeIcon" style="display:flex;align-items:center;justify-content:center"></span>
+      </button>
 
-      <div class="form-group">
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-badge">
+          <img src="img/Dacem.png" alt="DACEM logo">
+        </div>
+        <h2>DACEM</h2>
+        <p class="tagline">Conecta. Descubre. Inspira</p>
+      </div>
+
+      <!-- Form -->
+      <form onsubmit="login(event)">
         <label for="identifier">Apodo o Email</label>
-        <input id="identifier" type="text" placeholder="tu apodo o email"/>
-      </div>
+        <div class="input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="8" r="4"/></svg>
+          <input id="identifier" type="text" placeholder="tu apodo o email" required>
+        </div>
 
-      <div class="form-group">
         <label for="loginPassword">Contraseña</label>
-        <input id="loginPassword" type="password" placeholder="******"/>
-      </div>
+        <div class="input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="loginPassword" type="password" placeholder="••••••••" required>
+        </div>
 
-      <!-- reCAPTCHA (login) -->
-      <div id="recaptcha-login" style="margin:8px 0"></div>
+        <div id="recaptcha-login"></div>
 
-      <button class="btn primary" onclick="login()">Entrar</button>
-      <div id="loginMsg" class="msg"></div>
+        <button type="submit" class="btn">Entrar</button>
+        <div id="loginMsg" class="msg"></div>
+      </form>
 
       <div class="divider"><span>o</span></div>
 
-      <!-- Botón de Google -->
-      <div
-        id="g_id_onload"
-        data-client_id="661877365139-mhu54lv2ng3hngf6b5be3merjiuba4b7.apps.googleusercontent.com"
-        data-callback="handleGoogleLogin"
-        data-auto_prompt="false">
-      </div>
+      <!-- Google GSI -->
+      <div id="g_id_onload"
+           data-client_id="661877365139-mhu54lv2ng3hngf6b5be3merjiuba4b7.apps.googleusercontent.com"
+           data-callback="handleGoogleLogin"
+           data-auto_prompt="false"></div>
       <div class="g_id_signin"
            data-type="standard"
            data-size="large"
            data-theme="outline"
            data-text="continue_with"
            data-shape="rectangular"
-           data-logo_alignment="left">
-      </div>
+           data-logo_alignment="left"
+           style="display:flex; justify-content:center"></div>
 
-      <p class="muted">
-        ¿No tienes cuenta? <a href="register.html">Crear cuenta</a>
-      </p>
+      <div class="links">
+        <a class="link" href="#" onclick="openRegisterModal(event)">Crear cuenta</a>
+        <a class="link" href="#">¿Olvidaste tu contraseña?</a>
+      </div>
     </section>
   </main>
 
+  <!-- Modal Registro -->
+  <div class="modal-backdrop" id="register-backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Crear cuenta</h3>
+        <button class="modal-close btn small ghost" onclick="closeRegisterModal()">✕</button>
+      </div>
+
+      <form onsubmit="register(event)">
+        <div class="grid-2">
+          <div>
+            <label for="firstName">Nombre</label>
+            <input id="firstName" type="text" placeholder="Tu nombre" required>
+          </div>
+          <div>
+            <label for="lastName">Apellido</label>
+            <input id="lastName" type="text" placeholder="Tu apellido" required>
+          </div>
+        </div>
+
+        <label for="nickname">Apodo</label>
+        <input id="nickname" type="text" placeholder="Tu apodo único" required>
+
+        <label for="email">Email</label>
+        <div class="input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" fill="none"/><path d="m22 6l-10 7L2 6"/></svg>
+          <input id="email" type="email" placeholder="tu@email.com" required>
+        </div>
+
+        <label for="password">Contraseña</label>
+        <div class="input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="password" type="password" placeholder="••••••••" required>
+        </div>
+
+        <label for="confirmPassword">Confirmar contraseña</label>
+        <div class="input-wrap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input id="confirmPassword" type="password" placeholder="••••••••" required>
+        </div>
+
+        <div id="recaptcha-register"></div>
+
+        <button type="submit" class="btn">Registrarse</button>
+        <div id="registerMsg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    // ====== Config ======
+    // Redirect si ya está logueado
+    if (localStorage.getItem('token')) location.href = 'user.html';
+
+    // THEME toggle
+    (function(){
+      const btn   = document.getElementById('themeToggle');
+      const icon  = document.getElementById('themeIcon');
+      const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+      const saved = localStorage.getItem('theme');
+      const start = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', start);
+      setBtn(start);
+
+      btn.addEventListener('click', () => {
+        const curr = document.documentElement.getAttribute('data-theme') || 'dark';
+        const next = curr === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        setBtn(next);
+      });
+
+      function setBtn(mode){
+        btn.title = mode === 'dark' ? 'Modo claro' : 'Modo oscuro';
+        icon.innerHTML = mode === 'dark'
+          ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`
+          : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3A7 7 0 0 0 21 12.79z"/></svg>`;
+      }
+    })();
+
+    // API
     const API_USER = `${location.origin}/api/user`;
     const API_AUTH = `${location.origin}/api/auth`;
-
-    // Tu site key de reCAPTCHA v2 (la misma que ya usabas y te funciona)
     const RECAPTCHA_SITE_KEY = "6LcMNc8rAAAAADgevHmG75S_cJPmydAOFEfo8lib";
 
-    // ====== reCAPTCHA: login y registro (render explícito) ======
+    // reCAPTCHA
     let widgetLogin = null;
     let widgetRegister = null;
     let registerRendered = false;
 
     function initRecaptcha() {
       try {
-        // Render del login inmediatamente
         widgetLogin = grecaptcha.render("recaptcha-login", {
           sitekey: RECAPTCHA_SITE_KEY,
-          theme: "light"
+          theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
         });
       } catch (e) {
         console.warn("[reCAPTCHA] login aún no disponible:", e);
       }
     }
-
     function ensureRegisterRecaptcha() {
       if (registerRendered) return;
       if (!window.grecaptcha || !grecaptcha.render) return;
       widgetRegister = grecaptcha.render("recaptcha-register", {
         sitekey: RECAPTCHA_SITE_KEY,
-        theme: "light"
+        theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
       });
       registerRendered = true;
     }
 
-    // ---------- Modal helpers ----------
-    function openRegisterModal() {
-      const bd = document.getElementById('register-backdrop');
-      bd.setAttribute('data-open', 'true');
-      document.body.classList.add('no-scroll');
-      ensureRegisterRecaptcha(); // monta el captcha del modal si falta
+    // Modales registro
+    function openRegisterModal(e){
+      e?.preventDefault?.();
+      document.getElementById('register-backdrop').setAttribute('data-open','true');
+      document.body.style.overflow='hidden';
+      ensureRegisterRecaptcha();
     }
-
-    function closeRegisterModal() {
-      const bd = document.getElementById('register-backdrop');
-      bd.removeAttribute('data-open');
-      document.body.classList.remove('no-scroll');
-
-      // reset visual + mensajes del modal
-      if (registerRendered && widgetRegister !== null) {
-        try { grecaptcha.reset(widgetRegister); } catch {}
-      }
+    function closeRegisterModal(){
+      document.getElementById('register-backdrop').removeAttribute('data-open');
+      document.body.style.overflow='auto';
       const msg = document.getElementById('registerMsg');
-      msg.textContent = '';
-      msg.className = 'msg';
+      msg.textContent=''; msg.className='msg';
+      if (registerRendered && widgetRegister!==null) try{grecaptcha.reset(widgetRegister)}catch{}
     }
 
-    // ---------- Utilidad mensajes ----------
-    function setMsg(el, text, isError = false) {
+    // Mensajes
+    function setMsg(el, text, isError=false){
       el.textContent = text;
-      el.className = "msg " + (isError ? "error" : "success");
-
-      // ✨ Animación de "shake" en error sin tocar el resto del flujo
-      if (isError) {
+      el.className = 'msg ' + (isError ? 'error' : 'success');
+      if (isError && el.id==='loginMsg'){
         const card = document.getElementById('loginCard');
-        if (card) {
-          card.classList.remove('animate__shakeX'); // reset
-          void card.offsetWidth;                    // reflow para reiniciar la animación
-          card.classList.add('animate__shakeX');    // dispara animación
-        }
+        card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
       }
     }
 
-    // ---------- Registro (en modal) ----------
-    async function register() {
+    // Registro
+    async function register(e){
+      e.preventDefault();
       const firstName = document.getElementById("firstName").value.trim();
       const lastName  = document.getElementById("lastName").value.trim();
       const nickname  = document.getElementById("nickname").value.trim();
@@ -180,120 +410,91 @@
       const confirm   = document.getElementById("confirmPassword").value;
       const msg = document.getElementById("registerMsg");
 
-      if (!firstName || !lastName || !nickname || !email || !password || !confirm) {
+      if (!firstName || !lastName || !nickname || !email || !password || !confirm)
         return setMsg(msg, "Todos los campos son obligatorios", true);
-      }
-      if (password !== confirm) {
-        return setMsg(msg, "Las contraseñas no coinciden.", true);
-      }
+      if (password !== confirm)
+        return setMsg(msg, "Las contraseñas no coinciden", true);
 
-      const recaptchaToken = (registerRendered && widgetRegister !== null)
-        ? grecaptcha.getResponse(widgetRegister)
-        : "";
-      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
+      const recaptchaToken = (registerRendered && widgetRegister !== null) ? grecaptcha.getResponse(widgetRegister) : "";
+      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA", true);
 
-      try {
+      try{
         const res = await fetch(`${API_USER}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ firstName, lastName, nickname, email, password, recaptchaToken })
         });
-        const data = await res.json().catch(() => ({}));
-        console.log("[REGISTER] status", res.status, "data", data);
-
-        if (res.ok && data.ok) {
-          setMsg(msg, "Usuario registrado ✅");
-          // opcional: cerrar modal a los 700ms
+        const data = await res.json().catch(()=>({}));
+        if (res.ok && data.ok){
+          setMsg(msg, "Usuario registrado ✓");
           setTimeout(closeRegisterModal, 700);
-        } else {
+        }else{
           setMsg(msg, data.message || `Error ${res.status}`, true);
-          if (data.details) console.warn("[REGISTER] recaptcha details:", data.details);
         }
-      } catch (e) {
-        console.error("[REGISTER] fetch error:", e);
-        setMsg(msg, "Error de conexión.", true);
-      } finally {
-        if (registerRendered && widgetRegister !== null) {
-          try { grecaptcha.reset(widgetRegister); } catch {}
-        }
+      }catch(e){
+        console.error("[REGISTER] error:", e);
+        setMsg(msg, "Error de conexión", true);
+      }finally{
+        if (registerRendered && widgetRegister !== null) { try{ grecaptcha.reset(widgetRegister) }catch{} }
       }
     }
 
-    // ---------- Login ----------
-    async function login() {
+    // Login
+    async function login(e){
+      e.preventDefault();
       const identifier = document.getElementById("identifier").value.trim();
       const password   = document.getElementById("loginPassword").value;
       const msg = document.getElementById("loginMsg");
 
-      if (!identifier || !password) {
+      if (!identifier || !password)
         return setMsg(msg, "Ingresa apodo/email y contraseña", true);
-      }
 
       const recaptchaToken = widgetLogin !== null ? grecaptcha.getResponse(widgetLogin) : "";
-      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA.", true);
+      if (!recaptchaToken) return setMsg(msg, "Por favor marca el reCAPTCHA", true);
 
-      try {
+      try{
         const res = await fetch(`${API_USER}/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ identifier, password, recaptchaToken })
         });
-        const data = await res.json().catch(() => ({}));
-        console.log("[LOGIN] status", res.status, "data", data);
-
-        if (res.ok && data.ok) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          setMsg(msg, "Login exitoso ✅");
-          setTimeout(() => (window.location.href = "user.html"), 600);
-        } else {
+        const data = await res.json().catch(()=>({}));
+        if (res.ok && data.ok){
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          setMsg(msg, "Login exitoso ✓");
+          setTimeout(()=> location.href='user.html', 600);
+        }else{
           setMsg(msg, data.message || `Error ${res.status}`, true);
-          if (data.details) console.warn("[LOGIN] recaptcha details:", data.details);
         }
-      } catch (e) {
-        console.error("[LOGIN] fetch error:", e);
-        setMsg(msg, "Error de conexión.", true);
-      } finally {
-        if (widgetLogin !== null) {
-          try { grecaptcha.reset(widgetLogin); } catch {}
-        }
+      }catch(e){
+        console.error("[LOGIN] error:", e);
+        setMsg(msg, "Error de conexión", true);
+      }finally{
+        if (widgetLogin !== null) { try{ grecaptcha.reset(widgetLogin) }catch{} }
       }
     }
 
-    // ---------- Google Login callback ----------
-    async function handleGoogleLogin(response) {
-      const id_token = response.credential;
-      try {
+    // Google Login
+    async function handleGoogleLogin(response){
+      const id_token = response?.credential;
+      try{
         const res = await fetch(`${API_AUTH}/google`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ id_token })
         });
-        const data = await res.json();
-        if (data.ok) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("user", JSON.stringify(data.user));
-          window.location.href = "user.html";
-        } else {
+        const data = await res.json().catch(()=>({}));
+        if (data.ok){
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          location.href = 'user.html';
+        }else{
           alert("Error con Google login: " + (data.message || "Desconocido"));
         }
-      } catch {
-        alert("Fallo conexión con backend /api/auth/google");
-      }
+      }catch{ alert("Fallo conexión con backend /api/auth/google"); }
     }
+    window.handleGoogleLogin = handleGoogleLogin;
   </script>
 
-  <!-- AOS JS + init -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-  <script>
-    AOS.init({
-      once: true,
-      duration: 700,
-      easing: 'ease-out'
-    });
-  </script>
-
-  <!-- Cargar scripts UNA sola vez y al final -->
+  <!-- Scripts externos -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://www.google.com/recaptcha/api.js?onload=initRecaptcha&render=explicit" async defer></script>
 </body>

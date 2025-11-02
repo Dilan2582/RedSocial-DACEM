@@ -4,39 +4,37 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Perfil – DACEM</title>
+  
+  <!-- Fuente Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  
+  <!-- Pre-aplica el tema para evitar FOUC -->
+  <script>
+    (function(){
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  
   <link rel="stylesheet" href="css/profile.css">
-  <style>
-    /* IG grid compacto */
-    #profilePosts{ max-width:935px; margin:0 auto }
-    .grid-ig{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px }
-    .ig-item{ position:relative; aspect-ratio:1/1; overflow:hidden; border-radius:12px; background:var(--panel2) }
-    .ig-item img{ width:100%; height:100%; object-fit:cover; display:block }
-    @media (max-width:1024px){ #profilePosts{ max-width:90vw } }
-
-    /* Modal tipo Instagram */
-    .lightbox{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:60 }
-    .lightbox[aria-hidden="false"]{ display:flex }
-    .lb-content{ position:relative; width:min(935px,96vw); height:min(90vh,820px); display:flex; background:var(--panel); border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.35) }
-    .lb-media{ flex:1 1 65%; background:#000; display:flex; align-items:center; justify-content:center }
-    .lb-media img{ max-width:100%; max-height:100%; object-fit:contain; display:block }
-    .lb-side{ flex:1 1 35%; display:flex; flex-direction:column; border-left:1px solid var(--line); background:var(--panel) }
-    .lb-head{ display:flex; align-items:center; gap:10px; padding:12px; border-bottom:1px solid var(--line) }
-    .lb-ava{ width:36px; height:36px; border-radius:999px; object-fit:cover }
-    .lb-body{ flex:1; overflow:auto; padding:12px }
-    .lb-cmt{ margin-bottom:10px; line-height:1.35 }
-    .lb-cmt .nm{ font-weight:600; margin-right:8px }
-    .lb-cmt .dt{ color:var(--muted); font-size:12px; margin-left:8px }
-    .lb-input{ display:flex; gap:8px; padding:10px; border-top:1px solid var(--line) }
-    .lb-input input{ flex:1; padding:10px 12px; border:1px solid var(--line); background:var(--panel2); color:var(--text); border-radius:10px }
-    .lb-close{ position:absolute; top:8px; right:8px }
-  </style>
 </head>
-<body>
+<body class="profile-page">
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand">DACEM</div>
+      <div class="brand">
+        <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM"></span>
+        DACEM
+      </div>
       <div class="topbar-actions">
+        <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
+          <i data-lucide="moon" style="width:18px;height:18px"></i>
+        </button>
         <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
       </div>
     </div>
@@ -44,51 +42,70 @@
 
   <div class="wrap">
     <div class="layout">
+      <!-- Sidebar -->
       <aside class="sidebar">
         <nav class="nav">
-          <a class="nav-item" href="user.html"><span class="nav-ico">🏠</span> Inicio</a>
-          <a class="nav-item active" href="profile.html"><span class="nav-ico">👤</span> Mi perfil</a>
+          <a class="nav-item" href="user.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Inicio
+          </a>
+          <a class="nav-item active" href="profile.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Mi perfil
+          </a>
         </nav>
       </aside>
 
       <!-- Main -->
       <main class="main">
-        <section class="cover"><div id="banner" class="cover-img"></div></section>
+        <!-- Header moradito con banner -->
+        <section class="profile-header">
+          <div class="banner" id="banner"></div>
 
-        <section class="head">
-          <div class="avatar">
-            <img id="avatarImg" class="avatar-img" alt="avatar">
-            <div id="avatarTxt" class="avatar-txt">U</div>
-          </div>
+          <div class="profile-info">
+            <div class="profile-header-top">
+              <img id="avatarImg" class="profile-avatar" alt="Avatar">
+              <div>
+                <h1 id="nameTxt">Perfil</h1>
+                <div class="profile-username">
+                  @<span id="usernameTxt">usuario</span>
+                  <span id="verified" class="badge" title="Verificado" style="display:none;">✔</span>
+                </div>
 
-          <div class="who">
-            <div class="name-row">
-              <span id="nameTxt" class="name">Perfil</span>
-              <span id="verified" class="badge" title="Verificado">✔</span>
+                <div class="profile-stats">
+                  <div class="stat">
+                    <strong id="followingCnt">0</strong>
+                    <span>siguiendo</span>
+                  </div>
+                  <div class="stat">
+                    <strong id="followersCnt">0</strong>
+                    <span>seguidores</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="profile-actions">
+                <button id="btnFollow" class="btn" style="display:none">Seguir</button>
+                <button id="btnEdit" class="btn ghost" style="display:none">Editar perfil</button>
+              </div>
             </div>
-            <div class="username">@<span id="usernameTxt">usuario</span></div>
-            <div class="counts">
-              <button class="link ghost" id="btnOpenFollowing"><b id="followingCnt">0</b> siguiendo</button> ·
-              <button class="link ghost" id="btnOpenFollowers"><b id="followersCnt">0</b> seguidores</button>
-            </div>
-          </div>
 
-          <div class="actions">
-            <button id="btnFollow" class="btn" style="display:none">Seguir</button>
-            <button id="btnEdit" class="btn secondary" style="display:none">Editar perfil</button>
+            <div class="profile-bio" id="bioTxt">NoBioYet</div>
           </div>
         </section>
 
-        <section class="card"><div class="bio" id="bioTxt">NoBioYet</div></section>
+        <!-- Publicaciones (moradito sutil) -->
+        <section class="posts-section" id="profilePosts">
+          <h2>Publicaciones</h2>
+          <div class="posts-grid grid-ig" id="gridIg"></div>
+        </section>
       </main>
     </div>
   </div>
-
-  <!-- Grid de publicaciones -->
-  <section class="card" id="profilePosts">
-    <h3 style="margin:0 0 12px">Publicaciones</h3>
-    <div class="grid-ig" id="gridIg"></div>
-  </section>
 
   <!-- Visor post -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
@@ -112,21 +129,22 @@
     </div>
   </div>
 
-  <!-- MODAL EDITAR PERFIL -->
+  <!-- Modal Editar Perfil -->
   <div id="editModal" class="backdrop">
     <div class="modal">
       <div class="modal-head">
         <h3>Editar perfil</h3>
         <button class="btn ghost" id="closeEdit">Cerrar</button>
       </div>
+
       <div class="modal-body">
-        <div class="banner-edit">
+        <div>
           <div id="bannerPreview" class="banner-preview"></div>
           <input id="bannerFile" type="file" accept="image/*" hidden>
           <button class="btn" id="btnPickBanner">Cambiar banner</button>
         </div>
 
-        <div class="avatar-edit">
+        <div>
           <div class="avatar avatar-xl">
             <img id="avatarPreview" class="avatar-img" alt="">
             <div id="avatarPreviewTxt" class="avatar-txt">U</div>
@@ -150,7 +168,7 @@
     </div>
   </div>
 
-  <!-- MODAL FOLLOWERS / FOLLOWING -->
+  <!-- Modal Seguidores / Siguiendo -->
   <div id="followModal" class="backdrop">
     <div class="modal" style="max-width:640px">
       <div class="modal-head" style="justify-content:space-between; gap:12px;">
@@ -171,8 +189,33 @@
     </div>
   </div>
 
+  <!-- JS (idéntico al tuyo, solo funciona con los mismos IDs) -->
   <script>
-    // ===== Helpers / API =====
+    // Toggle tema
+    const themeBtn = document.getElementById('themeToggle');
+    function applyTheme(t){
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      const icon = themeBtn?.querySelector('[data-lucide]');
+      if(icon){
+        icon.setAttribute('data-lucide', t==='dark' ? 'sun' : 'moon');
+        if(window.lucide) lucide.createIcons();
+      }
+    }
+    themeBtn?.addEventListener('click', ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current==='dark' ? 'light' : 'dark');
+    });
+    // Inicializar icono correcto
+    (function(){ 
+      const t=document.documentElement.getAttribute('data-theme'); 
+      if(t==='dark'){
+        const icon = themeBtn?.querySelector('[data-lucide]');
+        if(icon) icon.setAttribute('data-lucide','sun');
+      }
+      if(window.lucide) lucide.createIcons();
+    })();
+
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
@@ -184,12 +227,13 @@
 
     let me=null, other=null, isFollowing=false;
 
-    const displayName = (u)=> u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || (u.nickname || 'Usuario');
-    const initialLetter= (u)=> (u.firstName?.[0] || u.name?.[0] || u.nickname?.[0] || 'U').toUpperCase();
+    const displayName = (u)=> u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario');
+    const initialLetter= (u)=> (u?.firstName?.[0] || u?.name?.[0] || u?.nickname?.[0] || 'U').toUpperCase();
     const abs = (url)=>!url ? '' : (url.startsWith('http') ? url : `${location.origin}${url.startsWith('/')?url:'/'+url}`);
+
     function setAvatarBox(imgEl, txtEl, u){
-      if (u.avatar){ imgEl.src = abs(u.avatar); imgEl.style.display='block'; txtEl.style.display='none'; }
-      else { imgEl.removeAttribute('src'); imgEl.style.display='none'; txtEl.textContent = initialLetter(u); txtEl.style.display='flex'; }
+      if (u?.avatar){ imgEl.src = abs(u.avatar); imgEl.style.display='block'; if(txtEl) txtEl.style.display='none'; }
+      else { imgEl.removeAttribute('src'); imgEl.style.display='none'; if(txtEl){ txtEl.textContent = initialLetter(u); txtEl.style.display='flex'; } }
     }
     function resolveAvatar(u){
       if (!u) return `https://api.dicebear.com/8.x/initials/svg?seed=U&radius=50&scale=110&fontWeight=700`;
@@ -198,7 +242,7 @@
       return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
     }
 
-    // ===== FOLLOW MODAL =====
+    /* ---------- Follow modal (idéntico a tu versión) ---------- */
     const followModal  = document.getElementById('followModal');
     const followTabs   = document.getElementById('followTabs');
     const followList   = document.getElementById('followList');
@@ -206,9 +250,7 @@
     const followSearch = document.getElementById('followSearch');
     document.getElementById('closeFollow').onclick = ()=> followModal.removeAttribute('data-open');
 
-    // Estado relación cacheado por id (si YO lo sigo)
-    const REL_STATE = new Map(); // id -> boolean
-
+    const REL_STATE = new Map();
     let FOLLOW_STATE = { tab:'followers', userId:null, cursor:null, cache:[] };
 
     function openFollowModal(tab, userId){
@@ -228,7 +270,6 @@
       const r = await fetch(url.toString(), { headers:H });
       const d = await r.json();
       if (!d.ok){ followList.innerHTML = '<div class="muted">No disponible</div>'; return; }
-
       if (first) { followList.innerHTML = ''; FOLLOW_STATE.cache = []; }
       (d.users || []).forEach(u => FOLLOW_STATE.cache.push(u));
       FOLLOW_STATE.cursor = d.nextCursor || null;
@@ -236,7 +277,6 @@
       renderFollowList();
     }
 
-    // Pide /user/:id/public para saber si YA lo sigo (followers tab)
     async function ensureFollowFlag(id){
       if (REL_STATE.has(id)) return REL_STATE.get(id);
       try{
@@ -278,36 +318,23 @@
         let followingNow = FOLLOW_STATE.tab === 'following' ? true : REL_STATE.get(u.id);
         const row = rowTemplate(u, !!followingNow);
         const btn = row.querySelector('.follow-toggle');
-
-        // Si estamos en "Seguidores" y no sabemos el estado, lo resolvemos y actualizamos el botón
         if (FOLLOW_STATE.tab === 'followers' && followingNow === undefined){
-          ensureFollowFlag(u.id).then(val=>{
-            const current = REL_STATE.get(u.id);
-            btn.textContent = current ? 'Dejar de seguir' : 'Seguir';
-          });
+          ensureFollowFlag(u.id).then(()=>{ btn.textContent = (REL_STATE.get(u.id) ? 'Dejar de seguir' : 'Seguir'); });
         }
-
         btn.onclick = async ()=>{
           btn.disabled = true;
           try{
-            // Usamos toggle; si 404, fallback manual POST/DELETE
             const r = await fetch(API(`/follow/toggle/${u.id}`), { method:'POST', headers:H });
             if (r.status !== 404){
-              const d = await r.json();
-              if (d.ok){
-                const newVal = FOLLOW_STATE.tab==='following' ? false : !(REL_STATE.get(u.id) || false);
-                REL_STATE.set(u.id, d.following ?? newVal);
-              }
+              const d = await r.json(); if (d.ok) REL_STATE.set(u.id, !!d.following);
             }else{
               const currently = FOLLOW_STATE.tab==='following' ? true : (REL_STATE.get(u.id) || false);
               const m = currently ? 'DELETE' : 'POST';
               const r2 = await fetch(API(`/follow/${u.id}`), { method:m, headers:H });
-              const d2 = await r2.json();
-              if (d2.ok) REL_STATE.set(u.id, !currently);
+              const d2 = await r2.json(); if (d2.ok) REL_STATE.set(u.id, !currently);
             }
           } finally {
             const now = REL_STATE.get(u.id) || false;
-            // Si estamos en "Siguiendo" y ya no sigo => elimino fila y bajo contador
             if (FOLLOW_STATE.tab==='following' && !now){
               row.remove();
               const cntEl = document.getElementById('followingCnt');
@@ -318,36 +345,38 @@
             btn.disabled = false;
           }
         };
-
         followList.appendChild(row);
       }
     }
 
     followMore.onclick = ()=> loadFollowPage(false);
     followSearch.oninput = ()=> renderFollowList();
-    followTabs.addEventListener('click', (e)=>{ const b=e.target.closest('button[data-tab]'); if(!b) return; openFollowModal(b.dataset.tab, FOLLOW_STATE.userId); });
+    followTabs.addEventListener('click', (e)=>{
+      const b=e.target.closest('button[data-tab]'); if(!b) return;
+      openFollowModal(b.dataset.tab, FOLLOW_STATE.userId);
+    });
 
-    document.getElementById('btnOpenFollowers').onclick = ()=>{
+    document.getElementById('btnOpenFollowers')?.addEventListener('click', ()=>{
       const uid = (viewId && viewId!==(me?._id||'')) ? viewId : (me?._id || '');
       openFollowModal('followers', uid);
-    };
-    document.getElementById('btnOpenFollowing').onclick = ()=>{
+    });
+    document.getElementById('btnOpenFollowing')?.addEventListener('click', ()=>{
       const uid = (viewId && viewId!==(me?._id||'')) ? viewId : (me?._id || '');
       openFollowModal('following', uid);
-    };
+    });
 
-    // ===== Perfil =====
+    /* ---------- Perfil ---------- */
     function paintProfile(u, counts){
       const hasBanner = !!u.banner;
-      $('#banner').style.backgroundImage = hasBanner ? `url(${abs(u.banner)})` : 'none';
-      document.querySelector('.main').classList.toggle('has-banner', hasBanner);
-      $('#nameTxt').textContent = displayName(u);
-      $('#usernameTxt').textContent = u.nickname || 'usuario';
-      $('#followersCnt').textContent = counts?.followers ?? 0;
-      $('#followingCnt').textContent = counts?.following ?? 0;
-      $('#verified').style.display = u.isVerified ? 'inline' : 'none';
-      setAvatarBox($('#avatarImg'), $('#avatarTxt'), u);
-      $('#bioTxt').textContent = (u.bio && u.bio.trim()) ? u.bio : 'NoBioYet';
+      document.getElementById('banner').style.backgroundImage = hasBanner ? `url(${abs(u.banner)})` : 'none';
+      document.querySelector('.main').classList.toggle('has-banner', hasBanner); // inofensivo
+      document.getElementById('nameTxt').textContent = displayName(u);
+      document.getElementById('usernameTxt').textContent = u.nickname || 'usuario';
+      document.getElementById('followersCnt').textContent = counts?.followers ?? 0;
+      document.getElementById('followingCnt').textContent = counts?.following ?? 0;
+      document.getElementById('verified').style.display = u.isVerified ? 'inline' : 'none';
+      setAvatarBox(document.getElementById('avatarImg'), null, u);
+      document.getElementById('bioTxt').textContent = (u.bio && u.bio.trim()) ? u.bio : 'NoBioYet';
     }
 
     async function loadMe(){
@@ -365,7 +394,8 @@
     }
 
     async function toggleFollow(){
-      $('#btnFollow').disabled = true;
+      const btn = document.getElementById('btnFollow');
+      btn.disabled = true;
       const tryToggle = await fetch(API(`/follow/toggle/${other._id}`), { method:'POST', headers:H });
       if (tryToggle.status !== 404){
         const d = await tryToggle.json(); if (d.ok) isFollowing = !isFollowing;
@@ -373,40 +403,39 @@
         const r = await fetch(API(`/follow/${other._id}`), { method: isFollowing ? 'DELETE' : 'POST', headers:H });
         const d = await r.json(); if (d.ok) isFollowing = !isFollowing;
       }
-      $('#btnFollow').textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
-      $('#btnFollow').disabled = false;
+      btn.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+      btn.disabled = false;
     }
 
-    // ===== Editar perfil =====
-    const modal = $('#editModal');
+    /* ---------- Editar perfil ---------- */
+    const modal = document.getElementById('editModal');
     const openModal  = ()=> modal.setAttribute('data-open','true');
     const closeModal = ()=> modal.removeAttribute('data-open');
-    $('#closeEdit').onclick = closeModal;
+    document.getElementById('closeEdit').onclick = closeModal;
 
     function prefillEdit(){
-      $('#bannerPreview').style.backgroundImage = me.banner ? `url(${abs(me.banner)})` : 'none';
-      setAvatarBox($('#avatarPreview'), $('#avatarPreviewTxt'), me);
-      $('#nicknameInp').value = me.nickname || '';
-      $('#bioInp').value = me.bio || '';
-      $('#saveMsg').textContent = '';
+      document.getElementById('bannerPreview').style.backgroundImage = me.banner ? `url(${abs(me.banner)})` : 'none';
+      setAvatarBox(document.getElementById('avatarPreview'), document.getElementById('avatarPreviewTxt'), me);
+      document.getElementById('nicknameInp').value = me.nickname || '';
+      document.getElementById('bioInp').value = me.bio || '';
+      document.getElementById('saveMsg').textContent = '';
     }
-    $('#btnPickBanner').onclick = ()=> $('#bannerFile').click();
-    $('#btnPickAvatar').onclick = ()=> $('#avatarFile').click();
+    document.getElementById('btnPickBanner').onclick = ()=> document.getElementById('bannerFile').click();
+    document.getElementById('btnPickAvatar').onclick = ()=> document.getElementById('avatarFile').click();
 
-    $('#bannerFile').addEventListener('change', async (e)=>{
+    document.getElementById('bannerFile').addEventListener('change', async (e)=>{
       const f = e.target.files?.[0]; if(!f) return;
       const fd = new FormData(); fd.append('banner', f);
       const r = await fetch(API('/user/me/banner'), { method:'PUT', headers:H, body:fd });
       const d = await r.json();
       if (d.ok){
-        $('#bannerPreview').style.backgroundImage = `url(${d.banner})`;
-        $('#banner').style.backgroundImage = `url(${d.banner})`;
-        document.querySelector('.main').classList.add('has-banner');
+        document.getElementById('bannerPreview').style.backgroundImage = `url(${d.banner})`;
+        document.getElementById('banner').style.backgroundImage = `url(${d.banner})`;
       }
       e.target.value = '';
     });
 
-    $('#avatarFile').addEventListener('change', async (e)=>{
+    document.getElementById('avatarFile').addEventListener('change', async (e)=>{
       const f = e.target.files?.[0]; if(!f) return;
       const fd = new FormData(); fd.append('avatar', f);
       const r = await fetch(API('/user/me/avatar'), { method:'POST', headers:H, body:fd });
@@ -420,32 +449,33 @@
       const d = await r.json();
       if (d.ok){ me = d.user; paintProfile(me, d.counts); prefillEdit(); }
     }
-    $('#btnSave').onclick = async ()=>{
-      $('#saveMsg').textContent = 'Guardando...';
-      const payload = { nickname: $('#nicknameInp').value.trim(), bio: $('#bioInp').value.trim() };
+    document.getElementById('btnSave').onclick = async ()=>{
+      document.getElementById('saveMsg').textContent = 'Guardando...';
+      const payload = { nickname: document.getElementById('nicknameInp').value.trim(), bio: document.getElementById('bioInp').value.trim() };
       const r = await fetch(API('/user/update'), { method:'PUT', headers:JH, body:JSON.stringify(payload) });
       const d = await r.json();
-      $('#saveMsg').textContent = d.ok ? 'Guardado' : (d.message || 'Error');
+      document.getElementById('saveMsg').textContent = d.ok ? 'Guardado' : (d.message || 'Error');
       if (d.ok) await refreshMe();
     };
 
-    // ===== Init =====
+    /* ---------- Init ---------- */
     (async ()=>{
       const meData = await loadMe();
       const myId = meData.user._id?.toString?.() || meData.user.id || '';
-
       if (viewId && viewId !== myId){
         const { user, counts } = await loadOther(viewId);
         paintProfile(user, counts);
-        $('#btnEdit').style.display = 'none';
-        $('#btnFollow').style.display = 'inline-block';
-        $('#btnFollow').textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
-        $('#btnFollow').onclick = toggleFollow;
+        document.getElementById('btnEdit').style.display = 'none';
+        const bf = document.getElementById('btnFollow');
+        bf.style.display = 'inline-block';
+        bf.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
+        bf.onclick = toggleFollow;
       }else{
         paintProfile(meData.user, meData.counts);
-        $('#btnFollow').style.display = 'none';
-        $('#btnEdit').style.display = 'inline-block';
-        $('#btnEdit').onclick = ()=>{ prefillEdit(); openModal(); };
+        document.getElementById('btnFollow').style.display = 'none';
+        const be = document.getElementById('btnEdit');
+        be.style.display = 'inline-block';
+        be.onclick = ()=>{ prefillEdit(); openModal(); };
       }
     })();
 
@@ -454,7 +484,7 @@
       localStorage.removeItem('token'); localStorage.removeItem('user'); location.replace('index.html');
     });
 
-    // ===== Grid + modal de post =====
+    /* ---------- Grid + modal de post ---------- */
     const grid = document.getElementById('gridIg');
     const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
@@ -471,7 +501,6 @@
       if (d.ok){ userCache.set(uId, d.user); return d.user; }
       return null;
     }
-
     async function listPostComments(postId){
       const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
       const d = await r.json();
@@ -502,8 +531,12 @@
       const url = new URL(API('/posts')); url.searchParams.set('userId', uid); url.searchParams.set('limit', '36');
       const r = await fetch(url, { headers:H }); const d = await r.json(); grid.innerHTML='';
       if (!d.ok || !d.posts?.length){ grid.innerHTML = '<div class="muted">Aún no hay publicaciones.</div>'; return; }
-      d.posts.forEach(p=>{ const a=document.createElement('a'); a.href='#'; a.className='ig-item';
-        a.innerHTML=`<img src="${p.media.thumb}" alt="">`; a.addEventListener('click', ev=>{ ev.preventDefault(); openPostModal(p); }); grid.appendChild(a); });
+      d.posts.forEach(p=>{
+        const a=document.createElement('a'); a.href='#'; a.className='ig-item';
+        a.innerHTML=`<img src="${p.media.thumb}" alt="">`;
+        a.addEventListener('click', ev=>{ ev.preventDefault(); openPostModal(p); });
+        grid.appendChild(a);
+      });
     }
 
     async function openPostModal(p){
@@ -513,16 +546,18 @@
       lbAva.src  = resolveAvatar(u); lbName.textContent = display; lbUser.textContent = u ? `@${u.nickname || 'usuario'}` : '';
       const comments = await listPostComments(p.id); const authors = new Map(); if (u) authors.set(String(p.userId), u);
       renderComments(comments, authors);
-      lbSend.onclick = async ()=>{ const t = lbInp.value.trim(); if (!t) return;
+      lbSend.onclick = async ()=>{
+        const t = lbInp.value.trim(); if (!t) return;
         const c = await addPostComment(p.id, t);
-        if (c){ lbInp.value=''; comments.push(c); renderComments(comments, authors); } };
+        if (c){ lbInp.value=''; comments.push(c); renderComments(comments, authors); }
+      };
       lb.setAttribute('aria-hidden','false');
     }
     function closePostModal(){ lb.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML=''; }
-    lbClose.onclick = closePostModal; lb.addEventListener('click',(e)=>{ if(e.target===lb) closePostModal(); });
+    lbClose.onclick = closePostModal;
+    lb.addEventListener('click',(e)=>{ if(e.target===lb) closePostModal(); });
     document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && lb.getAttribute('aria-hidden')==='false') closePostModal(); });
 
-    // Cargar publicaciones del usuario (grid)
     (async ()=>{
       const meResp = await fetch(API('/user/me'), { headers:H });
       const meData = await meResp.json();
@@ -531,5 +566,10 @@
       await loadProfilePostsIG(uid);
     })();
   </script>
+
+  <!-- Footer -->
+  <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">
+    © 2025 Proyecto Desarrollo Web - Desarrollado por Dilan Escobar y Andrea Chafolla
+  </footer>
 </body>
 </html>
