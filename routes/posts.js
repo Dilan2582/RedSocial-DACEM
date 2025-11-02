@@ -27,7 +27,13 @@ router.get('/:id/comments', ensureAuth, ctrl.listComments);
 // Agregar comentario a un post
 router.post('/:id/comments', ensureAuth, ctrl.addComment);
 
-// Análisis de imagen
-router.get('/:id/analysis', ensureAuth, ctrl.getAnalysis);
+// Eliminar un comentario
+router.delete('/:postId/comments/:commentId', ensureAuth, ctrl.deleteComment);
+
+// Eliminar un post
+router.delete('/:id', ensureAuth, ctrl.deletePost);
+
+// Re-analizar un post con Rekognition
+router.post('/:id/reanalyze', ensureAuth, ctrl.reanalyzePost);
 
 module.exports = router;

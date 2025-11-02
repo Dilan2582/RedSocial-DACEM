@@ -18,6 +18,7 @@ const env = {
   aws: {
     region: need('AWS_REGION'),
     bucket: need('S3_BUCKET'),
+    s3Bucket: need('S3_BUCKET'), // alias para compatibilidad
     accessKeyId: need('AWS_ACCESS_KEY_ID'),
     secretAccessKey: need('AWS_SECRET_ACCESS_KEY'),
     // admite S3_PUBLIC_BASE_URL o S3_PUBLIC_BASE
@@ -27,6 +28,14 @@ const env = {
       banners: process.env.S3_UPLOAD_PREFIX_BANNERS || 'banners/',
       posts:   process.env.S3_UPLOAD_PREFIX_POSTS   || 'posts/',
     },
+  },
+
+  rekognition: {
+    // 'full' = labels + moderation + faces (si detecta personas)
+    // 'lite' = solo labels básicos
+    // 'off' = desactivado
+    mode: process.env.REKOGNITION_MODE || 'full',
+    enabled: process.env.REKOGNITION_ENABLED !== 'false', // true por defecto
   },
 
   upload: {
