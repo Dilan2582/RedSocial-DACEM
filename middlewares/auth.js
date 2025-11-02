@@ -1,23 +1,33 @@
 // middlewares/auth.js
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 
 function auth(req, res, next) {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7).trim()
+    : null;
+
+  if (!token) {
+    return res.status(401).json({ ok: false, message: 'Falta token' });
+  }
+
   try {
-    const h = req.headers.authorization || '';
-    const token = h.startsWith('Bearer ') ? h.slice(7).trim() : h.trim();
-    if (!token) return res.status(401).json({ ok:false, message:'Falta token' });
+    const decoded = jwt.verify(token, JWT_SECRET);
 
-    const payload = jwt.verify(token, JWT_SECRET);
-    const id = payload.id || payload._id || payload.uid || payload.sub;
-    if (!id) return res.status(401).json({ ok:false, message:'Token sin id' });
+    // Aceptamos distintas variantes por compatibilidad, pero priorizamos "id"
+    const id = String(decoded.id || decoded.sub || decoded._id || decoded.uid || '');
+    if (!id) {
+      return res.status(401).json({ ok: false, message: 'Token inválido (sin id)' });
+    }
 
-    req.user = { ...payload, id, sub: id };
+    // Solo ponemos lo mínimo confiable en req.user
+    req.user = { id };
     next();
-  } catch {
-    res.status(401).json({ ok:false, message:'Token inválido' });
+  } catch (e) {
+    return res.status(401).json({ ok: false, message: 'Token inválido' });
   }
 }
 
-const ensureAuth = auth;
-module.exports = { auth, ensureAuth };
+module.exports = { auth, ensureAuth: auth };
