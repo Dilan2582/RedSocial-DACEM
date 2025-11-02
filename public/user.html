@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>DACEM – Inicio (Light/Dark + Lucide)</title>
+  <title>DACEM – Inicio</title>
 
   <!-- Fuente -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,9 +13,9 @@
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest" defer></script>
 
-  <!-- Pre-aplica el tema para evitar FOUC -->
+  <!-- Tema inicial para evitar FOUC -->
   <script>
-    (function(){
+    (function () {
       var saved = localStorage.getItem('theme');
       if(!saved){ saved = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
       document.documentElement.setAttribute('data-theme', saved);
@@ -23,7 +23,7 @@
   </script>
 
   <style>
-    /* ====== LIGHT TOKENS (Recroot-like) ====== */
+    /* ====== LIGHT ====== */
     :root{
       --bg:#f5f3ff; --bg2:#efeaff; --panel:#ffffff; --card:#ffffff;
       --line:rgba(16,24,40,.08);
@@ -31,10 +31,9 @@
       --primary:#7c5cfc; --primary2:#a855f7; --accent:#22d3ee;
       --ring:rgba(124,92,252,.28);
       --shadow:0 12px 28px rgba(2,6,23,.08);
-      --r:18px; --r2:22px;
+      --r:18px;
     }
-
-    /* ====== DARK TOKENS (Neo Purple) ====== */
+    /* ====== DARK (Neo-Purple) ====== */
     [data-theme="dark"]{
       --bg:#0a0b14; --bg2:#0d1022; --panel:#0f1324; --card:#11162b;
       --line:rgba(255,255,255,.08);
@@ -47,22 +46,19 @@
     html,body{height:100%}
     body{margin:0;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,Segoe UI,Roboto,Arial}
 
-    /* Glow background (light sutil, dark intenso) */
+    /* Fondo glow */
     body::before,body::after{content:"";position:fixed;inset:auto;pointer-events:none;z-index:-1}
     body::before{top:-15%;left:-10%;width:65vw;height:55vh;filter:blur(90px);
-      background:radial-gradient(50% 50% at 50% 50%, rgba(124,92,252,.28) 0%, rgba(124,92,252,0) 65%),
-                 radial-gradient(50% 50% at 20% 30%, rgba(168,85,247,.18) 0%, rgba(168,85,247,0) 70%)}
+      background:
+        radial-gradient(50% 50% at 50% 50%, rgba(124,92,252,.28) 0%, rgba(124,92,252,0) 65%),
+        radial-gradient(50% 50% at 20% 30%, rgba(168,85,247,.18) 0%, rgba(168,85,247,0) 70%);
+    }
     body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
-      background:radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,.18) 0%, rgba(34,211,238,0) 65%),
-                 radial-gradient(50% 50% at 70% 30%, rgba(168,85,247,.12) 0%, rgba(168,85,247,0) 70%)}
+      background:
+        radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,.18) 0%, rgba(34,211,238,0) 65%),
+        radial-gradient(50% 50% at 70% 30%, rgba(168,85,247,.12) 0%, rgba(168,85,247,0) 70%);
+    }
     [data-theme="dark"] body::before,[data-theme="dark"] body::after{display:none}
-    [data-theme="dark"] body{background:var(--bg)}
-    [data-theme="dark"] body::before{content:"";display:block;position:fixed;top:-20%;left:-10%;width:60vw;height:60vh;filter:blur(70px);z-index:-1;
-      background:radial-gradient(50% 50% at 50% 50%, rgba(139,92,246,.65) 0%, rgba(139,92,246,0) 65%),
-                 radial-gradient(50% 50% at 20% 30%, rgba(217,70,239,.45) 0%, rgba(217,70,239,0) 70%)}
-    [data-theme="dark"] body::after{content:"";display:block;position:fixed;right:-10%;top:10%;width:55vw;height:55vh;filter:blur(80px);z-index:-1;
-      background:radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,.35) 0%, rgba(34,211,238,0) 65%),
-                 radial-gradient(50% 50% at 70% 30%, rgba(217,70,239,.25) 0%, rgba(217,70,239,0) 70%)}
 
     /* Topbar */
     .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7));backdrop-filter: blur(10px);border-bottom:1px solid var(--line)}
@@ -70,56 +66,39 @@
     .topbar-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.3px}
     .logo-badge{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 0 0 6px rgba(124,92,252,.12),0 10px 25px rgba(124,92,252,.25);overflow:hidden;position:relative;display:grid;place-items:center}
-    .logo-badge img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+    .logo-badge img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
     .logo-badge::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px rgba(255,255,255,.06);pointer-events:none}
 
-    /* Buttons */
-    .btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;transition:.15s ease;font-size:.9rem;outline:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
-    .btn:active{transform:translateY(0);opacity:0.9}
+    /* Botones */
+    .btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;transition:.15s ease;font-size:.9rem;display:inline-flex;align-items:center;gap:8px}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.10)}
+    .btn:active{transform:translateY(0)}
     .btn:focus{outline:2px solid var(--ring);outline-offset:2px}
     .btn.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));border-color:transparent;color:#fff;box-shadow:0 8px 18px rgba(124,92,252,.28)}
-    .btn.primary:hover{box-shadow:0 12px 24px rgba(124,92,252,.35)}
-    .btn.primary:active{transform:translateY(0);box-shadow:0 4px 12px rgba(124,92,252,.25)}
     .btn.ghost{background:transparent;border:1px solid var(--line)}
-    .btn.ghost:hover{background:rgba(124,92,252,.08);border-color:rgba(124,92,252,.2)}
-    .btn.ghost:active{background:rgba(124,92,252,.15)}
     .btn.small{padding:8px 14px;font-size:.85rem}
     .btn.danger{background:#fee2e2;border-color:#fecaca;color:#7f1d1d}
     [data-theme="dark"] .btn.danger{background:#3b1d2a;border-color:#6b233a;color:#fce7f3}
-    [data-theme="dark"] .btn:hover{box-shadow:0 4px 12px rgba(0,0,0,.4)}
-
-    /* Evitar que se oculten elementos durante selección */
-    body * { user-select: none; }
-    .cmp-input, .post-caption, .lb-input input, input, textarea { user-select: text; }
-    a, button, .nav-item, .btn { user-select: none; pointer-events: auto; }
-    [data-lucide], .nav-ico, .btn-icon, svg, i { user-select: none; pointer-events: none; }
 
     /* Layout */
     .wrap{max-width:1200px;margin:0 auto;padding:28px 24px}
     .layout{display:grid;grid-template-columns:260px 1fr 340px;gap:28px}
     @media (max-width:1080px){ .layout{grid-template-columns:1fr;gap:24px} .sidebar{order:3} .aside{order:2} }
 
-    /* Surfaces */
     .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);transition:.2s ease}
     .card:hover{box-shadow:0 16px 40px rgba(124,92,252,.12)}
 
-    /* Sidebar nav */
+    /* Sidebar */
+    .sidebar{position:sticky; top:84px; align-self:start; height:max-content}
     .nav{display:grid;gap:10px;padding:14px}
     .nav-item{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;color:var(--text);text-decoration:none;border:1px solid transparent;transition:.15s ease}
     .nav-item:hover{background:rgba(124,92,252,.08);border-color:rgba(124,92,252,.15)}
     .nav-item.active{background:rgba(124,92,252,.15);border-color:rgba(124,92,252,.35);color:var(--primary)}
-    .nav-ico{width:22px;height:22px;display:inline-flex;margin-right:4px;align-items:center;justify-content:center}
+    .nav-ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center}
     .nav-ico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
-    .nav-item.active .nav-ico svg{stroke:var(--primary)}
 
-    /* Icon colors by theme */
-    :root .nav-ico svg, :root .btn-icon svg, :root .btn-icon i {
-      color: #1e293b;
-    }
-    [data-theme="dark"] .nav-ico svg, [data-theme="dark"] .btn-icon svg, [data-theme="dark"] .btn-icon i {
-      color: #ffffff;
-    }
+    /* Aside */
+    .aside{position:sticky; top:84px; align-self:start; height:max-content}
 
     /* Composer */
     .composer{padding:18px;display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:24px}
@@ -137,7 +116,6 @@
     /* Feed */
     .feed{display:grid;gap:20px}
     .post-card{overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);transition:.2s ease}
-    .post-card:hover{box-shadow:0 16px 40px rgba(124,92,252,.15)}
     .post-head{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
     .post-ava{width:44px;height:44px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--primary),var(--primary2))}
     .post-user{display:grid;line-height:1.2;flex:1}
@@ -146,21 +124,16 @@
     .post-userid{color:var(--muted);font-size:.85rem}
     .post-media{position:relative;background:#f6f7fb;cursor:pointer}
     [data-theme="dark"] .post-media{background:#0b0f1d}
-    .post-media img{display:block;width:100%;height:auto;object-fit:cover;transition:.3s ease}
-    .post-media:hover img{opacity:.95}
+    .post-media img{display:block;width:100%;height:auto;object-fit:cover}
     .post-media.ratio-square img{aspect-ratio:1/1}
     .post-media.ratio-portrait img{aspect-ratio:4/5}
     .post-media.ratio-landscape img{aspect-ratio:16/9}
     .post-actions{display:flex;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
-    .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:44px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;transition:.15s ease;outline:none}
+    .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:44px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;transition:.15s ease}
     .btn-icon:hover{background:rgba(124,92,252,.08)}
     .btn-icon:active{background:rgba(124,92,252,.15);transform:scale(0.95)}
-    .btn-icon:focus{outline:2px solid var(--ring);outline-offset:2px}
-    .btn-icon i,.btn-icon svg{width:24px;height:24px;pointer-events:none}
-    .btn-icon svg{stroke:currentColor;fill:none;stroke-width:2}
+    .btn-icon i,.btn-icon svg{width:24px;height:24px}
     .btn-icon[aria-pressed="true"]{color:var(--accent)}
-    .btn-icon[aria-pressed="true"] svg{fill:currentColor}
-    .btn-icon[aria-pressed="true"]:hover{background:rgba(34,211,238,.1)}
     .post-counts{color:var(--muted);font-size:.9rem;font-weight:600}
     .post-caption{padding:0 16px 16px;color:var(--text);line-height:1.5;font-size:.95rem}
 
@@ -169,7 +142,6 @@
     .person-row{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--panel);transition:.2s ease}
     .person-row:hover{background:rgba(124,92,252,.06);border-color:rgba(124,92,252,.25);box-shadow:0 4px 12px rgba(124,92,252,.1)}
     .p-top{display:flex;gap:12px;align-items:center;width:100%}
-    .p-avatar{flex-shrink:0}
     .p-avatar img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(124,92,252,.2)}
     .p-info{min-width:0;flex:1}
     .p-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-size:.95rem}
@@ -183,8 +155,8 @@
     .lb-content{display:grid;grid-template-columns:min(62vw,760px) 380px;gap:0;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
     @media (max-width:1080px){ .lb-content{grid-template-columns:1fr;max-height:85vh} }
     .lb-close{position:absolute;right:16px;top:16px;z-index:10}
-    .lb-media{background:#000;border-top-left-radius:20px;border-bottom-left-radius:20px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-    .lb-media img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain}
+    .lb-media{background:#000;display:flex;align-items:center;justify-content:center}
+    .lb-media img{display:block;max-width:100%;max-height:100%;object-fit:contain}
     .lb-side{display:grid;grid-template-rows:auto 1fr auto;background:var(--panel)}
     .lb-head{display:flex;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
     .lb-ava{width:40px;height:40px;border-radius:50%;object-fit:cover}
@@ -193,29 +165,45 @@
     .lb-cmt .nm{font-weight:700;color:var(--text)}
     .lb-cmt .dt{color:var(--muted);font-size:.85rem;white-space:nowrap}
     .lb-input{display:flex;gap:10px;padding:16px;border-top:1px solid var(--line)}
-    .lb-input input{flex:1;background:#f6f7fb;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px;outline:none}
-    [data-theme="dark"] .lb-input input{background:#0b0f1d}
+    .lb-input input{flex:1;background:#0b0f1d;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px}
     .lb-input input:focus{box-shadow:0 0 0 3px var(--ring)}
+
+    /* Responsive */
+    @media(max-width:1080px){
+      .wrap{padding:20px 16px}
+      .layout{grid-template-columns:1fr;gap:20px}
+      .sidebar,.aside{position:static}
+    }
+    @media(max-width:768px){
+      .topbar-inner{padding:10px 12px}
+      .composer{padding:14px;margin-bottom:16px}
+      .cmp-avatar{width:40px;height:40px}
+      .cmp-input{min-height:70px;padding:12px;font-size:0.9rem}
+      .feed{gap:16px}
+      .post-head{padding:12px}
+      .post-actions{padding:10px 12px}
+      .post-caption{padding:0 12px 12px;font-size:0.9rem}
+    }
     @media(max-width:600px){
-      .lb-content{grid-template-columns:1fr;max-height:90vh}
-      .lb-media{border-radius:20px 20px 0 0;border-bottom-left-radius:0}
-      .lb-side{border-top:1px solid var(--line)}
+      .btn{padding:7px 12px;font-size:0.85rem}
+      .cmp-input{min-height:60px}
+      .btn-icon{width:40px;height:36px}
+      .btn-icon i,.btn-icon svg{width:20px;height:20px}
     }
   </style>
 </head>
-<body class="profile-page">
+
+<body>
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <span class="logo-badge">
-          <img src="img/Dacem.png" alt="DACEM logo">
-        </span>
+        <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM logo"></span>
         <span>DACEM</span>
       </div>
       <div style="margin-left:auto" class="topbar-actions">
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
-          <i class="nav-ico" data-lucide="moon"></i> Modo oscuro
+          <i class="nav-ico" data-lucide="moon"></i> <span id="themeTxt">Modo oscuro</span>
         </button>
         <button id="logoutBtnTop" class="btn danger small">
           <i class="nav-ico" data-lucide="log-out"></i> Cerrar sesión
@@ -240,18 +228,19 @@
 
       <!-- Centro -->
       <main class="main">
-        <!-- Composer -->
         <section class="card composer" id="composer">
           <div class="cmp-row">
             <img id="cmpAvatar" class="cmp-avatar" alt="yo">
             <textarea id="cmpText" class="cmp-input" rows="2" placeholder="¿Qué estás pensando? (opcional)"></textarea>
           </div>
+
           <div id="cmpPreview" class="cmp-preview" style="display:none">
             <img id="cmpPreviewImg" alt="preview">
             <button id="cmpRemoveImg" class="btn ghost small">
               <i class="nav-ico" data-lucide="x"></i> Quitar
             </button>
           </div>
+
           <div class="cmp-tools">
             <input id="cmpFile" type="file" accept="image/*" hidden>
             <button id="cmpPick" class="btn ghost small">
@@ -272,7 +261,7 @@
         </div>
       </main>
 
-      <!-- Aside: Personas -->
+      <!-- Aside -->
       <aside class="aside">
         <div class="card" style="padding:18px">
           <h3 style="margin:0 0 16px;font-size:1rem;color:var(--text);font-weight:800">Personas sugeridas</h3>
@@ -282,7 +271,7 @@
     </div>
   </div>
 
-  <!-- Lightbox Post -->
+  <!-- Lightbox -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose">
@@ -300,9 +289,7 @@
         <div class="lb-body" id="lbComments"></div>
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
-          <button id="lbSend" class="btn">
-            <i class="nav-ico" data-lucide="send"></i>
-          </button>
+          <button id="lbSend" class="btn"><i class="nav-ico" data-lucide="send"></i></button>
         </div>
       </aside>
     </div>
@@ -310,28 +297,27 @@
 
   <!-- ===== JS ===== -->
   <script>
-    // Toggle tema
+    // Toggle tema (y texto)
     const themeBtn = document.getElementById('themeToggle');
+    const themeTxt = document.getElementById('themeTxt');
     function applyTheme(t){
       document.documentElement.setAttribute('data-theme', t);
       localStorage.setItem('theme', t);
       const icon = themeBtn?.querySelector('[data-lucide]');
-      if(icon) {
-        icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
-        if (window.lucide) lucide.createIcons();
-      }
+      if(icon) icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
+      themeTxt.textContent = t === 'dark' ? 'Modo claro' : 'Modo oscuro';
+      if (window.lucide) lucide.createIcons();
     }
     themeBtn?.addEventListener('click', ()=>{
-      const current = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+      const current = (document.documentElement.getAttribute('data-theme')||'dark');
       applyTheme(current==='dark' ? 'light' : 'dark');
     });
-    (function(){ const t=document.documentElement.getAttribute('data-theme'); if(t==='dark') document.querySelector('[data-lucide="moon"]').setAttribute('data-lucide','sun'); })();
+    (function(){ const t=document.documentElement.getAttribute('data-theme'); themeTxt.textContent = t==='dark' ? 'Modo claro' : 'Modo oscuro'; })();
 
     // ===== Helpers / API =====
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
-
     const H  = { 'Authorization':`Bearer ${token}` };
     const $  = s => document.querySelector(s);
 
@@ -345,57 +331,97 @@
     function timeAgo(iso){ try{ const d=new Date(iso); const s=(Date.now()-d)/1000; if(s<60) return 'ahora'; if(s<3600) return Math.floor(s/60)+' min'; if(s<86400) return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d'; }catch{ return ''; } }
 
     async function toggleFollow(id, isFollowing){
-      try{ const r = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H }); if (r.status !== 404){ const d = await r.json(); return !!d.ok; } }
-      catch{}
+      try{
+        const r = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H });
+        if (r.status !== 404){ const d = await r.json(); return !!d.ok; }
+      }catch{}
       if (!isFollowing){ const r = await fetch(API(`/follow/${id}`), { method:'POST', headers:H }); const d = await r.json(); return !!d.ok; }
       else { const r = await fetch(API(`/follow/${id}`), { method:'DELETE', headers:H }); const d = await r.json(); return !!d.ok; }
     }
+
     function personRow(u){
       const el = document.createElement('div');
       el.className = 'person-row';
       el.innerHTML = `
-        <div class="p-top">
-          <div class="p-avatar"><img src="${resolveAvatar(u)}" alt=""></div>
-          <div class="p-info">
-            <div class="p-name" title="${displayName(u)}">${displayName(u)}</div>
-            <div class="p-user" title="@${u.nickname || 'usuario'}">@${u.nickname || 'usuario'}</div>
-          </div>
+        <div class="p-avatar"><img src="${resolveAvatar(u)}" alt=""></div>
+        <div class="p-info">
+          <div class="p-name" title="${displayName(u)}">${displayName(u)}</div>
+          <div class="p-user" title="@${u.nickname || 'usuario'}">@${u.nickname || 'usuario'}</div>
         </div>
         <div class="p-actions">
-          <a class="btn ghost small" href="profile.html?id=${u._id}" style="text-decoration:none">Ver perfil</a>
-          <button class="btn small ${u.isFollowing?'ghost':'primary'}">${u.isFollowing?'Siguiendo':'Seguir'}</button>
+          <a class="btn ghost small" href="profile.html?id=${u._id || u.id}" style="text-decoration:none">Ver perfil</a>
+          <button class="btn small ${u.isFollowing ? 'ghost' : 'primary'}">
+            ${u.isFollowing ? 'Siguiendo' : 'Seguir'}
+          </button>
         </div>`;
       const btn = el.querySelector('button');
       btn.onclick = async () => {
         btn.disabled = true;
-        const ok = await toggleFollow(u._id, !!u.isFollowing);
-        if (ok){ 
-          u.isFollowing=!u.isFollowing; 
-          btn.textContent = u.isFollowing?'Siguiendo':'Seguir';
-          btn.className = `btn small ${u.isFollowing?'ghost':'primary'}`;
+        const ok = await toggleFollow(u._id || u.id, !!u.isFollowing);
+        if (ok){
+          u.isFollowing = !u.isFollowing;
+          btn.textContent = u.isFollowing ? 'Siguiendo' : 'Seguir';
+          btn.className = `btn small ${u.isFollowing ? 'ghost' : 'primary'}`;
         }
         btn.disabled = false;
       };
       return el;
     }
+
+    async function fetchSuggestedUsers(){
+      const endpoints = [
+        '/user/others',
+        '/users/others',
+        '/users/suggested',
+        '/user/suggested'
+      ];
+      for (const ep of endpoints){
+        try{
+          const r = await fetch(API(ep), { headers:H });
+          if (!r.ok) continue;
+          const d = await r.json().catch(()=>null);
+          const list = d?.users || d?.data || [];
+          if (Array.isArray(list) && list.length) return list;
+        }catch{}
+      }
+      return [];
+    }
+
     async function loadOthers(){
-      const list = document.querySelector('#peopleList'); if (!list) return;
+      const list = document.getElementById('peopleList');
+      if (!list) return;
+      list.innerHTML = '<div class="muted">Cargando…</div>';
+
+      const users = await fetchSuggestedUsers();
+
+      if (!users.length){
+        list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>';
+        return;
+      }
+
       list.innerHTML = '';
-      const r = await fetch(API('/user/others'), { headers:H });
-      const d = await r.json();
-      if(!d.ok || !d.users?.length){ list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>'; return; }
-      d.users.forEach(u => list.appendChild(personRow(u)));
+      users.forEach(u => {
+        // normaliza campos comunes
+        u._id = u._id || u.id;
+        u.isFollowing = !!(u.isFollowing || u.following || u.viewerFollows);
+        list.appendChild(personRow(u));
+      });
     }
 
     let me = null; const userCache = new Map();
     async function loadMe(){
       const r = await fetch(API('/user/me'), { headers:H });
-      const d = await r.json(); if(!d.ok){ localStorage.clear(); return location.replace('index.html'); }
+      const d = await r.json();
+      if(!d.ok){ localStorage.clear(); return location.replace('index.html'); }
       me = d.user; userCache.set(me._id, me);
       document.querySelector('#cmpAvatar').src = resolveAvatar(me);
     }
 
-    const cmp = { fileEl: document.querySelector('#cmpFile'), pick: document.querySelector('#cmpPick'), imgBox: document.querySelector('#cmpPreview'), img: document.querySelector('#cmpPreviewImg'), rm: document.querySelector('#cmpRemoveImg'), txt: document.querySelector('#cmpText'), post: document.querySelector('#cmpPost'), msg: document.querySelector('#cmpMsg') };
+    const cmp = {
+      fileEl: $('#cmpFile'), pick: $('#cmpPick'), imgBox: $('#cmpPreview'),
+      img: $('#cmpPreviewImg'), rm: $('#cmpRemoveImg'), txt: $('#cmpText'),
+      post: $('#cmpPost'), msg: $('#cmpMsg')
+    };
     let selectedFile = null;
     cmp.pick.onclick = ()=> cmp.fileEl.click();
     cmp.fileEl.onchange = e=>{
@@ -425,8 +451,6 @@
     const feedEl = document.querySelector('#feed');
     let nextCursor = null, loading = false;
 
-    function iconComment(){ return '<i data-lucide="message-circle"></i>'; }
-    function iconLike(){ return '<i data-lucide="heart"></i>'; }
     function ratioClass(w,h){ const r=w/h; if(r<0.95) return 'ratio-portrait'; if(r>1.6) return 'ratio-landscape'; return 'ratio-square'; }
 
     async function getUserCached(id){
@@ -489,8 +513,8 @@
         </header>
         <div class="post-media ${cls}"><img class="post-img" src="${p.media.thumb}" alt=""></div>
         <div class="post-actions">
-          <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta">${iconLike()}</button>
-          <button class="btn-icon btn-comment" title="Comentar">${iconComment()}</button>
+          <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta"><i data-lucide="heart"></i></button>
+          <button class="btn-icon btn-comment" title="Comentar"><i data-lucide="message-circle"></i></button>
           <div class="spacer"></div>
           <div class="post-counts"><span class="likes">${p.counts?.likes||0}</span> · <span class="comments">${p.counts?.comments||0}</span></div>
         </div>
@@ -499,13 +523,13 @@
       const likeBtn = el.querySelector('.btn-like'); const likesEl = el.querySelector('.likes');
       likeBtn.onclick = async ()=>{
         const pressed = likeBtn.getAttribute('aria-pressed')==='true';
-        likeBtn.setAttribute('aria-pressed',(!pressed)+'');
+        likeBtn.setAttribute('aria-pressed',(!pressed)+'' );
         likesEl.textContent=(+likesEl.textContent+(pressed?-1:1));
         try{
           const r=await fetch(API(`/posts/${p.id}/likes/toggle`), {method:'POST', headers:H});
           const d=await r.json(); if(!d.ok) throw 0;
         } catch{
-          likeBtn.setAttribute('aria-pressed',pressed+'');
+          likeBtn.setAttribute('aria-pressed',pressed+'' );
           likesEl.textContent=(+likesEl.textContent+(pressed?1:-1));
         }
       };
@@ -513,7 +537,6 @@
       el.querySelector('.btn-comment').onclick = ()=> openPostModal(p);
       el.querySelector('.post-img').onclick   = ()=> openPostModal(p);
 
-      // Inicializa iconos recién insertados
       if (window.lucide) lucide.createIcons();
       return el;
     }
@@ -543,18 +566,13 @@
     });
 
     (async ()=>{ await loadMe(); await loadOthers(); await loadFeed(true); })();
-    
-    // Initialize lucide icons after DOM is ready
-    if (window.lucide) {
-      window.addEventListener('load', () => lucide.createIcons());
-      // Also create icons on demand when new elements are added
-      const observer = new MutationObserver(() => {
-        if (window.lucide) lucide.createIcons();
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-    
-    document.getElementById('btnMore').onclick = ()=> loadFeed();
+
+    // Lucide
+    window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
   </script>
+
+  <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">
+    © 2025 Proyecto Desarrollo Web - Desarrollado por Dilan Escobar y Andrea Chafolla
+  </footer>
 </body>
 </html>

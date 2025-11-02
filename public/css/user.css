@@ -136,6 +136,53 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe
 .post-card .post-media.ratio-square{ aspect-ratio:1/1; max-height:80vh; }
 .post-card .post-media.ratio-landscape{ aspect-ratio:16/9; max-height:80vh; }
 
+/* === Post actions (likes y comentarios) === */
+.post-actions{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  border-top:1px solid var(--line);
+}
+.btn-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  border:none;
+  background:transparent;
+  color:var(--text);
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.btn-icon:hover{
+  background:rgba(124,92,252,.1);
+  transform:scale(1.1);
+}
+.btn-icon svg{
+  width:22px;
+  height:22px;
+  stroke:currentColor;
+}
+.btn-icon[aria-pressed="true"] svg{
+  fill:#ef4444;
+  stroke:#ef4444;
+}
+.spacer{flex:1}
+.post-counts{
+  color:var(--muted);
+  font-size:0.9rem;
+  font-weight:600;
+}
+.post-caption{
+  padding:0 16px 12px;
+  color:var(--text);
+  line-height:1.5;
+  font-size:0.95rem;
+}
+
 /* === IG grid (3 columnas, ancho 935px) === */
 #profilePosts { max-width: 935px; margin: 0 auto; }
 .grid-ig{
@@ -258,3 +305,284 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,Segoe
 .user-row .u-nick { color:var(--muted); font-size:.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .user-row .u-actions { display:flex; gap:8px; }
 .tabs .active { background: var(--line); }
+
+/* ===== RESPONSIVE ADICIONAL PARA USER.HTML ===== */
+
+/* Tablets (max-width: 1024px) */
+@media (max-width:1024px){
+  .wrap{ padding:0 16px; margin:16px auto }
+  .topbar-inner{ padding:10px 16px }
+}
+
+/* Mobile landscape (max-width: 768px) */
+@media (max-width:768px){
+  body{ font-size:15px }
+  
+  .topbar-inner{ padding:8px 12px }
+  .brand{ font-size:16px }
+  .topbar .btn.small{ padding:5px 10px; font-size:0.8rem }
+  
+  .wrap{ 
+    padding:0 12px; 
+    margin:12px auto;
+  }
+  
+  .layout{ 
+    grid-template-columns:1fr; 
+    gap:12px;
+  }
+  
+  .sidebar{ 
+    position:sticky; 
+    top:52px; 
+    background:var(--bg);
+    z-index:40;
+    padding:8px 0;
+    border-bottom:1px solid var(--line);
+  }
+  
+  .nav{ 
+    flex-direction:row; 
+    overflow-x:auto;
+    gap:6px;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .nav::-webkit-scrollbar{ display:none }
+  
+  .nav-item{ 
+    flex-shrink:0;
+    padding:10px 12px;
+    font-size:0.9rem;
+    white-space:nowrap;
+  }
+  
+  /* Cover/Banner mobile */
+  .cover{ 
+    aspect-ratio:2/1; 
+    max-height:200px;
+    border-radius:10px;
+  }
+  
+  /* Avatar y perfil mobile */
+  .head{ margin-top:8px; gap:12px; flex-wrap:wrap }
+  .avatar{ width:72px; height:72px }
+  .avatar-xl{ width:90px; height:90px }
+  .main.has-banner .head{ margin-top:-36px }
+  
+  .who{ flex:1; min-width:200px }
+  .name-row{ font-size:18px }
+  .username{ font-size:13px }
+  .counts{ font-size:13px; margin-top:8px }
+  
+  .actions{ 
+    width:100%; 
+    flex-wrap:wrap;
+    margin-left:0;
+  }
+  .actions .btn{ 
+    flex:1;
+    min-width:120px;
+  }
+  
+  /* Card y bio */
+  .card{ padding:14px; border-radius:10px; margin-top:12px }
+  .bio{ font-size:0.9rem; line-height:1.5 }
+  
+  /* Modal */
+  .modal{ 
+    width:95vw; 
+    padding:16px;
+    border-radius:12px;
+  }
+  .modal .grid{ 
+    grid-template-columns:1fr;
+    gap:10px;
+  }
+  .modal-body{ 
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  .banner-preview{ height:120px }
+  
+  /* Lightbox mobile */
+  .lb-content{ 
+    width:100vw; 
+    height:100vh;
+    border-radius:0;
+    flex-direction:column;
+  }
+  .lb-media{ 
+    flex:1 1 auto;
+    max-height:55vh;
+  }
+  .lb-side{ 
+    flex:0 0 auto;
+    border-left:none;
+    border-top:1px solid var(--line);
+    max-height:45vh;
+  }
+  .lb-close{ 
+    top:8px; 
+    right:8px;
+    width:32px;
+    height:32px;
+  }
+  
+  /* Grid reducido en mobile */
+  .grid-ig{ 
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+  }
+  .ig-item{ border-radius:8px }
+}
+
+/* Mobile portrait (max-width: 480px) */
+@media (max-width:480px){
+  body{ font-size:14px }
+  
+  .topbar-inner{ padding:6px 10px }
+  .brand{ font-size:15px }
+  .topbar .btn{ padding:6px 10px; font-size:0.8rem }
+  
+  .wrap{ 
+    padding:0 8px;
+    margin:8px auto;
+  }
+  
+  .layout{ gap:10px }
+  
+  .sidebar{ 
+    top:48px;
+    padding:6px 0;
+  }
+  
+  .nav{ gap:4px }
+  .nav-item{ 
+    padding:8px 10px;
+    font-size:0.85rem;
+  }
+  
+  /* Cover más pequeño */
+  .cover{ 
+    aspect-ratio:16/9;
+    max-height:150px;
+    border-radius:8px;
+  }
+  
+  /* Avatar pequeño */
+  .avatar{ width:60px; height:60px }
+  .avatar-xl{ width:72px; height:72px }
+  .main.has-banner .head{ margin-top:-30px }
+  
+  .head{ gap:8px }
+  .name-row{ font-size:16px }
+  .badge{ font-size:14px }
+  .username{ font-size:12px; margin-top:2px }
+  .counts{ font-size:12px }
+  
+  .actions{ gap:6px }
+  .actions .btn{ 
+    padding:7px 10px;
+    font-size:0.85rem;
+  }
+  
+  .card{ 
+    padding:12px;
+    margin-top:10px;
+  }
+  .bio{ font-size:0.85rem }
+  
+  /* Modal pequeño */
+  .modal{ 
+    width:98vw;
+    padding:12px;
+  }
+  .modal .header h3{ font-size:16px }
+  .modal .close{ padding:6px 10px; font-size:0.85rem }
+  .banner-preview{ height:100px; border-radius:8px }
+  .form label{ font-size:13px }
+  .form input, .form textarea{ 
+    padding:9px 10px;
+    font-size:13px;
+  }
+  
+  /* Lightbox extra pequeño */
+  .lb-media{ max-height:50vh }
+  .lb-side{ max-height:50vh }
+  .lb-head{ padding:10px }
+  .lb-ava{ width:32px; height:32px }
+  .lb-body{ padding:10px }
+  .lb-input{ padding:8px; gap:6px }
+  .lb-input input{ 
+    padding:8px 10px;
+    font-size:0.9rem;
+  }
+  .lb-cmt{ font-size:0.9rem; margin-bottom:8px }
+  
+  /* Grid más compacto */
+  .grid-ig{ 
+    grid-template-columns:repeat(3, 1fr);
+    gap:4px;
+  }
+  .ig-item{ border-radius:6px }
+  
+  /* User rows más pequeños */
+  .user-row{ padding:6px; gap:8px }
+  .user-row img{ width:36px; height:36px }
+  .user-row .u-name{ font-size:13px }
+  .user-row .u-nick{ font-size:11px }
+  .user-row .u-actions .btn{ 
+    padding:5px 8px;
+    font-size:0.75rem;
+  }
+}
+
+/* Extra small (max-width: 360px) */
+@media (max-width:360px){
+  .topbar-inner{ padding:6px 8px }
+  .brand{ font-size:14px }
+  
+  .wrap{ padding:0 6px }
+  
+  .cover{ 
+    max-height:120px;
+    border-radius:6px;
+  }
+  
+  .avatar{ width:52px; height:52px }
+  .avatar-xl{ width:60px; height:60px }
+  .main.has-banner .head{ margin-top:-26px }
+  
+  .name-row{ font-size:15px }
+  .username{ font-size:11px }
+  
+  .card{ padding:10px }
+  
+  .grid-ig{ gap:3px }
+  .ig-item{ border-radius:4px }
+  
+  .modal{ padding:10px }
+}
+
+/* People (sugeridos) – layout uniforme */
+.people-list{ display:flex; flex-direction:column; gap:12px }
+.person-row{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  padding:12px;
+  border-radius:14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+}
+.p-avatar img{
+  width:44px;height:44px; border-radius:50%; object-fit:cover;
+  border:2px solid rgba(124,92,252,.18);
+}
+.p-info{ min-width:0 }
+.p-name{ font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text) }
+.p-user{ color:var(--muted); font-size:.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.p-actions{ display:flex; gap:8px }
+.p-actions .btn{ padding:8px 12px; font-size:.85rem; white-space:nowrap }
