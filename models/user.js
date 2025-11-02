@@ -12,6 +12,11 @@ const UserSchema = new Schema({
   banner: String,                 // <--- asegúrate de tenerlo
   bio:    { type: String, default: '' }, // <--- y este también
 
+  // Campos para OAuth
+  provider: { type: String, default: 'local' }, // 'local' o 'google'
+  providerId: { type: String, sparse: true }, // ID único de Google, solo para usuarios de Google
+  image: String, // URL de foto de perfil de Google
+
   isVerified: { type: Boolean, default: false },
   role:       { type: String,   default: 'user' }
 }, { timestamps: true });

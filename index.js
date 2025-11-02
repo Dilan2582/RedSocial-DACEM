@@ -11,7 +11,26 @@ const app = express();
 const PORT = Number(process.env.PORT || 3900);
 
 // ===== Middlewares base =====
-app.use(cors());
+// CORS configurado para Google OAuth
+app.use(cors({
+  origin: [
+    'http://localhost:3900',
+    'http://127.0.0.1:3900',
+    'https://accounts.google.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Headers adicionales para Google OAuth
+app.use((req, res, next) => {
+  // Permitir Google OAuth completamente
+  res.removeHeader('Cross-Origin-Opener-Policy');
+  res.removeHeader('Cross-Origin-Embedder-Policy');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

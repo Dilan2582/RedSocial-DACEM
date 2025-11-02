@@ -3,7 +3,7 @@ require('dotenv').config();
 
 async function listUsers() {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/dacem';
+    const mongoURI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/dacem';
     await mongoose.connect(mongoURI);
     console.log('✅ Conectado a MongoDB\n');
 
@@ -23,6 +23,7 @@ async function listUsers() {
         console.log(`   Nickname: ${user.nickname || 'N/A'}`);
         console.log(`   Nombre: ${user.firstName || 'N/A'} ${user.lastName || ''}`);
         console.log(`   Provider: ${user.provider || 'local'}`);
+        console.log(`   ProviderId: ${user.providerId || '(ninguno)'}`);
         console.log(`   Creado: ${user.createdAt || 'N/A'}`);
         console.log('');
       });

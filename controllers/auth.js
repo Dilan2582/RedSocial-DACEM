@@ -12,6 +12,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const googleLogin = async (req, res) => {
   try {
     const { id_token } = req.body || {};
+    
     if (!id_token) {
       return res.status(400).json({ ok: false, message: 'Falta id_token' });
     }
@@ -22,6 +23,7 @@ const googleLogin = async (req, res) => {
       audience: process.env.GOOGLE_CLIENT_ID
     });
     const payload = ticket.getPayload();
+    
     // Datos útiles
     const {
       sub,                // id único de Google
@@ -37,10 +39,13 @@ const googleLogin = async (req, res) => {
       return res.status(401).json({ ok: false, message: 'Email no verificado por Google' });
     }
 
-    // 2) Buscar usuario por providerId o email
-    let user =
-      (await User.findOne({ provider: 'google', providerId: sub })) ||
-      (await User.findOne({ email: (email || '').toLowerCase() }));
+    // 2) Buscar usuario por email primero (más confiable)
+    let user = await User.findOne({ email: (email || '').toLowerCase() });
+    
+    // Si no encontramos por email, buscar por providerId (para usuarios que ya usaron Google antes)
+    if (!user) {
+      user = await User.findOne({ provider: 'google', providerId: sub });
+    }
 
     // 3) Crear si no existe
     if (!user) {
@@ -64,6 +69,8 @@ const googleLogin = async (req, res) => {
         // placeholder: no se usa para login con Google
         password: ':)'
       });
+      
+      console.log('✅ Nuevo usuario creado con Google:', user.email);
     } else {
       // Si existe pero no tiene providerId y el email coincide, enlazar
       if (user.provider !== 'google') {
@@ -71,6 +78,7 @@ const googleLogin = async (req, res) => {
         user.providerId = sub;
         if (!user.image && picture) user.image = picture;
         await user.save();
+        console.log('🔗 Usuario existente enlazado con Google:', user.email);
       }
     }
 
@@ -81,6 +89,7 @@ const googleLogin = async (req, res) => {
 
     return res.status(200).json({ ok: true, user: safe, token });
   } catch (e) {
+    console.error('❌ Error en Google Login:', e.message);
     return res.status(500).json({ ok: false, message: 'Error en login con Google', error: e.message });
   }
 };
