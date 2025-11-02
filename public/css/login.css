@@ -10,37 +10,44 @@
   --success:#2bd889;
 }
 
-*{box-sizing:border-box}
-html,body{height:100%;margin:0}
+*{ box-sizing:border-box }
+html,body{ height:100%; margin:0 }
+
+/* ===== Base (sin centrado global) ===== */
 body{
   background:var(--bg);
   color:var(--text);
-  font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  min-height:100vh;
-  padding:24px;
+  font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
 }
 
-.page-header{max-width:1040px;margin:32px auto 0;padding:0 16px}
-.page-header h1{margin:0 0 4px}
-.subtitle{margin:0;color:var(--muted)}
+/* ===== Centrado SOLO para la página de login ===== */
+body.auth-page{
+  min-height:100svh;
+  display:grid;
+  place-items:center;
+  padding:0;
+}
 
-.auth-shell{
+.auth-page .auth-shell{
   width:100%;
-  max-width:400px;
+  max-width:380px;
+  min-height:100svh;
+  display:grid;
+  place-items:center;
+  padding:24px 16px;
+  margin:0 auto;
 }
 
 .card{
   width:100%;
-  max-width:400px;
+  max-width:380px;
   background:var(--card);
   border:1px solid var(--border);
-  border-radius:16px;
-  padding:24px;
+  border-radius:14px;
+  padding:18px;
   box-shadow:0 10px 30px rgba(0,0,0,.35);
   transition:transform .2s ease, box-shadow .2s ease;
+  margin:0; /* evitar empujes verticales */
 }
 .card:hover{
   transform:translateY(-2px);
@@ -48,18 +55,19 @@ body{
 }
 
 .login-card h2,
-.register-card h2{margin:0 0 12px}
+.register-card h2{ margin:0 0 8px; font-size:1.1rem }
 
-.form-group{margin:12px 0}
-.form-group label{display:block;margin:0 0 6px;color:var(--muted)}
+.form-group{ margin:8px 0 }
+.form-group label{ display:block; margin:0 0 4px; color:var(--muted); font-size:12px }
 .form-group input{
   width:100%;
   background:#0b1421;
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:9px;
   color:var(--text);
-  padding:12px 14px;
+  padding:10px 11px;
   outline:none;
+  font-size:14px;
   transition:border-color .15s ease, box-shadow .15s ease;
 }
 .form-group input:focus{
@@ -72,12 +80,12 @@ body{
   gap:12px;
   grid-template-columns:1fr 1fr;
 }
-@media (max-width:720px){ .grid-2{grid-template-columns:1fr} }
+@media (max-width:720px){ .grid-2{ grid-template-columns:1fr } }
 
 .btn{
   appearance:none; border:0; cursor:pointer;
-  padding:12px 16px; border-radius:10px;
-  font-weight:600; color:#fff;
+  padding:10px 14px; border-radius:9px;
+  font-weight:600; color:#fff; font-size:14px;
   background:#2b2f36;
   transition:background .15s ease, transform .15s ease, box-shadow .15s ease;
 }
@@ -94,259 +102,74 @@ body{
   background:transparent; color:var(--text);
   border:1px solid var(--border);
 }
-.mt-24{margin-top:24px}
+.mt-24{ margin-top:24px }
 
-.muted{color:var(--muted)}
-.small{font-size:.925rem}
-.link{color:#a9c7ff;text-decoration:none}
-.link:hover{text-decoration:underline}
+.muted{ color:var(--muted) }
+.small{ font-size:.925rem }
+.link{ color:#a9c7ff; text-decoration:none }
+.link:hover{ text-decoration:underline }
 
-.divider{display:flex; align-items:center; gap:10px; margin:14px 0}
-.divider::before,.divider::after{
-  content:""; height:1px; flex:1; background:var(--border);
-}
-.divider span{color:var(--muted)}
+.divider{ display:flex; align-items:center; gap:8px; margin:8px 0 }
+.divider::before,.divider::after{ content:""; height:1px; flex:1; background:var(--border) }
+.divider span{ color:var(--muted); font-size:0.8rem }
 
-.msg{margin-top:10px; font-size:.95rem}
-.msg.error{color:var(--error)}
-.msg.success{color:var(--success)}
+.msg{ margin-top:8px; font-size:.9rem }
+.msg.error{ color:var(--error) }
+.msg.success{ color:var(--success) }
 
-.recaptcha-slot{margin:8px 0}
-.google-slot{display:flex; justify-content:center}
+.recaptcha-slot{ margin:5px 0; transform:scale(0.92); transform-origin:0 0 }
+.google-slot{ display:flex; justify-content:center; margin-top:8px }
 
 /* ===== Modal registro ===== */
 .modal-backdrop{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.55);
-  display: flex;                 /* siempre en flex para centrar, pero… */
-  align-items: center;
-  justify-content: center;
-
-  /* …queda oculto por defecto */
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-
-  z-index: 9999;                 /* por encima de todo */
-  transition: opacity .2s ease;
+  position:fixed; inset:0; background:rgba(0,0,0,.55);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; visibility:hidden; pointer-events:none;
+  z-index:9999; transition:opacity .2s ease;
 }
-
-/* Cuando está abierto */
 .modal-backdrop[data-open="true"]{
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
+  opacity:1; visibility:visible; pointer-events:auto;
 }
-
 .modal{
-  width: min(900px, 92vw);
-  background: #0f1826;
-  color: #e8eefc;
-  border: 1px solid #1f2a3a;
-  border-radius: 14px;
-  padding: 28px;
-  box-shadow: 0 20px 60px #000a;
-  z-index: 10000;               /* por encima del backdrop */
+  width:min(900px, 92vw);
+  background:#0f1826; color:#e8eefc;
+  border:1px solid #1f2a3a; border-radius:14px;
+  padding:28px; box-shadow:0 20px 60px #000a; z-index:10000;
 }
-
-.modal .header{
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
+.modal .header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px }
+.modal .header h3{ margin:0; font-size:1.2rem }
+.modal .close{ border:none; background:#1e2a3a; color:#c9d7f2; border-radius:10px; padding:8px 12px; cursor:pointer }
+.modal .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.modal .grid .form-group{ display:flex; flex-direction:column; gap:8px }
+.modal .actions{ margin-top:18px; display:flex; gap:10px }
+@media (max-width:720px){
+  .modal{ padding:18px }
+  .modal .grid{ grid-template-columns:1fr }
 }
-.modal .header h3{ margin: 0; font-size: 1.2rem; }
-.modal .close{
-  border: none; background: #1e2a3a; color: #c9d7f2; border-radius: 10px;
-  padding: 8px 12px; cursor: pointer;
-}
+body.no-scroll{ overflow:hidden }
 
-.modal .grid{
-  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-}
-.modal .grid .form-group{ display:flex; flex-direction:column; gap:8px; }
-.modal .actions{ margin-top:18px; display:flex; gap:10px; }
+/* Avatares (opcional) */
+.avatar{ width:72px; height:72px; border-radius:50%; object-fit:cover }
+.miniPic{ width:40px; height:40px; border-radius:50%; object-fit:cover }
 
-@media (max-width: 720px){
-  .modal{ padding: 18px; }
-  .modal .grid{ grid-template-columns: 1fr; }
-}
-
-/* Evitar scroll de fondo con modal abierto */
-body.no-scroll{ overflow: hidden; }
-
-
-/* Centrado general para login y registro */
-body {
-  align-items: left;
-  display: flex;
-  justify-content: left;
-  align-items: center;
-  min-height: 100vh;   /* ocupa toda la altura */
-  margin: 10px 0 0; /* margen superior para el header */
-  background-color: #0d1117; /* tu fondo oscuro */
-  color: #fff;
-  font-family: sans-serif;
-}
-
-/* Contenedor principal */
-.container {
-  align-items: left;
-  justify-content: left;
-  width: 100%;
-  max-width: 400px; /* igual que login */
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-/* Card */
-.card {
-  justify-content: left;
-  background: #161b22;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  padding: 24px;
-}
-
-/* opcional, por si no lo tenías */
-.avatar { width:72px; height:72px; border-radius:50%; object-fit:cover; }
-.miniPic { width:40px; height:40px; border-radius:50%; object-fit:cover; }
-
-/* ===== RESPONSIVE DESIGN PARA LOGIN ===== */
-
-/* Tablets (max-width: 768px) */
+/* ===== Responsive ===== */
 @media (max-width:768px){
-  body{ padding:16px }
-  
-  .auth-shell{ max-width:380px }
-  
-  .card{ 
-    max-width:380px;
-    padding:24px 20px;
-  }
-  
+  .auth-page .auth-shell{ padding:20px 14px }
+  .card{ padding:24px 20px }
   h1{ font-size:1.5rem }
   h2{ font-size:1.2rem; margin:0 0 14px }
-  
-  .modal{ 
-    width:min(860px, 95vw);
-    padding:20px;
-  }
-  
-  .modal .grid{ 
-    grid-template-columns:1fr;
-    gap:12px;
-  }
 }
-
-/* Mobile (max-width: 480px) */
 @media (max-width:480px){
-  body{ padding:12px }
-  
-  .container{ 
-    gap:20px;
-    min-height:auto;
-  }
-  
-  .card{ 
-    max-width:100%;
-    padding:20px 16px;
-    border-radius:12px;
-  }
-  
+  .auth-page .auth-shell{ padding:16px 12px }
+  .card{ max-width:100%; padding:20px 16px; border-radius:12px }
   h1{ font-size:1.3rem; margin:0 0 6px }
   h2{ font-size:1.1rem; margin:0 0 12px }
-  p{ margin:0 0 24px; font-size:0.9rem }
-  
-  label{ font-size:13px; margin:10px 0 5px }
-  
-  input{ 
-    padding:10px 11px;
-    font-size:14px;
-  }
-  
-  button{ 
-    padding:11px 12px;
-    font-size:0.95rem;
-  }
-  
-  .btn{ 
-    padding:10px 14px;
-    font-size:0.9rem;
-  }
-  
-  .grid-2{ 
-    grid-template-columns:1fr;
-    gap:10px;
-  }
-  
-  .modal{ 
-    width:min(98vw, 380px);
-    padding:16px;
-    border-radius:12px;
-  }
-  
-  .modal .header{ margin-bottom:10px }
-  .modal .header h3{ font-size:1rem }
-  .modal .close{ 
-    padding:6px 10px;
-    font-size:0.85rem;
-  }
-  
-  .modal .grid{ gap:10px }
-  
-  .modal .actions{ 
-    margin-top:14px;
-    flex-direction:column;
-  }
-  .modal .actions .btn{ width:100% }
-  
-  .banner-preview{ height:120px }
-  
-  .form label{ 
-    font-size:13px;
-    margin:8px 0 5px;
-  }
-  
-  .form input, .form textarea{ 
-    padding:10px 11px;
-    font-size:14px;
-  }
-  
-  .msg{ font-size:0.85rem }
-  
-  .divider{ margin:12px 0 }
-  .divider span{ font-size:0.85rem }
-  
-  .recaptcha-slot{ 
-    transform:scale(0.9);
-    transform-origin:0 0;
-  }
+  .grid-2{ grid-template-columns:1fr; gap:10px }
+  .modal{ width:min(98vw, 380px); padding:16px; border-radius:12px }
 }
-
-/* Extra small (max-width: 360px) */
 @media (max-width:360px){
-  body{ padding:8px }
-  
   .card{ padding:16px 12px }
-  
-  h1{ font-size:1.2rem }
-  h2{ font-size:1rem }
-  p{ font-size:0.85rem }
-  
-  input{ padding:9px 10px }
-  button{ padding:10px }
-  
-  .modal{ 
-    width:98vw;
-    padding:12px;
-  }
-  
-  .modal .header h3{ font-size:0.95rem }
-  
+  h1{ font-size:1.2rem } h2{ font-size:1rem }
+  .modal{ width:98vw; padding:12px }
   .banner-preview{ height:100px }
-  
-  .recaptcha-slot{ 
-    transform:scale(0.85);
-  }
 }
-
