@@ -98,6 +98,14 @@
 
               <div class="profile-actions">
                 <button id="btnFollow" class="btn" style="display:none">Seguir</button>
+                <button id="btnSendMessage" class="btn" style="display:none" title="Enviar mensaje">
+                  <span style="display:flex; align-items:center; gap:6px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span>Mensaje</span>
+                  </span>
+                </button>
                 <button id="btnEdit" class="btn ghost" style="display:none">Editar perfil</button>
                 <button id="btnManagePosts" class="btn ghost" style="display:none">Gestionar publicaciones</button>
               </div>
@@ -553,9 +561,15 @@
         bf.style.display = 'inline-block';
         bf.textContent = isFollowing ? 'Dejar de seguir' : 'Seguir';
         bf.onclick = toggleFollow;
+        
+        // Botón enviar mensaje
+        const bm = document.getElementById('btnSendMessage');
+        bm.style.display = 'inline-block';
+        bm.onclick = ()=> window.location.href = `messages.html?userId=${viewId}`;
       }else{
         paintProfile(meData.user, meData.counts);
         document.getElementById('btnFollow').style.display = 'none';
+        document.getElementById('btnSendMessage').style.display = 'none';
         const be = document.getElementById('btnEdit');
         be.style.display = 'inline-block';
         be.onclick = ()=>{ prefillEdit(); openModal(); };
