@@ -1,3 +1,4 @@
+/* ========================== CONFIG ========================== */
 const API_BASE = '/api';
 let currentConversation = null;
 let currentRecipient = null;
@@ -5,369 +6,464 @@ let conversations = [];
 let pollInterval = null;
 let authToken = null;
 
-// Helper para resolver avatares
-function resolveAvatar(user) {
-  if (!user) return 'img/default-avatar.png';
-  if (user.image || user.avatar) {
-    const img = user.image || user.avatar;
-    // Si ya es URL completa, devolverla
-    if (img.startsWith('http')) return img;
-    // Si es ruta relativa del servidor, agregarle el origin
-    if (img.startsWith('/')) return `${location.origin}${img}`;
-    return `${location.origin}/${img}`;
-  }
-  // Fallback a avatar generado
-  const seed = encodeURIComponent(user.nick || user.nickname || user.name || 'U');
+/* ========================== HELPERS ========================= */
+const $ = (s)=>document.querySelector(s);
+function safe(v,f=''){ return (v===null||v===undefined)?f:v; }
+function displayName(u){
+  if(!u) return 'Usuario';
+  return u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim() || u.nick || u.nickname || u.username || 'Usuario';
+}
+function goToProfile(u){
+  if(!u) return;
+  const id  = u.id || u._id || '';
+  const nick = u.nickname || u.nick || '';
+  // ajusta la ruta que uses para perfiles:
+  const href = nick ? `profile.html?u=${encodeURIComponent(nick)}` 
+                    : `profile.html?userId=${encodeURIComponent(id)}`;
+  location.href = href;
+}
+function resolveAvatar(u){
+  if(!u) return 'img/default-avatar.png';
+  const img = u.image || u.avatar;
+  if (img){ if(img.startsWith('http')) return img; return `${location.origin}${img.startsWith('/')?img:'/'+img}`; }
+  const seed = encodeURIComponent(u.nick || u.nickname || u.name || 'U');
   return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
 }
+function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+function formatTime(ts){
+  if(!ts) return ''; const d=new Date(ts); const diff=Date.now()-d;
+  if(diff<60000) return 'Ahora';
+  if(diff<3600000) return Math.floor(diff/60000)+'m';
+  if(diff<86400000) return Math.floor(diff/3600000)+'h';
+  if(diff<604800000) return Math.floor(diff/86400000)+'d';
+  return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    window.location.href = '/index.html';
-    return;
-  }
-  
-  authToken = 'Bearer ' + token;
-  setupTheme();
-  
-  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-  document.getElementById('logoutBtn').addEventListener('click', logout);
-  document.getElementById('backBtn').addEventListener('click', () => window.location.href = '/user.html');
-  document.getElementById('searchBox').addEventListener('input', handleSearch);
-  
-  loadConversations();
-  
-  // Si viene userId en URL, iniciar conversación
-  const userId = new URLSearchParams(window.location.search).get('userId');
-  if (userId) {
-    startConversationWithUser(userId);
-  }
-  
-  // Polling para nuevos mensajes
-  pollInterval = setInterval(() => {
-    if (currentConversation) {
-      loadMessages(currentConversation.id, true);
+/* ====== Lightbox (idéntico a user.html) ====== */
+let lb=null, lbImg=null, lbAva=null, lbName=null, lbUser=null, lbBody=null, lbInp=null, lbSend=null, lbLike=null, lbLikes=null, lbCommentsCount=null;
+
+(function bindExistingLightbox(){
+  lb = $('#lightbox');
+  lbImg = $('#lbImg'); lbAva=$('#lbAva'); lbName=$('#lbName'); lbUser=$('#lbUser');
+  lbBody=$('#lbComments'); lbInp=$('#lbInp'); lbSend=$('#lbSend');
+  lbLike=$('#lbLike'); lbLikes=$('#lbLikes'); lbCommentsCount=$('#lbCommentsCount');
+  $('#lbClose')?.addEventListener('click', closePostModal);
+  lb?.addEventListener('click', (e)=>{ if(e.target===lb) closePostModal(); });
+})();
+
+let currentPost = null;
+async function fetchPost(postId){
+  const r = await fetch(`${API_BASE}/posts/${postId}`, { headers:{ Authorization:authToken }});
+  const d = await r.json(); return d.ok ? d.post : null;
+}
+async function listPostComments(postId){
+  const r=await fetch(`${API_BASE}/posts/${postId}/comments?limit=100`,{headers:{Authorization:authToken}});
+  const d=await r.json(); return d.ok? d.comments: [];
+}
+async function addPostComment(postId,text){
+  const r=await fetch(`${API_BASE}/posts/${postId}/comments`,{
+    method:'POST', headers:{Authorization:authToken,'Content-Type':'application/json'},
+    body: JSON.stringify({ text })
+  });
+  const d=await r.json(); return d.ok? d.comment:null;
+}
+async function openPostModal(p){
+  if(!p) return;
+  currentPost = p;
+
+  lbImg.src = p.media?.t1 || p.media?.original || p.media?.thumb || '';
+  const au = p.author || p.user || {};
+lbAva.src = resolveAvatar(au);
+
+// Nombre y @nick clicables
+const nm   = displayName(au);
+const nick = au.nickname || au.nick || 'usuario';
+const pid  = au.id || au._id || '';
+
+lbName.innerHTML = `<a href="profile.html?${nick ? `u=${encodeURIComponent(nick)}` : `userId=${encodeURIComponent(pid)}`}" class="lb-author">${escapeHtml(nm)}</a>`;
+lbUser.innerHTML = `<a href="profile.html?${nick ? `u=${encodeURIComponent(nick)}` : `userId=${encodeURIComponent(pid)}`}" class="lb-author muted">@${escapeHtml(nick)}</a>`;
+
+// También navega si hacen click en el avatar
+lbAva.onclick = () => goToProfile(au);
+
+
+  const comments = await listPostComments(p.id);
+  lbBody.innerHTML='';
+  comments.forEach(c=>{
+    const row = document.createElement('div'); row.className='lb-cmt';
+    const nm = displayName(c.user || {});
+    row.innerHTML = `<span class="nm">${escapeHtml(nm)}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+    lbBody.appendChild(row);
+  });
+  lbBody.scrollTop = lbBody.scrollHeight;
+  lbCommentsCount.textContent = comments.length;
+
+  lbSend.onclick = async ()=>{
+    const t = lbInp.value.trim(); if(!t) return;
+    const c = await addPostComment(p.id, t);
+    if(c){
+      lbInp.value=''; const row=document.createElement('div'); row.className='lb-cmt';
+      row.innerHTML = `<span class="nm">${escapeHtml(displayName(c.user||{}))}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+      lbBody.appendChild(row); lbBody.scrollTop=lbBody.scrollHeight;
+      lbCommentsCount.textContent = +lbCommentsCount.textContent + 1;
     }
-  }, 5000);
+  };
+
+  lbLike.onclick = async ()=>{
+    const pressed = lbLike.getAttribute('aria-pressed')==='true';
+    lbLike.setAttribute('aria-pressed', (!pressed)+'' );
+    lbLikes.textContent = (+lbLikes.textContent + (pressed?-1:1));
+    try{
+      const r=await fetch(`${API_BASE}/posts/${p.id}/likes/toggle`, {method:'POST', headers:{Authorization:authToken}});
+      const d=await r.json(); if(!d.ok) throw 0;
+    }catch{
+      lbLike.setAttribute('aria-pressed', pressed+'' );
+      lbLikes.textContent = (+lbLikes.textContent + (pressed?1:-1));
+    }
+  };
+
+  lb.setAttribute('aria-hidden','false');
+  try{ if(window.lucide) window.lucide.createIcons(); }catch(_){}
+}
+function closePostModal(){
+  lb.setAttribute('aria-hidden','true');
+  lbImg.removeAttribute('src'); lbBody.innerHTML=''; lbInp.value='';
+  lbLike.setAttribute('aria-pressed','false'); lbLikes.textContent='0'; lbCommentsCount.textContent='0';
+  currentPost=null;
+}
+
+/* ====================== BOOT ====================== */
+document.addEventListener('DOMContentLoaded', ()=>{
+  const token = localStorage.getItem('token');
+  if(!token){ location.href='/index.html'; return; }
+  authToken = 'Bearer ' + token;
+
+  // Topbar events (para esta página)
+  $('#themeToggle')?.addEventListener('click', ()=>{
+    const cur=document.documentElement.getAttribute('data-theme');
+    const t=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+    const el=$('#themeTxt'); if(el) el.textContent=t==='dark'?'Modo claro':'Modo oscuro';
+    try{ if(window.lucide) window.lucide.createIcons(); }catch(_){}
+  });
+  $('#logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); location.href='/index.html'; });
+
+  $('#searchBox')?.addEventListener('input', handleSearch);
+
+  // Composer handlers (si ya hay conversación)
+  $('#sendBtn')?.addEventListener('click', sendMessage);
+  $('#messageInput')?.addEventListener('keypress', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  });
+
+  loadConversations();
+
+  const userId = new URLSearchParams(location.search).get('userId');
+  if(userId) startConversationWithUser(userId);
+
+  pollInterval = setInterval(()=>{ if(currentConversation){ loadMessages(currentConversation.id, true); } }, 5000);
 });
 
-function setupTheme() {
-  const saved = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('themeTxt').textContent = saved === 'dark' ? 'Modo claro' : 'Modo oscuro';
-}
-
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const newTheme = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-  document.getElementById('themeTxt').textContent = newTheme === 'dark' ? 'Modo claro' : 'Modo oscuro';
-}
-
-function logout() {
-  localStorage.removeItem('token');
-  window.location.href = '/index.html';
-}
-
-async function loadConversations() {
-  try {
-    const r = await fetch(API_BASE + '/messages', {
-      headers: { Authorization: authToken }
-    });
-    
-    if (!r.ok) {
-      if (r.status === 401) logout();
-      return;
-    }
-    
-    const data = await r.json();
-    conversations = data.conversations || [];
-    console.log('🔍 DEBUG Conversaciones:', conversations); // Debug
+/* ================== CONVERSATIONS ================= */
+async function loadConversations(){
+  try{
+    const r = await fetch(API_BASE+'/messages', { headers:{ Authorization:authToken }});
+    if(!r.ok){ if(r.status===401) { localStorage.removeItem('token'); location.href='/index.html'; } return; }
+    const d = await r.json();
+    conversations = d.conversations || [];
     renderConversations(conversations);
-  } catch (err) {
-    console.error('Error loadConversations:', err);
-  }
+  }catch(e){ console.error('loadConversations', e); }
 }
 
-function renderConversations(convs) {
-  const container = document.getElementById('conversationsBody');
-  
-  if (convs.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
-        <p>No tienes conversaciones aún</p>
-      </div>`;
+function renderConversations(convs){
+  const container = $('#conversationsBody');
+  if(!convs.length){
+    container.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <p>No tienes conversaciones aún</p></div>`;
     return;
   }
-  
-  container.innerHTML = convs.map(conv => {
-    const isActive = currentConversation && currentConversation.id === conv.id;
-    const isUnread = conv.lastMessage && !conv.lastMessage.read && !conv.lastMessage.isMine;
-    const lastMsg = conv.lastMessage 
-      ? (conv.lastMessage.isMine ? 'Tú: ' : '') + conv.lastMessage.content 
-      : 'No hay mensajes aún';
-    
-    // Intentar obtener el nombre de múltiples formas
+
+  container.innerHTML = convs.map(conv=>{
+    const isActive = currentConversation && currentConversation.id===conv.id;
+    const last = conv.lastMessage;
+    const isUnread = last && !last.read && !last.isMine;
+    const preview = last ? (last.isMine?'Tú: ':'') + (typeof last.content==='string' ? last.content.replace(/[\r\n]+/g,' ').slice(0,120) : '[contenido]') : 'No hay mensajes aún';
     const user = conv.user || conv.recipient || {};
-    console.log('🔍 Usuario en conversación:', user); // Debug
-    
-    const displayName = user.name || 
-                        user.fullName ||
-                        `${user.firstName || ''} ${user.lastName || ''}`.trim() || 
-                        user.nick || 
-                        user.nickname || 
-                        user.username ||
-                        'Usuario';
-    
+    const name = displayName(user);
     return `
-      <div class="conversation-item ${isActive ? 'active' : ''}" 
-           onclick="selectConversation('${conv.id}', '${user.id || user._id}', '${escapeHtml(displayName)}', '${user.image || user.avatar || ''}')">
-        <img src="${resolveAvatar(user)}" class="conv-avatar" alt="${displayName}">
-        <div class="conv-info">
-          <div class="conv-top">
-            <div class="conv-name">${escapeHtml(displayName)}</div>
-            <div class="conv-time">${formatTime(conv.lastMessageAt)}</div>
-          </div>
-          <div class="conv-message ${isUnread ? 'unread' : ''}">${escapeHtml(lastMsg)}</div>
+    <div class="conversation-item ${isActive?'active':''}"
+      onclick="selectConversation('${conv.id}','${user.id||user._id||''}','${escapeHtml(name)}','${user.image||user.avatar||''}')">
+      <img src="${resolveAvatar(user)}" class="conv-avatar" alt="${escapeHtml(name)}">
+      <div class="conv-info">
+        <div class="conv-top">
+          <div class="conv-name">${escapeHtml(name)}</div>
+          <div class="conv-time">${formatTime(conv.lastMessageAt)}</div>
         </div>
-      </div>`;
+        <div class="conv-message ${isUnread?'unread':''}">${escapeHtml(preview)}</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-function handleSearch(e) {
-  const query = e.target.value.toLowerCase();
-  const filtered = conversations.filter(c => 
-    c.user.nick.toLowerCase().includes(query)
-  );
+function handleSearch(e){
+  const q = e.target.value.toLowerCase();
+  const filtered = conversations.filter(c=>{
+    const u = c.user || c.recipient || {};
+    return displayName(u).toLowerCase().includes(q);
+  });
   renderConversations(filtered);
 }
 
-function selectConversation(id, userId, displayName, image) {
-  currentConversation = { id };
-  currentRecipient = { 
-    id: userId, 
-    nick: displayName,
-    nickname: displayName,
-    name: displayName,
-    image: image 
-  };
-  renderConversations(conversations);
-  renderChatHeader();
-  loadMessages(id);
-  
-  // Mobile: ocultar lista y mostrar chat
-  document.getElementById('conversationsList').classList.add('hidden');
-  document.getElementById('chatView').classList.remove('hidden');
-}
+function selectConversation(id,userId,name,image){
+  currentConversation={id};
+  currentRecipient={ id:userId, name, nick:name, nickname:name, image };
 
-async function startConversationWithUser(userId) {
-  try {
-    const r = await fetch(API_BASE + '/messages/conversation/' + userId, {
-      headers: { Authorization: authToken }
-    });
-    
-    if (!r.ok) throw new Error('Error al iniciar conversación');
-    
-    const data = await r.json();
-    console.log('🔍 DEBUG startConversation response:', data); // Debug
-    
-    currentConversation = { id: data.conversation.id };
-    currentRecipient = data.conversation.user;
-    
-    console.log('🔍 DEBUG currentRecipient asignado:', currentRecipient); // Debug
-    
-    renderChatHeader();
-    loadMessages(data.conversation.id);
-    loadConversations();
-    
-    // Mobile
-    document.getElementById('conversationsList').classList.add('hidden');
-    document.getElementById('chatView').classList.remove('hidden');
-  } catch (err) {
-    console.error('Error startConversation:', err);
-  }
-}
-
-function renderChatHeader() {
-  if (!currentRecipient) return;
-  
-  console.log('🔍 DEBUG currentRecipient:', currentRecipient); // Debug
-  
-  const displayName = currentRecipient.name || 
-                      currentRecipient.fullName ||
-                      `${currentRecipient.firstName || ''} ${currentRecipient.lastName || ''}`.trim() || 
-                      currentRecipient.nick || 
-                      currentRecipient.nickname || 
-                      currentRecipient.username ||
-                      'Usuario';
-  
-  console.log('🔍 DEBUG displayName:', displayName); // Debug
-  
-  document.getElementById('chatView').innerHTML = `
-    <div class="chat-header">
-      <button class="btn ghost small" id="backToList" style="display:none">← Atrás</button>
-      <img src="${resolveAvatar(currentRecipient)}" class="chat-avatar" alt="${displayName}">
-      <div class="chat-user-info">
-        <div class="chat-username">${escapeHtml(displayName)}</div>
-        <div class="chat-status">Activo ahora</div>
-      </div>
-    </div>
-    <div class="chat-body" id="chatBody"></div>
-    <div class="chat-input-area">
-      <textarea class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." rows="1"></textarea>
-      <button class="send-btn" id="sendBtn">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-      </button>
+  // header visible
+  const head = $('#chatHead');
+  head.style.display = 'flex';
+  head.innerHTML = `
+    <button class="btn ghost small" id="backToList" style="display:none">← Atrás</button>
+    <img src="${resolveAvatar(currentRecipient)}" class="chat-avatar" alt="${escapeHtml(name)}">
+    <div class="chat-user-info">
+      <div class="chat-username">${escapeHtml(name)}</div>
+      <div class="chat-status">Activo ahora</div>
     </div>`;
-  
-  document.getElementById('sendBtn').addEventListener('click', sendMessage);
-  document.getElementById('chatInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-  
-  // Mobile: botón volver
-  const backBtn = document.getElementById('backToList');
+    $('#chatComposer').style.display = 'flex';
+
+// eventos
+$('#sendBtn').onclick = sendMessage;
+$('#messageInput').onkeypress = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } };
+
+  // ===== Layout del área de chat para que el composer NUNCA se esconda =====
+  const view = $('#chatView');
+  view.style.display = 'grid';
+  view.style.gridTemplateRows = 'auto 1fr auto';   // header | body scroll | composer
+  view.style.minHeight = '0';
+
+  const body = $('#chatBody');
+  body.style.flex = '1';
+  body.style.minHeight = '0';
+  body.style.overflow = 'auto';
+
+  // composer visible
+  const composer = $('#chatComposer');
+  composer.style.display = 'flex';
+
+  // eventos (una sola vez al recrear)
+  $('#sendBtn').onclick = sendMessage;
+  $('#messageInput').onkeypress = (e)=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
+  };
+
+  // responsive back
+  const backBtn = $('#backToList');
   if (window.innerWidth <= 768) {
     backBtn.style.display = 'block';
-    backBtn.addEventListener('click', () => {
-      document.getElementById('conversationsList').classList.remove('hidden');
-      document.getElementById('chatView').classList.add('hidden');
-    });
+    backBtn.onclick = ()=>{
+      $('#conversationsList').classList.remove('hidden');
+      $('#chatView').classList.add('hidden');
+    };
   }
+
+  renderConversations(conversations);
+  loadMessages(id);
+
+  // mobile
+  $('#conversationsList').classList.add('hidden');
+  $('#chatView').classList.remove('hidden');
 }
 
-async function loadMessages(conversationId, polling = false) {
-  try {
-    const r = await fetch(API_BASE + '/messages/' + conversationId, {
-      headers: { Authorization: authToken }
-    });
-    
-    if (!r.ok) throw new Error('Error al cargar mensajes');
-    
-    const data = await r.json();
-    const messages = data.messages || [];
-    
-    // Si es polling, solo actualizar si hay nuevos mensajes
-    if (polling) {
-      const chatBody = document.getElementById('chatBody');
-      if (chatBody) {
-        const currentCount = chatBody.querySelectorAll('.message').length;
-        if (messages.length > currentCount) {
-          renderMessages(messages);
-        }
-      }
-    } else {
-      renderMessages(messages);
+
+/* ====================== MESSAGES ====================== */
+
+// 1) Extrae JSON embebido (ej. "ira nomas {...}")
+function extractEmbeddedJson(str){
+  const start = str.indexOf('{'); const end = str.lastIndexOf('}');
+  if(start !== -1 && end !== -1 && end > start){
+    try{ return JSON.parse(str.slice(start, end+1)); }catch{ return null; }
+  }
+  return null;
+}
+
+// 2) Extrae postId desde "...#post=<id>"
+function extractPostIdFromLink(str){
+  const m = str.match(/[#?&]post=([A-Za-z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+async function loadMessages(conversationId, polling=false){
+  try{
+    const r = await fetch(API_BASE+'/messages/'+conversationId, { headers:{ Authorization:authToken }});
+    if(!r.ok) throw 0;
+    const d = await r.json();
+    const list = d.messages || [];
+
+    if(polling){
+      const body=$('#chatBody'); if(!body) return;
+      const cnt = body.querySelectorAll('.message').length;
+      if(list.length>cnt) renderMessages(list);
+    }else{
+      renderMessages(list);
     }
-    
     markAsRead(conversationId);
-  } catch (err) {
-    console.error('Error loadMessages:', err);
-  }
+  }catch(e){ console.error('loadMessages',e); }
 }
 
-function renderMessages(messages) {
-  const chatBody = document.getElementById('chatBody');
-  if (!chatBody) return;
-  
-  const wasAtBottom = chatBody.scrollHeight - chatBody.scrollTop <= chatBody.clientHeight + 100;
-  
-  if (messages.length === 0) {
-    chatBody.innerHTML = '<div class="empty-state"><p>Escribe el primer mensaje</p></div>';
-    return;
+function buildPostBubble(msg, data){
+  const authorName = data.name || data.author || '';
+  const nick = data.nickname ? `@${data.nickname}` : '';
+  const ava = data.avatar || '';
+  const thumb = data.mediaThumb || '';
+  const caption = data.caption || '';
+
+  const header = `
+    <div class="pc-head">
+      <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}">
+      <div class="pc-u">
+        <div class="pc-name">${escapeHtml(authorName)}</div>
+        <div class="pc-nick">${escapeHtml(nick)}</div>
+      </div>
+    </div>`;
+  const media = `<div class="pc-media"><img src="${escapeHtml(thumb)}" alt=""></div>`;
+  const cap = caption ? `<div class="pc-cap">${escapeHtml(caption)}</div>` : '';
+
+  return `
+  <div class="message ${msg.isMine ? 'mine' : ''}">
+    <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
+    <div class="msg-bubble post-bubble" data-postid="${escapeHtml(data.postId||'')}" data-mode="card">
+      ${header}${media}${cap}
+    </div>
+  </div>`;
+}
+
+function buildMessageHTML(msg){
+  let data=null, postId=null;
+
+  if(typeof msg.content === 'object' && msg.content){
+    data = msg.content;
+  }else if(typeof msg.content === 'string'){
+    // JSON limpio
+    if(msg.content.trim().startsWith('{')){ try{ data = JSON.parse(msg.content); }catch{} }
+    // JSON embebido (ira nomas {...})
+    if(!data){ data = extractEmbeddedJson(msg.content); }
+    // Link con #post=
+    if(!data){ postId = extractPostIdFromLink(msg.content); }
   }
-  
-  chatBody.innerHTML = messages.map(msg => `
+
+  if(data && data.type==='post-card'){
+    return buildPostBubble(msg, data);
+  }
+
+  if(postId){
+    // Render placeholder y marcar para upgrade
+    const pid = escapeHtml(postId);
+    return `
     <div class="message ${msg.isMine ? 'mine' : ''}">
-      <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${msg.sender.nick}">
+      <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
+      <div class="msg-bubble post-bubble loading" data-postlink="${pid}">
+        <div class="pc-loading">Cargando publicación…</div>
+      </div>
+    </div>`;
+  }
+
+  // Texto normal
+  return `
+    <div class="message ${msg.isMine ? 'mine' : ''}">
+      <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
       <div>
-        <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+        <div class="msg-bubble">${escapeHtml(String(msg.content||''))}</div>
         <div class="msg-time">${formatTime(msg.createdAt)}</div>
       </div>
-    </div>`).join('');
-  
-  // Auto-scroll si estaba al final o es el primer mensaje
-  if (wasAtBottom || messages.length <= 1) {
-    chatBody.scrollTop = chatBody.scrollHeight;
-  }
+    </div>`;
 }
 
-async function sendMessage() {
-  if (!currentConversation) return;
-  
-  const input = document.getElementById('chatInput');
-  if (!input) return;
-  
-  const content = input.value.trim();
-  if (!content) return;
-  
-  try {
-    const r = await fetch(API_BASE + '/messages/' + currentConversation.id, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authToken
-      },
+async function upgradeLinkShares(){
+  const els = document.querySelectorAll('.post-bubble[data-postlink]:not([data-mode])');
+  for(const el of els){
+    const postId = el.getAttribute('data-postlink');
+    const p = await fetchPost(postId);
+    if(!p) { el.innerHTML = '<div class="pc-loading">No se pudo cargar la publicación</div>'; continue; }
+
+    const au = p.author || p.user || {};
+    const header = `
+      <div class="pc-head">
+        <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}">
+        <div class="pc-u">
+          <div class="pc-name">${escapeHtml(displayName(au))}</div>
+          <div class="pc-nick">@${escapeHtml(au.nickname||'usuario')}</div>
+        </div>
+      </div>`;
+    const media = `<div class="pc-media"><img src="${escapeHtml(p.media?.thumb || p.media?.original || '')}" alt=""></div>`;
+    const cap = p.caption ? `<div class="pc-cap">${escapeHtml(p.caption)}</div>` : '';
+
+    el.innerHTML = `${header}${media}${cap}`;
+    el.dataset.mode = 'card';
+    el.dataset.postid = p.id;
+  }
+  attachPostCardHandlers();
+}
+
+function attachPostCardHandlers(){
+  document.querySelectorAll('.post-bubble[data-postid]').forEach(el=>{
+    if(el.__bound) return;
+    el.__bound = true;
+    el.addEventListener('click', async ()=>{
+      const postId = el.getAttribute('data-postid');
+      if(!postId) return;
+      const p = await fetchPost(postId);
+      if(p) openPostModal(p);
+    });
+  });
+}
+
+function renderMessages(list){
+  const body = $('#chatBody'); if(!body) return;
+  if(!list.length){ body.innerHTML='<div class="empty-state"><p>Escribe el primer mensaje</p></div>'; return; }
+
+  body.innerHTML = list.map(buildMessageHTML).join('');
+  attachPostCardHandlers();
+  upgradeLinkShares(); // convierte los “Mira esta publicación: ...#post=ID”
+
+  // Auto scroll
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendMessage(){
+  if(!currentConversation) return;
+  const input = $('#messageInput'); if(!input) return;
+  const content = input.value.trim(); if(!content) return;
+
+  try{
+    const r = await fetch(API_BASE+'/messages/'+currentConversation.id, {
+      method:'POST',
+      headers:{ 'Content-Type': 'application/json', Authorization:authToken },
       body: JSON.stringify({ content })
     });
-    
-    if (!r.ok) throw new Error('Error al enviar mensaje');
-    
-    input.value = '';
-    input.style.height = 'auto';
-    
-    loadMessages(currentConversation.id);
+    if(!r.ok) throw 0;
+
+    input.value=''; input.style.height='auto';
+    await loadMessages(currentConversation.id);
     loadConversations();
-  } catch (err) {
-    console.error('Error sendMessage:', err);
-    alert('Error al enviar el mensaje');
-  }
+  }catch(e){ console.error('sendMessage', e); alert('Error al enviar el mensaje'); }
 }
 
-async function markAsRead(conversationId) {
-  try {
-    await fetch(API_BASE + '/messages/' + conversationId + '/read', {
-      method: 'PUT',
-      headers: { Authorization: authToken }
-    });
-  } catch (err) {
-    console.error('Error markAsRead:', err);
-  }
+async function startConversationWithUser(userId){
+  try{
+    const r = await fetch(API_BASE+'/messages/conversation/'+userId, { headers:{ Authorization:authToken }});
+    if(!r.ok) throw 0;
+    const d = await r.json();
+    currentConversation = { id:d.conversation.id };
+    currentRecipient   = d.conversation.user;
+
+    // mostrar header y composer
+    selectConversation(d.conversation.id, currentRecipient.id||currentRecipient._id, displayName(currentRecipient), currentRecipient.image||currentRecipient.avatar);
+  }catch(e){ console.error('startConversation', e); }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+async function markAsRead(conversationId){
+  try{ await fetch(API_BASE+`/messages/${conversationId}/read`, {method:'PUT', headers:{Authorization:authToken}}); }catch{}
 }
 
-function formatTime(timestamp) {
-  if (!timestamp) return '';
-  
-  const date = new Date(timestamp);
-  const diff = Date.now() - date;
-  
-  if (diff < 60000) return 'Ahora';
-  if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
-  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
-  if (diff < 604800000) return Math.floor(diff / 86400000) + 'd';
-  
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-}
-
-window.addEventListener('beforeunload', () => {
-  if (pollInterval) {
-    clearInterval(pollInterval);
-  }
-});
+window.addEventListener('beforeunload', ()=>{ if(pollInterval) clearInterval(pollInterval); });

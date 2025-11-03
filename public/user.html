@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+  <!-- Estilos -->
+  <link rel="stylesheet" href="css/user.css">
+
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
@@ -22,200 +25,62 @@
     })();
   </script>
 
+  <!-- Mejora visual solo para el modal Compartir (coincide con tu estética) -->
   <style>
-    /* ====== LIGHT ====== */
-    :root{
-      --bg:#f5f3ff; --bg2:#efeaff; --panel:#ffffff; --card:#ffffff;
-      --line:rgba(16,24,40,.08);
-      --text:#151826; --muted:#6b7280;
-      --primary:#7c5cfc; --primary2:#a855f7; --accent:#22d3ee;
-      --ring:rgba(124,92,252,.28);
-      --shadow:0 12px 28px rgba(2,6,23,.08);
-      --r:18px;
-    }
-    /* ====== DARK (Neo-Purple) ====== */
-    [data-theme="dark"]{
-      --bg:#0a0b14; --bg2:#0d1022; --panel:#0f1324; --card:#11162b;
-      --line:rgba(255,255,255,.08);
-      --text:#e7e9f3; --muted:#9aa3b2;
-      --primary:#8b5cf6; --primary2:#d946ef; --accent:#22d3ee;
-      --ring:rgba(139,92,246,.25);
-      --shadow:0 12px 28px rgba(0,0,0,.45);
-    }
-
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',system-ui,Segoe UI,Roboto,Arial}
-
-    /* Fondo glow */
-    body::before,body::after{content:"";position:fixed;inset:auto;pointer-events:none;z-index:-1}
-    body::before{top:-15%;left:-10%;width:65vw;height:55vh;filter:blur(90px);
-      background:
-        radial-gradient(50% 50% at 50% 50%, rgba(124,92,252,.28) 0%, rgba(124,92,252,0) 65%),
-        radial-gradient(50% 50% at 20% 30%, rgba(168,85,247,.18) 0%, rgba(168,85,247,0) 70%);
-    }
-    body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
-      background:
-        radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,.18) 0%, rgba(34,211,238,0) 65%),
-        radial-gradient(50% 50% at 70% 30%, rgba(168,85,247,.12) 0%, rgba(168,85,247,0) 70%);
-    }
-    [data-theme="dark"] body::before,[data-theme="dark"] body::after{display:none}
-
-    /* Topbar */
-    .topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.7));backdrop-filter: blur(10px);border-bottom:1px solid var(--line)}
-    [data-theme="dark"] .topbar{background:linear-gradient(180deg, rgba(10,11,20,.92), rgba(10,11,20,.65))}
-    .topbar-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px}
-    .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.3px}
-    .logo-badge{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary2));box-shadow:0 0 0 6px rgba(124,92,252,.12),0 10px 25px rgba(124,92,252,.25);overflow:hidden;position:relative;display:grid;place-items:center}
-    .logo-badge img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
-    .logo-badge::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px rgba(255,255,255,.06);pointer-events:none}
-
-    /* Botones */
-    .btn{appearance:none;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:10px 16px;border-radius:999px;font-weight:700;cursor:pointer;transition:.15s ease;font-size:.9rem;display:inline-flex;align-items:center;gap:8px}
-    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.10)}
-    .btn:active{transform:translateY(0)}
-    .btn:focus{outline:2px solid var(--ring);outline-offset:2px}
-    .btn.primary{background:linear-gradient(90deg,var(--primary),var(--primary2));border-color:transparent;color:#fff;box-shadow:0 8px 18px rgba(124,92,252,.28)}
-    .btn.ghost{background:transparent;border:1px solid var(--line)}
-    .btn.small{padding:8px 14px;font-size:.85rem}
-    .btn.danger{background:#fee2e2;border-color:#fecaca;color:#7f1d1d}
-    [data-theme="dark"] .btn.danger{background:#3b1d2a;border-color:#6b233a;color:#fce7f3}
-
-    /* Layout */
-    .wrap{max-width:1200px;margin:0 auto;padding:28px 24px}
-    .layout{display:grid;grid-template-columns:260px 1fr 340px;gap:28px}
-    @media (max-width:1080px){ .layout{grid-template-columns:1fr;gap:24px} .sidebar{order:3} .aside{order:2} }
-
-    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);transition:.2s ease}
-    .card:hover{box-shadow:0 16px 40px rgba(124,92,252,.12)}
-
-    /* Sidebar */
-    .sidebar{position:sticky; top:84px; align-self:start; height:max-content}
-    .nav{display:grid;gap:10px;padding:14px}
-    .nav-item{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;color:var(--text);text-decoration:none;border:1px solid transparent;transition:.15s ease}
-    .nav-item:hover{background:rgba(124,92,252,.08);border-color:rgba(124,92,252,.15)}
-    .nav-item.active{background:rgba(124,92,252,.15);border-color:rgba(124,92,252,.35);color:var(--primary)}
-    .nav-ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center}
-    .nav-ico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
-
-    /* Aside */
-    .aside{position:sticky; top:84px; align-self:start; height:max-content}
-
-    /* Composer */
-    .composer{padding:18px;display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:24px}
-    .cmp-row{display:flex;gap:14px;align-items:flex-start}
-    .cmp-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));flex-shrink:0}
-    .cmp-input{flex:1;min-height:90px;background:#f6f7fb;border:1px solid var(--line);border-radius:14px;color:var(--text);padding:14px;outline:none;font-size:.95rem;font-family:inherit}
-    [data-theme="dark"] .cmp-input{background:#0b0f1d}
-    .cmp-input:focus{box-shadow:0 0 0 3px var(--ring);border-color:var(--primary)}
-    .cmp-preview{display:flex;gap:10px;align-items:center}
-    .cmp-preview img{max-height:180px;border-radius:12px;border:1px solid var(--line)}
-    .cmp-tools{display:flex;align-items:center;gap:10px}
-    .spacer{flex:1}
-    .cmp-msg{font-size:.92rem;color:var(--muted);min-height:16px;text-align:center}
-
-    /* Feed */
-    .feed{display:grid;gap:20px}
-    .post-card{overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);transition:.2s ease}
-    .post-head{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
-    .post-ava{width:44px;height:44px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--primary),var(--primary2))}
-    .post-user{display:grid;line-height:1.2;flex:1}
-    .post-name{font-weight:700;color:var(--text);text-decoration:none}
-    .post-name:hover{color:var(--primary)}
-    .post-userid{color:var(--muted);font-size:.85rem}
-    .post-media{position:relative;background:#f6f7fb;cursor:pointer}
-    [data-theme="dark"] .post-media{background:#0b0f1d}
-    .post-media img{display:block;width:100%;height:auto;object-fit:cover}
-    .post-media.ratio-square img{aspect-ratio:1/1}
-    .post-media.ratio-portrait img{aspect-ratio:4/5}
-    .post-media.ratio-landscape img{aspect-ratio:16/9}
-    .post-actions{display:flex;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
-    .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:44px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;transition:.15s ease}
-    .btn-icon:hover{background:rgba(124,92,252,.08)}
-    .btn-icon:active{background:rgba(124,92,252,.15);transform:scale(0.95)}
-    .btn-icon i,.btn-icon svg{width:24px;height:24px}
-    .btn-icon svg{stroke: currentColor; fill: none; stroke-width: 2;}
-    .btn-icon[aria-pressed="true"]{color:var(--accent)}
-    .post-counts{color:var(--muted);font-size:.9rem;font-weight:600}
-    .post-caption{padding:0 16px 16px;color:var(--text);line-height:1.5;font-size:.95rem}
-
-    /* People */
-    .people-list{display:grid;gap:14px}
-    .person-row{display:flex;flex-direction:column;gap:12px;border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--panel);transition:.2s ease}
-    .person-row:hover{background:rgba(124,92,252,.06);border-color:rgba(124,92,252,.25);box-shadow:0 4px 12px rgba(124,92,252,.1)}
-    .p-top{display:flex;gap:12px;align-items:center;width:100%}
-    .p-avatar img{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(124,92,252,.2)}
-    .p-info{min-width:0;flex:1}
-    .p-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-size:.95rem}
-    .p-user{color:var(--muted);font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-    .p-actions{display:flex;gap:8px;width:100%}
-    .p-actions .btn{flex:1;justify-content:center;padding:8px 12px;font-size:.85rem;white-space:nowrap}
-
-    /* Lightbox */
-    .lightbox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);z-index:100;padding:20px;backdrop-filter:blur(4px)}
-    .lightbox[aria-hidden="false"]{display:flex}
-    .lb-content{display:grid;grid-template-columns:min(62vw,760px) 380px;gap:0;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
-    @media (max-width:1080px){ .lb-content{grid-template-columns:1fr;max-height:85vh} }
-    .lb-close{position:absolute;right:16px;top:16px;z-index:10}
-    .lb-media{background:#000;display:flex;align-items:center;justify-content:center}
-    .lb-media img{display:block;max-width:100%;max-height:100%;object-fit:contain}
-    .lb-side{display:grid;grid-template-rows:auto 1fr auto;background:var(--panel)}
-    .lb-head{display:flex;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
-    .lb-ava{width:40px;height:40px;border-radius:50%;object-fit:cover}
-    .lb-body{padding:16px;display:grid;gap:12px;max-height:50vh;overflow-y:auto}
-    .lb-cmt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
-    .lb-cmt .nm{font-weight:700;color:var(--text)}
-    .lb-cmt .dt{color:var(--muted);font-size:.85rem;white-space:nowrap}
-    .lb-input{display:flex;gap:10px;padding:16px;border-top:1px solid var(--line)}
-    .lb-input input{flex:1;background:#0b0f1d;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px}
-    .lb-input input:focus{box-shadow:0 0 0 3px var(--ring)}
-    /* Barra de acciones del modal */
-    .lb-actions{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      padding:12px 16px;
-      border-top:1px solid var(--line);
+    /* Búsqueda estilo "Mensajes" */
+    .share-search{
+      width:100%;
+      padding:10px 16px;
+      border:1px solid var(--line);
+      border-radius:999px;
       background:var(--panel);
-      flex-wrap:nowrap;            /* evita que salte a otra línea */
+      color:var(--text);
+      outline:none;
+      transition:all .15s ease;
     }
-
-    /* Empuja y alinea el recuento a la derecha en una sola línea */
-    .lb-actions .post-counts{
-      margin-left:auto;            /* lo manda a la derecha (no depende del .spacer) */
-      white-space:nowrap;          /* evita salto 2 · 1 */
-      line-height:1;
+    .share-search::placeholder{ color:var(--muted) }
+    .share-search:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 3px var(--ring);
+      background:var(--panel);
+    }
+    /* Grid de destinatarios con hover tipo "Personas sugeridas" */
+    .share-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      max-height:50vh;
+      overflow:auto;
+      padding:2px;
+    }
+    .share-pick{
+      border:1px solid var(--line);
+      background:var(--panel);
+      border-radius:12px;
+      padding:10px;
       display:flex;
-      gap:6px;                     /* pequeño espacio entre números y separador */
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      position:relative;
+      transition:.15s ease;
+      color:var(--text);
     }
-
-    /* Tamaño/alineación de los íconos */
-    .lb-actions .btn-icon{ width:42px; height:38px }
-    .lb-actions .btn-icon svg{ width:22px; height:22px; vertical-align:middle }
-
-
-
-    /* Responsive */
-    @media(max-width:1080px){
-      .wrap{padding:20px 16px}
-      .layout{grid-template-columns:1fr;gap:20px}
-      .sidebar,.aside{position:static}
+    .share-pick:hover{
+      background:rgba(124,92,252,.06);
+      border-color:rgba(124,92,252,.25);
+      box-shadow:0 4px 12px rgba(124,92,252,.1);
     }
-    @media(max-width:768px){
-      .topbar-inner{padding:10px 12px}
-      .composer{padding:14px;margin-bottom:16px}
-      .cmp-avatar{width:40px;height:40px}
-      .cmp-input{min-height:70px;padding:12px;font-size:0.9rem}
-      .feed{gap:16px}
-      .post-head{padding:12px}
-      .post-actions{padding:10px 12px}
-      .post-caption{padding:0 12px 12px;font-size:0.9rem}
+    .share-mark{
+      position:absolute;right:8px;top:8px;width:18px;height:18px;border-radius:50%;
+      border:2px solid var(--line);display:grid;place-items:center;background:transparent;
     }
-    @media(max-width:600px){
-      .btn{padding:7px 12px;font-size:0.85rem}
-      .cmp-input{min-height:60px}
-      .btn-icon{width:40px;height:36px}
-      .btn-icon i,.btn-icon svg{width:20px;height:20px}
+    .share-mark[data-on="true"]{ background:var(--primary) }
+    .share-name{
+      font-weight:700;font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
     }
+    .lb-head strong{ font-weight:800 }
   </style>
 </head>
 
@@ -301,7 +166,7 @@
     </div>
   </div>
 
-  <!-- Lightbox -->
+  <!-- Lightbox (ver publicación) -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose">
@@ -315,13 +180,13 @@
             <div id="lbName" style="font-weight:700"></div>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
-          <button id="lbMessage" class="btn ghost small" style="display:none" title="Enviar mensaje">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
+          <!-- botón compartir dentro del modal -->
+          <button id="lbShare" class="btn ghost small" title="Compartir">
+            <i data-lucide="send"></i>
           </button>
         </header>
         <div class="lb-body" id="lbComments"></div>
+
         <div class="lb-actions">
           <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta">
             <i data-lucide="heart"></i>
@@ -334,6 +199,7 @@
             <span id="lbLikes">0</span> · <span id="lbCommentsCount">0</span>
           </div>
         </div>
+
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
           <button id="lbSend" class="btn"><i class="nav-ico" data-lucide="send"></i></button>
@@ -342,9 +208,35 @@
     </div>
   </div>
 
+  <!-- Modal Compartir publicación -->
+  <div class="lightbox" id="shareModal" aria-hidden="true">
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Compartir" style="grid-template-columns: min(90vw,560px); max-width:560px">
+      <div class="lb-side" style="display:flex;flex-direction:column">
+        <header class="lb-head" style="gap:8px">
+          <strong style="font-size:16px">Compartir</strong>
+          <div class="spacer"></div>
+          <button id="shareClose" class="btn ghost small"><i data-lucide="x"></i></button>
+        </header>
+
+        <div style="padding:12px; border-bottom:1px solid var(--line)">
+          <!-- misma estética que la búsqueda de mensajes -->
+          <input id="shareSearch" class="share-search" placeholder="Buscar conversación o usuario…"/>
+        </div>
+
+        <div id="shareList" class="lb-body share-grid"></div>
+
+        <div style="padding:12px; border-top:1px solid var(--line); display:grid; gap:8px">
+          <textarea id="shareMsg" rows="2" class="input" placeholder="Escribe un mensaje (opcional)"></textarea>
+          <button id="shareSend" class="btn primary" disabled>Enviar</button>
+          <div id="shareInfo" class="muted" style="font-size:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== JS ===== -->
   <script>
-    // Toggle tema (y texto)
+    /* ===== Tema ===== */
     const themeBtn = document.getElementById('themeToggle');
     const themeTxt = document.getElementById('themeTxt');
     function applyTheme(t){
@@ -361,11 +253,12 @@
     });
     (function(){ const t=document.documentElement.getAttribute('data-theme'); themeTxt.textContent = t==='dark' ? 'Modo claro' : 'Modo oscuro'; })();
 
-    // ===== Helpers / API =====
+    /* ===== Helpers / API ===== */
     const API = (p)=>`${location.origin}/api${p}`;
     const token = localStorage.getItem('token');
     if(!token){ location.replace('index.html'); }
     const H  = { 'Authorization':`Bearer ${token}` };
+    const JH = { ...H, 'Content-Type':'application/json' };
     const $  = s => document.querySelector(s);
 
     function displayName(u){ return u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario'); }
@@ -377,6 +270,7 @@
     }
     function timeAgo(iso){ try{ const d=new Date(iso); const s=(Date.now()-d)/1000; if(s<60) return 'ahora'; if(s<3600) return Math.floor(s/60)+' min'; if(s<86400) return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d'; }catch{ return ''; } }
 
+    /* ===== Sugerencias / follow ===== */
     async function toggleFollow(id, isFollowing){
       try{
         const r = await fetch(API(`/follow/toggle/${id}`), { method:'POST', headers:H });
@@ -416,12 +310,7 @@
     }
 
     async function fetchSuggestedUsers(){
-      const endpoints = [
-        '/user/others',
-        '/users/others',
-        '/users/suggested',
-        '/user/suggested'
-      ];
+      const endpoints = ['/user/others','/users/others','/users/suggested','/user/suggested'];
       for (const ep of endpoints){
         try{
           const r = await fetch(API(ep), { headers:H });
@@ -438,23 +327,17 @@
       const list = document.getElementById('peopleList');
       if (!list) return;
       list.innerHTML = '<div class="muted">Cargando…</div>';
-
       const users = await fetchSuggestedUsers();
-
-      if (!users.length){
-        list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>';
-        return;
-      }
-
+      if (!users.length){ list.innerHTML = '<div class="muted">No hay sugerencias por ahora.</div>'; return; }
       list.innerHTML = '';
       users.forEach(u => {
-        // normaliza campos comunes
         u._id = u._id || u.id;
         u.isFollowing = !!(u.isFollowing || u.following || u.viewerFollows);
         list.appendChild(personRow(u));
       });
     }
 
+    /* ===== Yo / Feed ===== */
     let me = null; const userCache = new Map();
     async function loadMe(){
       const r = await fetch(API('/user/me'), { headers:H });
@@ -509,7 +392,7 @@
       return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
     }
 
-    // Lightbox
+    /* ====== Lightbox ====== */
     const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
     const lbName = document.getElementById('lbName'), lbUser = document.getElementById('lbUser');
@@ -518,9 +401,9 @@
     const lbComment = document.getElementById('lbComment');
     const lbLikes = document.getElementById('lbLikes');
     const lbCommentsCount = document.getElementById('lbCommentsCount');
+    const lbShareBtn = document.getElementById('lbShare');
 
     let currentPost = null;
-
 
     async function listPostComments(postId){
       const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
@@ -551,29 +434,14 @@
       lbName.textContent = displayName(u);
       lbUser.textContent = `@${u.nickname || 'usuario'}`;
 
-      // Mostrar botón mensaje si no es tu post
-      const lbMessageBtn = document.getElementById('lbMessage');
-      const isMyPost = me && (String(p.userId) === String(me._id || me.id));
-      if (!isMyPost && p.userId) {
-        lbMessageBtn.style.display = 'inline-flex';
-        lbMessageBtn.onclick = () => {
-          window.location.href = `messages.html?userId=${p.userId}`;
-        };
-      } else {
-        lbMessageBtn.style.display = 'none';
-      }
-
-      // Estado inicial de acciones
       lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
       lbLikes.textContent = p.counts?.likes || 0;
       lbCommentsCount.textContent = p.counts?.comments || 0;
 
-      // Cargar y renderizar comentarios
       const comments = await listPostComments(p.id);
       await renderComments(comments);
       lbCommentsCount.textContent = comments.length;
 
-      // Enviar comentario
       lbSend.onclick = async ()=>{
         const t = lbInp.value.trim();
         if(!t) return;
@@ -586,7 +454,6 @@
         }
       };
 
-      // Like toggle
       lbLike.onclick = async ()=>{
         const pressed = lbLike.getAttribute('aria-pressed') === 'true';
         lbLike.setAttribute('aria-pressed', (!pressed) + '');
@@ -596,17 +463,15 @@
           const d = await r.json();
           if(!d.ok) throw 0;
         }catch{
-          // revertir si falla
           lbLike.setAttribute('aria-pressed', pressed + '');
           lbLikes.textContent = (+lbLikes.textContent + (pressed ? 1 : -1));
         }
       };
 
-      // Botón comentar: enfoca el input
-      lbComment.onclick = ()=>{
-        lbInp.focus();
-        lbBody.scrollTop = lbBody.scrollHeight;
-      };
+      lbComment.onclick = ()=>{ lbInp.focus(); lbBody.scrollTop = lbBody.scrollHeight; };
+
+      // compartir desde el visor
+      lbShareBtn.onclick = ()=> openShareModal(p);
 
       lb.setAttribute('aria-hidden','false');
       if (window.lucide) lucide.createIcons();
@@ -622,12 +487,13 @@
     lb.addEventListener('click', (e)=>{ if(e.target===lb) closePostModal(); });
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && lb.getAttribute('aria-hidden')==='false') closePostModal(); });
 
+    /* ====== Tarjeta de post ====== */
     function postCard(p){
       const cls = ratioClass(p.media.width, p.media.height);
       const el = document.createElement('article'); el.className='post-card';
       const author = userCache.get(p.userId) || {};
       const isMyPost = me && (String(p.userId) === String(me._id || me.id));
-      
+
       el.innerHTML = `
         <header class="post-head">
           <img class="post-ava" src="${resolveAvatar(author)}" alt="">
@@ -640,7 +506,7 @@
         <div class="post-actions">
           <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta"><i data-lucide="heart"></i></button>
           <button class="btn-icon btn-comment" title="Comentar"><i data-lucide="message-circle"></i></button>
-          ${!isMyPost ? `<button class="btn-icon btn-message" title="Enviar mensaje"><i data-lucide="mail"></i></button>` : ''}
+          <button class="btn-icon btn-share" title="Compartir"><i data-lucide="send"></i></button>
           <div class="spacer"></div>
           <div class="post-counts"><span class="likes">${p.counts?.likes||0}</span> · <span class="comments">${p.counts?.comments||0}</span></div>
         </div>
@@ -662,14 +528,7 @@
 
       el.querySelector('.btn-comment').onclick = ()=> openPostModal(p);
       el.querySelector('.post-img').onclick   = ()=> openPostModal(p);
-      
-      // Botón mensaje (si existe)
-      const messageBtn = el.querySelector('.btn-message');
-      if (messageBtn) {
-        messageBtn.onclick = () => {
-          window.location.href = `messages.html?userId=${p.userId}`;
-        };
-      }
+      el.querySelector('.btn-share').onclick  = ()=> openShareModal(p);
 
       if (window.lucide) lucide.createIcons();
       return el;
@@ -678,15 +537,14 @@
     async function renderPost(p){
       if(!userCache.has(p.userId)) await getUserCached(p.userId);
       feedEl.appendChild(postCard(p));
-      refreshIcons(); // ← aquí
+      refreshIcons();
     }
 
     function prependPost(p){
       if(!userCache.has(p.userId)) userCache.set(p.userId, me);
       feedEl.prepend(postCard(p));
-      refreshIcons(); // ← aquí
+      refreshIcons();
     }
-
 
     async function loadFeed(first=false){
       if (loading) return; loading=true;
@@ -705,7 +563,140 @@
 
     (async ()=>{ await loadMe(); await loadOthers(); await loadFeed(true); })();
 
-    // Lucide
+    /* ====== Compartir publicación (modal) ====== */
+    const shareModal   = document.getElementById('shareModal');
+    const shareClose   = document.getElementById('shareClose');
+    const shareSearch  = document.getElementById('shareSearch');
+    const shareList    = document.getElementById('shareList');
+    const shareMsg     = document.getElementById('shareMsg');
+    const shareSendBtn = document.getElementById('shareSend');
+    const shareInfo    = document.getElementById('shareInfo');
+
+    let shareTargetPost = null;
+    let followingCache = [];
+    const selectedRecipients = new Set();
+
+    function openShareModal(post){
+      shareTargetPost = post;
+      selectedRecipients.clear();
+      shareMsg.value = '';
+      shareSendBtn.disabled = true;
+      shareInfo.textContent = '';
+      listFollowing().then(()=> filterShareList(''));
+      shareModal.setAttribute('aria-hidden','false');
+      if (window.lucide) lucide.createIcons();
+    }
+    function closeShareModal(){
+      shareModal.setAttribute('aria-hidden','true');
+      shareList.innerHTML = '';
+    }
+    shareClose.onclick = closeShareModal;
+    shareModal.addEventListener('click', (e)=>{ if(e.target===shareModal) closeShareModal(); });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && shareModal.getAttribute('aria-hidden')==='false') closeShareModal(); });
+
+    async function listFollowing(){
+      if (!me) await loadMe();
+      const url = new URL(API(`/follow/${me._id || me.id}/following`));
+      url.searchParams.set('limit','200');
+      const r = await fetch(url.toString(), { headers:H });
+      const d = await r.json();
+      followingCache = d?.users || [];
+    }
+
+    function renderUserPick(u){
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'share-pick';
+      el.innerHTML = `
+        <img src="${resolveAvatar(u)}" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover">
+        <div class="share-name">${displayName(u)}</div>
+      `;
+      const mark = document.createElement('div');
+      mark.className = 'share-mark';
+      el.appendChild(mark);
+
+      const id = u.id || u._id;
+      const updateMark = ()=> mark.setAttribute('data-on', selectedRecipients.has(id) ? 'true' : 'false');
+      el.onclick = ()=>{
+        if (selectedRecipients.has(id)) selectedRecipients.delete(id);
+        else selectedRecipients.add(id);
+        updateMark();
+        shareSendBtn.disabled = selectedRecipients.size===0;
+        shareInfo.textContent = selectedRecipients.size ? `Seleccionados: ${selectedRecipients.size}` : '';
+      };
+      updateMark();
+      return el;
+    }
+
+    function filterShareList(q){
+      const query = (q||'').toLowerCase();
+      shareList.innerHTML = '';
+      const list = followingCache.filter(u=>{
+        const s = `${u.firstName||''} ${u.lastName||''} ${u.nickname||''} ${u.name||''}`.toLowerCase();
+        return !query || s.includes(query);
+      });
+      if (!list.length){
+        shareList.innerHTML = '<div class="muted" style="grid-column:1/-1;text-align:center">No se encontraron resultados</div>';
+        return;
+      }
+      list.forEach(u => shareList.appendChild(renderUserPick(u)));
+    }
+    shareSearch.oninput = e => filterShareList(e.target.value);
+
+    async function ensureConversation(userId){
+      const r = await fetch(API(`/messages/conversation/${userId}`), { headers:H });
+      const d = await r.json();
+      if (!d?.conversation?.id) throw new Error('No se pudo crear conversación');
+      return d.conversation.id;
+    }
+
+    // ENVÍO COMO TARJETA (no solo link). Enviamos un payload con tipo 'post-card'.
+    async function sendShare(){
+      if (!shareTargetPost || selectedRecipients.size===0) return;
+      shareSendBtn.disabled = true;
+
+      // armamos un payload estructurado para que messages.js pinte la tarjeta
+      const payload = {
+        type: 'post-card',
+        postId: shareTargetPost.id,
+        author: displayName(userCache.get(shareTargetPost.userId) || me) || '',
+        name: displayName(userCache.get(shareTargetPost.userId) || me) || '',
+        nickname: (userCache.get(shareTargetPost.userId) || me)?.nickname || '',
+        avatar: resolveAvatar(userCache.get(shareTargetPost.userId) || me),
+        mediaThumb: shareTargetPost.media?.thumb || shareTargetPost.media?.original || '',
+        caption: shareTargetPost.caption || ''
+      };
+
+      // mensaje opcional del usuario
+      const extra = shareMsg.value.trim();
+      const content = extra ? `${extra}\n${JSON.stringify(payload)}` : JSON.stringify(payload);
+
+      try{
+        for (const uid of selectedRecipients){
+          const convId = await ensureConversation(uid);
+          await fetch(API(`/messages/${convId}`), {
+            method:'POST',
+            headers:{ ...JH },
+            body: JSON.stringify({ content })
+          });
+        }
+        shareInfo.textContent = '¡Enviado!';
+        setTimeout(()=>{ closeShareModal(); }, 600);
+      }catch(e){
+        shareInfo.textContent = 'Error al enviar';
+      }finally{
+        shareSendBtn.disabled = false;
+      }
+    }
+    shareSendBtn.onclick = sendShare;
+
+    // Abrir modal de compartir por hash (limpieza)
+    (function(){
+      const m = location.hash.match(/post=([^&]+)/);
+      if (m) location.hash = '';
+    })();
+
+    // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
   </script>
 
