@@ -201,3 +201,53 @@ body{
   .chat-username{ font-size:15px }
   .composer-input{ font-size:14px }
 }
+
+/* ==== Ajustes composer: iconos sin fondo + animación glow ==== */
+.chat-composer .btn-icon {
+  background: transparent !important;
+  border: none !important;
+  display: inline-grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease;
+  color: var(--text);
+  opacity: .9;
+}
+.chat-composer .btn-icon:hover {
+  transform: translateY(-1px) scale(1.05);
+  opacity: 1;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.chat-composer .btn-icon:active {
+  transform: scale(.98);
+  box-shadow: 0 0 0 2px var(--ring);
+}
+.chat-composer .btn-icon i { width: 22px; height: 22px; }
+
+/* Por si algún reset metía fondo blanco en botones */
+.chat-composer button { background: transparent; }
+
+/* ===== Comentarios: @nickname clicable ===== */
+.lb-cmt .nm-wrap { margin-right:6px; }
+.lb-cmt .user-link {
+  color: var(--text);
+  font-weight: 700;
+  text-decoration: none;
+}
+.lb-cmt .user-link:hover {
+  color: var(--accent);
+  text-shadow: 0 0 0.5px var(--accent);
+}
+
+/* ===== Acciones: contador junto a cada ícono ===== */
+.lb-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lb-actions .act-count {
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: 12px; /* espacio después de cada par icono-contador */
+}
