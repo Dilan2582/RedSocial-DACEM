@@ -96,15 +96,18 @@
                 <p>Selecciona una conversación para empezar a chatear</p>
               </div>
             </div>
-
-            <!-- Composer fijo -->
+                <!-- Composer fijo -->
             <footer class="chat-composer" id="chatComposer" style="display:none">
-              <button class="btn-icon" id="openMediaModal" title="Adjuntar imagen">
+              <!-- Ícono de imagen: sin fondo -->
+              <button class="btn-icon ghost glow" id="openMediaModal" title="Adjuntar imagen" type="button">
                 <i data-lucide="image"></i>
               </button>
+
               <textarea id="messageInput" rows="1" class="composer-input" placeholder="Escribe un mensaje..."></textarea>
-              <button class="btn primary" id="sendBtn" title="Enviar">
-                <i data-lucide="send"></i> <span class="hide-sm">Enviar</span>
+
+              <!-- Enviar: solo ícono, sin fondo -->
+              <button class="btn-icon ghost glow" id="sendBtn" title="Enviar" type="button">
+                <i data-lucide="send"></i>
               </button>
             </footer>
           </section>
@@ -128,10 +131,15 @@
         </header>
         <div class="lb-body" id="lbComments"></div>
         <div class="lb-actions">
+          <!-- Like + contador -->
           <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta"><i data-lucide="heart"></i></button>
+          <span id="lbLikes" class="act-count">0</span>
+
+          <!-- Comentario + contador -->
           <button id="lbComment" class="btn-icon" title="Comentar"><i data-lucide="message-circle"></i></button>
+          <span id="lbCommentsCount" class="act-count">0</span>
+
           <div class="spacer"></div>
-          <div class="post-counts"><span id="lbLikes">0</span> · <span id="lbCommentsCount">0</span></div>
         </div>
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">

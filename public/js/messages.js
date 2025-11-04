@@ -11,15 +11,12 @@ const $ = (s)=>document.querySelector(s);
 function safe(v,f=''){ return (v===null||v===undefined)?f:v; }
 function displayName(u){
   if(!u) return 'Usuario';
-  return u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim() || u.nick || u.nickname || u.username || 'Usuario';
+  return (u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim() || u.nick || u.nickname || u.username || 'Usuario');
 }
 function goToProfile(u){
   if(!u) return;
   const id  = u.id || u._id || '';
-  const nick = u.nickname || u.nick || '';
-  // ajusta la ruta que uses para perfiles:
-  const href = nick ? `profile.html?u=${encodeURIComponent(nick)}` 
-                    : `profile.html?userId=${encodeURIComponent(id)}`;
+  const href = `profile.html?id=${encodeURIComponent(id)}`;
   location.href = href;
 }
 function resolveAvatar(u){
@@ -39,7 +36,21 @@ function formatTime(ts){
   return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
 }
 
-/* ====== Lightbox (idéntico a user.html) ====== */
+/* ====== Cache básico de usuarios ====== */
+const userCache = new Map();
+async function fetchUserPublic(uid){
+  if(!uid) return {};
+  if(userCache.has(uid)) return userCache.get(uid);
+  try{
+    const r = await fetch(`${API_BASE}/user/${uid}/public`, { headers:{ Authorization:authToken }});
+    const d = await r.json();
+    const u = d.user || d.data || {};
+    userCache.set(uid, u);
+    return u;
+  }catch{ return {}; }
+}
+
+/* ====== Lightbox ====== */
 let lb=null, lbImg=null, lbAva=null, lbName=null, lbUser=null, lbBody=null, lbInp=null, lbSend=null, lbLike=null, lbLikes=null, lbCommentsCount=null;
 
 (function bindExistingLightbox(){
@@ -50,6 +61,38 @@ let lb=null, lbImg=null, lbAva=null, lbName=null, lbUser=null, lbBody=null, lbIn
   $('#lbClose')?.addEventListener('click', closePostModal);
   lb?.addEventListener('click', (e)=>{ if(e.target===lb) closePostModal(); });
 })();
+
+/* ===== Likes helpers (sin body) ===== */
+async function toggleLike(postId){
+  const headers = { Authorization: authToken };
+  const candidates = [
+    `/posts/${postId}/likes/toggle`,
+    `/posts/${postId}/like/toggle`,
+    `/posts/${postId}/like`,
+    `/posts/${postId}/likes`,
+  ];
+  for (const path of candidates){
+    try{
+      const r = await fetch(API_BASE + path, { method:'POST', headers });
+      // Algunos backends devuelven 200 sin body, otros { ok:true }
+      if (r.ok) return true;
+      const d = await r.json().catch(()=>null);
+      if (d && (d.ok === true || d.success === true)) return true;
+    }catch(_){}
+  }
+  return false;
+}
+async function refreshCounts(postId){
+  try{
+    const r = await fetch(`${API_BASE}/posts/${postId}`, { headers:{ Authorization:authToken }});
+    const d = await r.json();
+    if (d?.ok && d.post){
+      lbLike.setAttribute('aria-pressed', d.post.viewerLiked ? 'true' : 'false');
+      if (typeof d.post.counts?.likes === 'number')    lbLikes.textContent = d.post.counts.likes;
+      if (typeof d.post.counts?.comments === 'number') lbCommentsCount.textContent = d.post.counts.comments;
+    }
+  }catch(_){}
+}
 
 let currentPost = null;
 async function fetchPost(postId){
@@ -67,58 +110,91 @@ async function addPostComment(postId,text){
   });
   const d=await r.json(); return d.ok? d.comment:null;
 }
+
+/* ---- Comentarios con @nickname clicable ---- */
+function renderCommentRow(c){
+  const cu   = c.user || {};
+  const uid  = cu.id || cu._id || c.userId || '';
+  const nick = (cu.nickname || cu.nick || 'usuario').replace(/^@/, '');
+  const nmLink = `<a href="profile.html?id=${encodeURIComponent(uid)}" class="nm user-link">@${escapeHtml(nick)}</a>`;
+  return `<span class="nm-wrap">${nmLink}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+}
+
 async function openPostModal(p){
   if(!p) return;
   currentPost = p;
 
   lbImg.src = p.media?.t1 || p.media?.original || p.media?.thumb || '';
   const au = p.author || p.user || {};
-lbAva.src = resolveAvatar(au);
+  lbAva.src = resolveAvatar(au);
 
-// Nombre y @nick clicables
-const nm   = displayName(au);
-const nick = au.nickname || au.nick || 'usuario';
-const pid  = au.id || au._id || '';
+  const nm      = displayName(au);
+  const pid     = au.id || au._id || p.userId || '';
+  const rawNick = (au.nickname || au.nick || '').replace(/^@/, '');
+  const profHref = pid ? `profile.html?id=${encodeURIComponent(pid)}` : '#';
 
-lbName.innerHTML = `<a href="profile.html?${nick ? `u=${encodeURIComponent(nick)}` : `userId=${encodeURIComponent(pid)}`}" class="lb-author">${escapeHtml(nm)}</a>`;
-lbUser.innerHTML = `<a href="profile.html?${nick ? `u=${encodeURIComponent(nick)}` : `userId=${encodeURIComponent(pid)}`}" class="lb-author muted">@${escapeHtml(nick)}</a>`;
+  lbName.innerHTML = `<a href="${profHref}" class="lb-author">${escapeHtml(nm)}</a>`;
+  lbUser.innerHTML = rawNick ? `<a href="${profHref}" class="lb-author muted">@${escapeHtml(rawNick)}</a>` : '';
+  lbAva.onclick = () => goToProfile({ id: pid });
 
-// También navega si hacen click en el avatar
-lbAva.onclick = () => goToProfile(au);
+  /* Estado inicial de likes/contadores */
+  lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
+  lbLikes.textContent = p.counts?.likes ?? '0';
+  lbCommentsCount.textContent = p.counts?.comments ?? '0';
+  // Sincroniza por si el objeto venía desactualizado
+  refreshCounts(p.id || p._id);
 
-
-  const comments = await listPostComments(p.id);
+  // Comentarios (resuelve nick si falta)
+  const comments = await listPostComments(p.id || p._id);
+  for(const c of comments){
+    const cu = c.user || {};
+    const uid = c.userId || cu.id || cu._id;
+    const hasNick = !!(cu.nickname || cu.nick);
+    if(uid && !hasNick){
+      const u = await fetchUserPublic(uid);
+      c.user = { id: uid, _id: uid, ...u, ...c.user };
+    }
+  }
   lbBody.innerHTML='';
   comments.forEach(c=>{
     const row = document.createElement('div'); row.className='lb-cmt';
-    const nm = displayName(c.user || {});
-    row.innerHTML = `<span class="nm">${escapeHtml(nm)}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+    row.innerHTML = renderCommentRow(c);
     lbBody.appendChild(row);
   });
   lbBody.scrollTop = lbBody.scrollHeight;
-  lbCommentsCount.textContent = comments.length;
 
+  // Enviar comentario
   lbSend.onclick = async ()=>{
     const t = lbInp.value.trim(); if(!t) return;
-    const c = await addPostComment(p.id, t);
+    const c = await addPostComment((p.id||p._id), t);
     if(c){
-      lbInp.value=''; const row=document.createElement('div'); row.className='lb-cmt';
-      row.innerHTML = `<span class="nm">${escapeHtml(displayName(c.user||{}))}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
-      lbBody.appendChild(row); lbBody.scrollTop=lbBody.scrollHeight;
+      if(!(c.user && (c.user.nickname||c.user.nick))){
+        const uid = c.userId || c.user?.id || c.user?._id;
+        if(uid){ const u = await fetchUserPublic(uid); c.user = { id: uid, _id: uid, ...c.user, ...u }; }
+      }
+      lbInp.value='';
+      const row=document.createElement('div'); row.className='lb-cmt';
+      row.innerHTML = renderCommentRow(c);
+      lbBody.appendChild(row);
+      lbBody.scrollTop=lbBody.scrollHeight;
       lbCommentsCount.textContent = +lbCommentsCount.textContent + 1;
     }
   };
 
+  // Like (sin body; rollback si falla)
   lbLike.onclick = async ()=>{
-    const pressed = lbLike.getAttribute('aria-pressed')==='true';
-    lbLike.setAttribute('aria-pressed', (!pressed)+'' );
-    lbLikes.textContent = (+lbLikes.textContent + (pressed?-1:1));
-    try{
-      const r=await fetch(`${API_BASE}/posts/${p.id}/likes/toggle`, {method:'POST', headers:{Authorization:authToken}});
-      const d=await r.json(); if(!d.ok) throw 0;
-    }catch{
-      lbLike.setAttribute('aria-pressed', pressed+'' );
-      lbLikes.textContent = (+lbLikes.textContent + (pressed?1:-1));
+    const pressedBefore = lbLike.getAttribute('aria-pressed')==='true';
+    lbLike.setAttribute('aria-pressed', (!pressedBefore)+'' );
+    lbLikes.textContent = (+lbLikes.textContent + (pressedBefore?-1:1));
+
+    const ok = await toggleLike(p.id || p._id);
+    if(!ok){
+      // Revertir
+      lbLike.setAttribute('aria-pressed', pressedBefore+'' );
+      lbLikes.textContent = (+lbLikes.textContent + (pressedBefore?1:-1));
+    } else {
+      // Opcional: refrescar para quedar 100% alineados con el backend
+      refreshCounts(p.id || p._id);
     }
   };
 
@@ -138,7 +214,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!token){ location.href='/index.html'; return; }
   authToken = 'Bearer ' + token;
 
-  // Topbar events (para esta página)
   $('#themeToggle')?.addEventListener('click', ()=>{
     const cur=document.documentElement.getAttribute('data-theme');
     const t=cur==='dark'?'light':'dark';
@@ -150,12 +225,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
   $('#logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); location.href='/index.html'; });
 
   $('#searchBox')?.addEventListener('input', handleSearch);
-
-  // Composer handlers (si ya hay conversación)
-  $('#sendBtn')?.addEventListener('click', sendMessage);
-  $('#messageInput')?.addEventListener('keypress', e=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
-  });
 
   loadConversations();
 
@@ -220,7 +289,6 @@ function selectConversation(id,userId,name,image){
   currentConversation={id};
   currentRecipient={ id:userId, name, nick:name, nickname:name, image };
 
-  // header visible
   const head = $('#chatHead');
   head.style.display = 'flex';
   head.innerHTML = `
@@ -231,15 +299,26 @@ function selectConversation(id,userId,name,image){
       <div class="chat-status">Activo ahora</div>
     </div>`;
     $('#chatComposer').style.display = 'flex';
+ const sendBtn = $('#sendBtn');
+  const inp     = $('#messageInput');
 
-// eventos
-$('#sendBtn').onclick = sendMessage;
-$('#messageInput').onkeypress = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); } };
-
-  // ===== Layout del área de chat para que el composer NUNCA se esconda =====
+  if (sendBtn) {
+    // sobrescribe cualquier handler previo
+    sendBtn.onclick = null;
+    sendBtn.onclick = sendMessage;
+  }
+  if (inp) {
+    inp.onkeypress = null;
+    inp.onkeypress = (e)=>{
+      if(e.key==='Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendMessage();
+      }
+    };
+  }
   const view = $('#chatView');
   view.style.display = 'grid';
-  view.style.gridTemplateRows = 'auto 1fr auto';   // header | body scroll | composer
+  view.style.gridTemplateRows = 'auto 1fr auto';
   view.style.minHeight = '0';
 
   const body = $('#chatBody');
@@ -247,17 +326,9 @@ $('#messageInput').onkeypress = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.pre
   body.style.minHeight = '0';
   body.style.overflow = 'auto';
 
-  // composer visible
   const composer = $('#chatComposer');
   composer.style.display = 'flex';
 
-  // eventos (una sola vez al recrear)
-  $('#sendBtn').onclick = sendMessage;
-  $('#messageInput').onkeypress = (e)=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendMessage(); }
-  };
-
-  // responsive back
   const backBtn = $('#backToList');
   if (window.innerWidth <= 768) {
     backBtn.style.display = 'block';
@@ -270,15 +341,11 @@ $('#messageInput').onkeypress = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.pre
   renderConversations(conversations);
   loadMessages(id);
 
-  // mobile
   $('#conversationsList').classList.add('hidden');
   $('#chatView').classList.remove('hidden');
 }
 
-
 /* ====================== MESSAGES ====================== */
-
-// 1) Extrae JSON embebido (ej. "ira nomas {...}")
 function extractEmbeddedJson(str){
   const start = str.indexOf('{'); const end = str.lastIndexOf('}');
   if(start !== -1 && end !== -1 && end > start){
@@ -286,8 +353,6 @@ function extractEmbeddedJson(str){
   }
   return null;
 }
-
-// 2) Extrae postId desde "...#post=<id>"
 function extractPostIdFromLink(str){
   const m = str.match(/[#?&]post=([A-Za-z0-9_-]+)/);
   return m ? m[1] : null;
@@ -313,7 +378,7 @@ async function loadMessages(conversationId, polling=false){
 
 function buildPostBubble(msg, data){
   const authorName = data.name || data.author || '';
-  const nick = data.nickname ? `@${data.nickname}` : '';
+  const nick = (data.nickname || '').replace(/^@/,'');
   const ava = data.avatar || '';
   const thumb = data.mediaThumb || '';
   const caption = data.caption || '';
@@ -323,7 +388,7 @@ function buildPostBubble(msg, data){
       <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}">
       <div class="pc-u">
         <div class="pc-name">${escapeHtml(authorName)}</div>
-        <div class="pc-nick">${escapeHtml(nick)}</div>
+        <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
       </div>
     </div>`;
   const media = `<div class="pc-media"><img src="${escapeHtml(thumb)}" alt=""></div>`;
@@ -332,7 +397,13 @@ function buildPostBubble(msg, data){
   return `
   <div class="message ${msg.isMine ? 'mine' : ''}">
     <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
-    <div class="msg-bubble post-bubble" data-postid="${escapeHtml(data.postId||'')}" data-mode="card">
+    <div class="msg-bubble post-bubble"
+         data-postid="${escapeHtml(data.postId||'')}"
+         data-mode="card"
+         data-userid="${escapeHtml(data.userId||'')}"
+         data-nickname="${escapeHtml(nick)}"
+         data-authorname="${escapeHtml(authorName)}"
+         data-avatar="${escapeHtml(ava)}">
       ${header}${media}${cap}
     </div>
   </div>`;
@@ -344,11 +415,8 @@ function buildMessageHTML(msg){
   if(typeof msg.content === 'object' && msg.content){
     data = msg.content;
   }else if(typeof msg.content === 'string'){
-    // JSON limpio
     if(msg.content.trim().startsWith('{')){ try{ data = JSON.parse(msg.content); }catch{} }
-    // JSON embebido (ira nomas {...})
     if(!data){ data = extractEmbeddedJson(msg.content); }
-    // Link con #post=
     if(!data){ postId = extractPostIdFromLink(msg.content); }
   }
 
@@ -357,7 +425,6 @@ function buildMessageHTML(msg){
   }
 
   if(postId){
-    // Render placeholder y marcar para upgrade
     const pid = escapeHtml(postId);
     return `
     <div class="message ${msg.isMine ? 'mine' : ''}">
@@ -368,7 +435,6 @@ function buildMessageHTML(msg){
     </div>`;
   }
 
-  // Texto normal
   return `
     <div class="message ${msg.isMine ? 'mine' : ''}">
       <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
@@ -387,12 +453,13 @@ async function upgradeLinkShares(){
     if(!p) { el.innerHTML = '<div class="pc-loading">No se pudo cargar la publicación</div>'; continue; }
 
     const au = p.author || p.user || {};
+    const nick = (au.nickname || au.nick || '').replace(/^@/,'');
     const header = `
       <div class="pc-head">
         <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}">
         <div class="pc-u">
           <div class="pc-name">${escapeHtml(displayName(au))}</div>
-          <div class="pc-nick">@${escapeHtml(au.nickname||'usuario')}</div>
+          <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
         </div>
       </div>`;
     const media = `<div class="pc-media"><img src="${escapeHtml(p.media?.thumb || p.media?.original || '')}" alt=""></div>`;
@@ -400,7 +467,12 @@ async function upgradeLinkShares(){
 
     el.innerHTML = `${header}${media}${cap}`;
     el.dataset.mode = 'card';
-    el.dataset.postid = p.id;
+    el.dataset.postid = p.id || p._id;
+
+    el.dataset.userid = au.id || au._id || (p.userId || '');
+    el.dataset.nickname = nick || '';
+    el.dataset.authorname = displayName(au);
+    el.dataset.avatar = au.avatar || au.image || '';
   }
   attachPostCardHandlers();
 }
@@ -413,7 +485,18 @@ function attachPostCardHandlers(){
       const postId = el.getAttribute('data-postid');
       if(!postId) return;
       const p = await fetchPost(postId);
-      if(p) openPostModal(p);
+      if(p){
+        const au = {
+          id: el.getAttribute('data-userid') || p.userId,
+          _id: el.getAttribute('data-userid') || p.userId,
+          nickname: (el.getAttribute('data-nickname') || '').replace(/^@/, ''),
+          nick: (el.getAttribute('data-nickname') || '').replace(/^@/, ''),
+          name: el.getAttribute('data-authorname') || '',
+          avatar: el.getAttribute('data-avatar') || ''
+        };
+        p.author = au;
+        openPostModal(p);
+      }
     });
   });
 }
@@ -424,9 +507,8 @@ function renderMessages(list){
 
   body.innerHTML = list.map(buildMessageHTML).join('');
   attachPostCardHandlers();
-  upgradeLinkShares(); // convierte los “Mira esta publicación: ...#post=ID”
+  upgradeLinkShares();
 
-  // Auto scroll
   body.scrollTop = body.scrollHeight;
 }
 
@@ -456,8 +538,6 @@ async function startConversationWithUser(userId){
     const d = await r.json();
     currentConversation = { id:d.conversation.id };
     currentRecipient   = d.conversation.user;
-
-    // mostrar header y composer
     selectConversation(d.conversation.id, currentRecipient.id||currentRecipient._id, displayName(currentRecipient), currentRecipient.image||currentRecipient.avatar);
   }catch(e){ console.error('startConversation', e); }
 }
