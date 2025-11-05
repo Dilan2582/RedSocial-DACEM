@@ -107,10 +107,11 @@
     .post-userid{color:var(--muted);font-size:.85rem}
     .post-media{position:relative;background:#f6f7fb;cursor:pointer}
     [data-theme="dark"] .post-media{background:#0b0f1d}
-    .post-media img{display:block;width:100%;height:auto;object-fit:cover}
-    .post-media.ratio-square img{aspect-ratio:1/1}
-    .post-media.ratio-portrait img{aspect-ratio:4/5}
-    .post-media.ratio-landscape img{aspect-ratio:16/9}
+    .post-media img,.post-media video{display:block;width:100%;height:auto;object-fit:cover}
+    .post-media.ratio-square img,.post-media.ratio-square video{aspect-ratio:1/1}
+    .post-media.ratio-portrait img,.post-media.ratio-portrait video{aspect-ratio:4/5}
+    .post-media.ratio-landscape img,.post-media.ratio-landscape video{aspect-ratio:16/9}
+    .post-video{max-height:600px;background:#000}
     .post-actions{display:flex;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
     .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:44px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;transition:.15s ease}
     .btn-icon:hover{background:rgba(124,92,252,.08)}
