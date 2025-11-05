@@ -6,6 +6,9 @@ let conversations = [];
 let pollInterval = null;
 let authToken = null;
 
+/* ====== Bulk delete (modal) ====== */
+let delModal = null, delList = null, delCount = null, delConfirm = null, delCancel = null;
+
 /* ========================== HELPERS ========================= */
 const $ = (s)=>document.querySelector(s);
 function safe(v,f=''){ return (v===null||v===undefined)?f:v; }
@@ -50,7 +53,7 @@ async function fetchUserPublic(uid){
   }catch{ return {}; }
 }
 
-/* ====== Lightbox ====== */
+/* ====== Lightbox (posts) ====== */
 let lb=null, lbImg=null, lbAva=null, lbName=null, lbUser=null, lbBody=null, lbInp=null, lbSend=null, lbLike=null, lbLikes=null, lbCommentsCount=null;
 
 (function bindExistingLightbox(){
@@ -74,7 +77,6 @@ async function toggleLike(postId){
   for (const path of candidates){
     try{
       const r = await fetch(API_BASE + path, { method:'POST', headers });
-      // Algunos backends devuelven 200 sin body, otros { ok:true }
       if (r.ok) return true;
       const d = await r.json().catch(()=>null);
       if (d && (d.ok === true || d.success === true)) return true;
@@ -137,14 +139,11 @@ async function openPostModal(p){
   lbUser.innerHTML = rawNick ? `<a href="${profHref}" class="lb-author muted">@${escapeHtml(rawNick)}</a>` : '';
   lbAva.onclick = () => goToProfile({ id: pid });
 
-  /* Estado inicial de likes/contadores */
   lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
   lbLikes.textContent = p.counts?.likes ?? '0';
   lbCommentsCount.textContent = p.counts?.comments ?? '0';
-  // Sincroniza por si el objeto venía desactualizado
   refreshCounts(p.id || p._id);
 
-  // Comentarios (resuelve nick si falta)
   const comments = await listPostComments(p.id || p._id);
   for(const c of comments){
     const cu = c.user || {};
@@ -163,7 +162,6 @@ async function openPostModal(p){
   });
   lbBody.scrollTop = lbBody.scrollHeight;
 
-  // Enviar comentario
   lbSend.onclick = async ()=>{
     const t = lbInp.value.trim(); if(!t) return;
     const c = await addPostComment((p.id||p._id), t);
@@ -181,19 +179,15 @@ async function openPostModal(p){
     }
   };
 
-  // Like (sin body; rollback si falla)
   lbLike.onclick = async ()=>{
     const pressedBefore = lbLike.getAttribute('aria-pressed')==='true';
     lbLike.setAttribute('aria-pressed', (!pressedBefore)+'' );
     lbLikes.textContent = (+lbLikes.textContent + (pressedBefore?-1:1));
-
     const ok = await toggleLike(p.id || p._id);
     if(!ok){
-      // Revertir
       lbLike.setAttribute('aria-pressed', pressedBefore+'' );
       lbLikes.textContent = (+lbLikes.textContent + (pressedBefore?1:-1));
     } else {
-      // Opcional: refrescar para quedar 100% alineados con el backend
       refreshCounts(p.id || p._id);
     }
   };
@@ -214,23 +208,30 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!token){ location.href='/index.html'; return; }
   authToken = 'Bearer ' + token;
 
-  $('#themeToggle')?.addEventListener('click', ()=>{
-    const cur=document.documentElement.getAttribute('data-theme');
-    const t=cur==='dark'?'light':'dark';
-    document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('theme', t);
-    const el=$('#themeTxt'); if(el) el.textContent=t==='dark'?'Modo claro':'Modo oscuro';
-    try{ if(window.lucide) window.lucide.createIcons(); }catch(_){}
-  });
+  // Referencias modal borrar
+  delModal   = $('#delModal');
+  delList    = $('#delList');
+  delCount   = $('#delCount');
+  delConfirm = $('#delConfirm');
+  delCancel  = $('#delCancel');
+
+  // Botón opciones (…)
+  $('#msgOptionsBtn')?.addEventListener('click', openDeleteModal);
+
+  // Logout
   $('#logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); location.href='/index.html'; });
 
+  // Buscar
   $('#searchBox')?.addEventListener('input', handleSearch);
 
+  // Cargar conversaciones
   loadConversations();
 
+  // Abrir conversación directa por query
   const userId = new URLSearchParams(location.search).get('userId');
   if(userId) startConversationWithUser(userId);
 
+  // Polling
   pollInterval = setInterval(()=>{ if(currentConversation){ loadMessages(currentConversation.id, true); } }, 5000);
 });
 
@@ -247,6 +248,8 @@ async function loadConversations(){
 
 function renderConversations(convs){
   const container = $('#conversationsBody');
+  if(!container) return;
+
   if(!convs.length){
     container.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -293,17 +296,19 @@ function selectConversation(id,userId,name,image){
   head.style.display = 'flex';
   head.innerHTML = `
     <button class="btn ghost small" id="backToList" style="display:none">← Atrás</button>
-    <img src="${resolveAvatar(currentRecipient)}" class="chat-avatar" alt="${escapeHtml(name)}">
+    <img src="${resolveAvatar(currentRecipient)}" class="chat-avatar" alt="${escapeHtml(name)}" id="chatHeadAva">
     <div class="chat-user-info">
-      <div class="chat-username">${escapeHtml(name)}</div>
+      <a class="chat-username" id="chatHeadLink" href="profile.html?id=${encodeURIComponent(userId)}" style="text-decoration:none">
+        ${escapeHtml(name)}
+      </a>
       <div class="chat-status">Activo ahora</div>
     </div>`;
-    $('#chatComposer').style.display = 'flex';
- const sendBtn = $('#sendBtn');
+
+  $('#chatHeadAva').onclick = (e)=>{ e.preventDefault(); location.href = `profile.html?id=${encodeURIComponent(userId)}`; };
+  const sendBtn = $('#sendBtn');
   const inp     = $('#messageInput');
 
   if (sendBtn) {
-    // sobrescribe cualquier handler previo
     sendBtn.onclick = null;
     sendBtn.onclick = sendMessage;
   }
@@ -547,3 +552,93 @@ async function markAsRead(conversationId){
 }
 
 window.addEventListener('beforeunload', ()=>{ if(pollInterval) clearInterval(pollInterval); });
+
+/* ====================== BULK DELETE (MODAL) ====================== */
+function openDeleteModal(){
+  if(!delModal) return;
+  // Construir la lista con conversaciones actuales
+  if(!conversations.length){
+    delList.innerHTML = `<div class="muted" style="padding:8px 4px">No hay conversaciones para borrar.</div>`;
+  }else{
+    delList.innerHTML = conversations.map(c=>{
+      const u = c.user || c.recipient || {};
+      const name = displayName(u);
+      return `
+        <label class="del-row">
+          <input type="checkbox" class="del-check" value="${escapeHtml(c.id)}">
+          <img src="${resolveAvatar(u)}" class="del-ava" alt="">
+          <div class="del-info">
+            <div class="del-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+            <div class="del-prev muted">${escapeHtml((c.lastMessage?.content || ''))}</div>
+          </div>
+          <span class="del-time muted">${formatTime(c.lastMessageAt)}</span>
+        </label>`;
+    }).join('');
+  }
+  // contador
+  updateDelCount();
+  // listeners
+  delList.querySelectorAll('.del-check').forEach(ch=>{
+    ch.addEventListener('change', updateDelCount);
+  });
+
+  // botones
+  delCancel.onclick = closeDeleteModal;
+  delConfirm.onclick = confirmDeleteSelected;
+
+  delModal.setAttribute('aria-hidden','false');
+}
+function closeDeleteModal(){
+  delModal?.setAttribute('aria-hidden','true');
+  if(delList) delList.innerHTML = '';
+  updateDelCount();
+}
+function updateDelCount(){
+  const n = delList ? delList.querySelectorAll('.del-check:checked').length : 0;
+  if(delCount) delCount.textContent = n;
+  if(delConfirm) delConfirm.disabled = n===0;
+}
+
+async function confirmDeleteSelected(){
+  const ids = [...delList.querySelectorAll('.del-check:checked')].map(x=>x.value);
+  if(!ids.length) return;
+
+  delConfirm.disabled = true;
+
+  // intenta varios endpoints comunes
+  async function tryDeleteOne(id){
+    const candidates = [
+      { m:'DELETE', p:`/messages/conversation/${id}` },
+      { m:'DELETE', p:`/messages/${id}` },
+      { m:'DELETE', p:`/messages/conversations/${id}` },
+    ];
+    for(const c of candidates){
+      try{
+        const r = await fetch(API_BASE + c.p, { method:c.m, headers:{ Authorization:authToken }});
+        if(r.ok) return true;
+      }catch(_){}
+    }
+    return false;
+  }
+
+  let okAll = true;
+  for(const id of ids){
+    const ok = await tryDeleteOne(id);
+    if(!ok) okAll = false;
+  }
+
+  // Recargar lista pase lo que pase
+  await loadConversations();
+  if(currentConversation && ids.includes(currentConversation.id)){
+    // si borraste la actual, limpia la vista de chat
+    currentConversation = null;
+    $('#chatBody')?.replaceChildren();
+    $('#chatHead')?.replaceChildren();
+    $('#chatComposer')?.style && ($('#chatComposer').style.display='none');
+  }
+
+  delConfirm.disabled = false;
+  closeDeleteModal();
+
+  if(!okAll) alert('Algunas conversaciones no pudieron eliminarse.');
+}
