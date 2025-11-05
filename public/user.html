@@ -12,6 +12,7 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/user.css">
+  <link rel="stylesheet" href="css/transformations.css">
 
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -180,6 +181,14 @@
             <div id="lbName" style="font-weight:700"></div>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
+          <!-- botón análisis facial -->
+          <button id="lbFaceAnalysis" class="btn ghost small" style="display:none" title="Análisis Facial">
+            <span style="font-size:18px;">😊</span>
+          </button>
+          <!-- botón transformaciones -->
+          <button id="lbTransformations" class="btn ghost small" style="display:none" title="Ver transformaciones">
+            <i data-lucide="sparkles"></i>
+          </button>
           <!-- botón compartir dentro del modal -->
           <button id="lbShare" class="btn ghost small" title="Compartir">
             <i data-lucide="send"></i>
@@ -230,6 +239,19 @@
           <button id="shareSend" class="btn primary" disabled>Enviar</button>
           <div id="shareInfo" class="muted" style="font-size:12px"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Análisis Facial -->
+  <div id="faceAnalysisModal" class="backdrop" style="z-index:10000">
+    <div class="modal" style="max-width:600px; max-height:90vh; overflow-y:auto">
+      <div class="modal-head" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; padding:20px">
+        <h3 style="margin:0; font-size:20px">🔍 Análisis Facial</h3>
+        <button class="btn ghost small" id="closeFaceAnalysis" style="color:white; border-color:rgba(255,255,255,0.3)">&times;</button>
+      </div>
+      <div class="modal-body" id="faceAnalysisContent" style="padding:20px">
+        <div class="muted" style="text-align:center">Cargando análisis...</div>
       </div>
     </div>
   </div>
@@ -426,6 +448,7 @@
     }
     async function openPostModal(p){
       currentPost = p;
+      window.currentPostData = p; // Guardar para sistema de transformaciones
 
       lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
 
@@ -434,8 +457,23 @@
       lbName.textContent = displayName(u);
       lbUser.textContent = `@${u.nickname || 'usuario'}`;
 
+      // Mostrar botón de análisis facial si hay datos de Rekognition
+      const lbFaceAnalysisBtn = document.getElementById('lbFaceAnalysis');
+      if (p.visionRaw && p.visionRaw.faces && p.visionRaw.faces.length > 0) {
+        lbFaceAnalysisBtn.style.display = 'inline-flex';
+      } else {
+        lbFaceAnalysisBtn.style.display = 'none';
+      }
+
+      // Mostrar botón de transformaciones si hay variantes
+      const lbTransformationsBtn = document.getElementById('lbTransformations');
+      if (p.media && p.media.variants) {
+        lbTransformationsBtn.style.display = 'inline-flex';
+      } else {
+        lbTransformationsBtn.style.display = 'none';
+      }
+
       lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
-      lbLikes.textContent = p.counts?.likes || 0;
       lbCommentsCount.textContent = p.counts?.comments || 0;
 
       const comments = await listPostComments(p.id);
@@ -698,6 +736,102 @@
 
     // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
+    
+    // Modal de Análisis Facial
+    const faceAnalysisModal = document.getElementById('faceAnalysisModal');
+    const closeFaceAnalysisBtn = document.getElementById('closeFaceAnalysis');
+    const faceAnalysisContent = document.getElementById('faceAnalysisContent');
+    
+    closeFaceAnalysisBtn.onclick = () => faceAnalysisModal.removeAttribute('data-open');
+    faceAnalysisModal.addEventListener('click', (e) => {
+      if (e.target === faceAnalysisModal) faceAnalysisModal.removeAttribute('data-open');
+    });
+    
+    document.getElementById('lbFaceAnalysis').addEventListener('click', () => {
+      if (!window.currentPostData || !window.currentPostData.visionRaw) return;
+      
+      const faces = window.currentPostData.visionRaw.faces || [];
+      if (faces.length === 0) return;
+      
+      faceAnalysisModal.setAttribute('data-open', 'true');
+      
+      // Construir HTML del análisis (igual que en profile.html)
+      let html = `<p style="color:var(--muted); margin-bottom:20px">Se detectaron ${faces.length} rostro(s) en la imagen</p>`;
+      
+      faces.forEach((face, index) => {
+        const ageRange = face.AgeRange ? `${face.AgeRange.Low} - ${face.AgeRange.High} años` : 'N/A';
+        const gender = face.Gender ? `${face.Gender.Value} (${Math.round(face.Gender.Confidence)}%)` : 'N/A';
+        
+        html += `
+          <div style="background:var(--panel2); padding:20px; border-radius:12px; margin-bottom:20px; border-left:4px solid #667eea">
+            <h4 style="color:#667eea; margin:0 0 16px; font-size:16px">Rostro ${index + 1}</h4>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px">
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Edad estimada:</label>
+                <strong style="font-size:14px">${ageRange}</strong>
+              </div>
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Género:</label>
+                <strong style="font-size:14px">${gender}</strong>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:16px">
+              <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Confianza:</label>
+              <strong style="font-size:14px">${Math.round(face.Confidence || 0)}%</strong>
+            </div>
+            
+            ${face.Emotions && face.Emotions.length > 0 ? `
+              <div style="margin-bottom:16px">
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Expresión:</label>
+                <strong style="font-size:14px; color:#667eea">${face.Emotions[0].Type} (${Math.round(face.Emotions[0].Confidence)}%)</strong>
+              </div>
+              
+              <div style="margin-bottom:16px">
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Características detectadas:</label>
+                <ul style="margin:0; padding-left:20px; font-size:13px">
+                  ${face.MouthOpen && face.MouthOpen.Value ? `<li>Boca abierta (${Math.round(face.MouthOpen.Confidence)}%)</li>` : ''}
+                  ${face.Smile && face.Smile.Value ? `<li>Sonriendo (${Math.round(face.Smile.Confidence)}%)</li>` : ''}
+                  ${face.Eyeglasses && face.Eyeglasses.Value ? `<li>Lentes (${Math.round(face.Eyeglasses.Confidence)}%)</li>` : ''}
+                </ul>
+              </div>
+              
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Emociones detectadas:</label>
+                <div style="display:flex; flex-direction:column; gap:6px">
+                  ${face.Emotions.map(emotion => `
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                      <span style="font-size:13px">${emotion.Type}</span>
+                      <div style="flex:1; margin:0 12px; height:6px; background:var(--line); border-radius:3px; overflow:hidden">
+                        <div style="width:${emotion.Confidence}%; height:100%; background:linear-gradient(90deg, #667eea, #764ba2)"></div>
+                      </div>
+                      <span style="font-size:12px; color:#667eea; font-weight:600">${Math.round(emotion.Confidence)}%</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      faceAnalysisContent.innerHTML = html;
+    });
+  </script>
+
+  <!-- Sistema de Transformaciones -->
+  <script src="js/transformations.js"></script>
+  <script>
+    // Inicializar sistema de transformaciones
+    const transformations = new ImageTransformations();
+    
+    // Conectar el botón de transformaciones
+    document.getElementById('lbTransformations').addEventListener('click', () => {
+      if (window.currentPostData) {
+        transformations.showTransformations(window.currentPostData);
+      }
+    });
   </script>
 
   <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">

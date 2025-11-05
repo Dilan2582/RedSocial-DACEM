@@ -10,24 +10,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Estilos -->
+  <!-- Estilos (no importo user.css) -->
   <link rel="stylesheet" href="css/profile.css">
   <link rel="stylesheet" href="css/messages.css">
 
   <!-- Iconos -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
-  <!-- Tema inicial (COPIADO de user.html) -->
+  <!-- Tema inicial -->
   <script>
-    (function () {
-      var saved = localStorage.getItem('theme');
-      if(!saved){ saved = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+    (function(){
+      const saved = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', saved);
     })();
   </script>
 </head>
 <body>
-  <!-- Topbar -->
+  <!-- Topbar como en user/profile -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
@@ -35,7 +34,6 @@
         <span>DACEM</span>
       </div>
       <div style="margin-left:auto" class="topbar-actions">
-        <!-- MISMO botón que en user.html -->
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
           <i class="nav-ico" data-lucide="moon"></i> <span id="themeTxt">Modo oscuro</span>
         </button>
@@ -70,26 +68,7 @@
           <!-- Lista de conversaciones -->
           <aside class="conversations-list" id="conversationsList">
             <div class="conversations-header">
-              <div class="conv-head-row">
-                <h1>Mensajes</h1>
-
-                <!-- Botón de 3 puntos, a la derecha del título "Mensajes" -->
-                <button id="msgOptionsBtn" class="btn ghost small" aria-haspopup="dialog" title="Opciones">
-                  …
-                </button>
-                <!-- Menú contextual -->
-                <div id="convMenu" class="menu" hidden>
-                  <button id="menuDelete" type="button">Borrar conversaciones</button>
-                </div>
-              </div>
-
-              <!-- Barra de selección (aparece en modo selección) -->
-              <div id="selectBar" class="select-bar" hidden>
-                <button id="selectCancel" class="btn ghost small">Cancelar</button>
-                <div class="select-info"><span id="selectCount">0</span> seleccionadas</div>
-                <button id="selectDelete" class="btn danger small">Eliminar</button>
-              </div>
-
+              <h1>Mensajes</h1>
               <input type="text" class="search-box" id="searchBox" placeholder="Buscar conversación...">
             </div>
             <div class="conversations-body" id="conversationsBody">
@@ -104,10 +83,10 @@
 
           <!-- Vista de chat -->
           <section class="chat-view" id="chatView">
-            <!-- Encabezado del chat -->
+            <!-- Encabezado del chat (lo genera JS) -->
             <div class="chat-header" id="chatHead" style="display:none"></div>
 
-            <!-- Mensajes -->
+            <!-- Timeline de mensajes -->
             <div class="chat-body" id="chatBody">
               <div class="no-chat-selected">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -117,13 +96,16 @@
                 <p>Selecciona una conversación para empezar a chatear</p>
               </div>
             </div>
-
-            <!-- Composer -->
+                <!-- Composer fijo -->
             <footer class="chat-composer" id="chatComposer" style="display:none">
+              <!-- Ícono de imagen: sin fondo -->
               <button class="btn-icon ghost glow" id="openMediaModal" title="Adjuntar imagen" type="button">
                 <i data-lucide="image"></i>
               </button>
+
               <textarea id="messageInput" rows="1" class="composer-input" placeholder="Escribe un mensaje..."></textarea>
+
+              <!-- Enviar: solo ícono, sin fondo -->
               <button class="btn-icon ghost glow" id="sendBtn" title="Enviar" type="button">
                 <i data-lucide="send"></i>
               </button>
@@ -134,7 +116,7 @@
     </div>
   </div>
 
-  <!-- Lightbox -->
+  <!-- Lightbox (igual a user.html) -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose"><i class="nav-ico" data-lucide="x"></i></button>
@@ -149,10 +131,14 @@
         </header>
         <div class="lb-body" id="lbComments"></div>
         <div class="lb-actions">
+          <!-- Like + contador -->
           <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta"><i data-lucide="heart"></i></button>
           <span id="lbLikes" class="act-count">0</span>
+
+          <!-- Comentario + contador -->
           <button id="lbComment" class="btn-icon" title="Comentar"><i data-lucide="message-circle"></i></button>
           <span id="lbCommentsCount" class="act-count">0</span>
+
           <div class="spacer"></div>
         </div>
         <div class="lb-input">
@@ -163,7 +149,7 @@
     </div>
   </div>
 
-  <!-- Modal adjuntar imagen -->
+  <!-- Modal adjuntar imagen (mismos estilos) -->
   <div class="lightbox" id="mediaModal" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Adjuntar imagen"
          style="grid-template-columns:min(90vw,560px);max-width:560px">
@@ -193,27 +179,8 @@
     </div>
   </div>
 
-  <!-- Modal borrar conversaciones -->
-<div class="lightbox" id="delModal" aria-hidden="true">
-  <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
-       style="grid-template-columns:min(92vw,560px);max-width:560px">
-    <div class="lb-side" style="display:flex;flex-direction:column">
-      <header class="lb-head" style="gap:8px">
-        <strong style="font-size:16px">Borrar conversaciones</strong>
-        <div class="spacer"></div>
-        <button id="delCancel" class="btn ghost small">Cancelar</button>
-        <button id="delConfirm" class="btn danger small" disabled>Eliminar (<span id="delCount">0</span>)</button>
-      </header>
-
-      <div id="delList" class="lb-body" style="padding:12px"></div>
-    </div>
-  </div>
-</div>
-
-
-  <!-- ===== JS ===== -->
+  <!-- Tema/íconos mínimos -->
   <script>
-    /* ===== Tema (COPIADO tal cual de user.html) ===== */
     const themeBtn = document.getElementById('themeToggle');
     const themeTxt = document.getElementById('themeTxt');
     function applyTheme(t){
@@ -228,14 +195,6 @@
       const current = (document.documentElement.getAttribute('data-theme')||'dark');
       applyTheme(current==='dark' ? 'light' : 'dark');
     });
-    (function(){
-      const t=document.documentElement.getAttribute('data-theme');
-      themeTxt.textContent = t==='dark' ? 'Modo claro' : 'Modo oscuro';
-      const icon = themeBtn?.querySelector('[data-lucide]');
-      if(icon) icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
-    })();
-
-    // Lucide y logout
     window.addEventListener('load', ()=>{ if (window.lucide) lucide.createIcons(); });
     document.getElementById('logoutBtnTop')?.addEventListener('click', ()=>{
       localStorage.removeItem('token'); localStorage.removeItem('user'); location.replace('index.html');
