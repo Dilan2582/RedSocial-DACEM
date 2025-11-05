@@ -82,14 +82,6 @@
                   <button id="menuDelete" type="button">Borrar conversaciones</button>
                 </div>
               </div>
-
-              <!-- Barra de selección (aparece en modo selección) -->
-              <div id="selectBar" class="select-bar" hidden>
-                <button id="selectCancel" class="btn ghost small">Cancelar</button>
-                <div class="select-info"><span id="selectCount">0</span> seleccionadas</div>
-                <button id="selectDelete" class="btn danger small">Eliminar</button>
-              </div>
-
               <input type="text" class="search-box" id="searchBox" placeholder="Buscar conversación...">
             </div>
             <div class="conversations-body" id="conversationsBody">
@@ -110,19 +102,16 @@
             <!-- Mensajes -->
             <div class="chat-body" id="chatBody">
               <div class="no-chat-selected">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                </svg>
-                <h2>Tus mensajes</h2>
-                <p>Selecciona una conversación para empezar a chatear</p>
+                <section class="empty-state" id="emptyMessages">
+                  <img src="/img/mainmes.svg" alt="" class="empty-illustration" aria-hidden="true">
+                  <h2 class="empty-title">Tus mensajes</h2>
+                  <p class="empty-sub">Selecciona una conversación para empezar a chatear</p>
+                </section>
               </div>
             </div>
 
             <!-- Composer -->
             <footer class="chat-composer" id="chatComposer" style="display:none">
-              <button class="btn-icon ghost glow" id="openMediaModal" title="Adjuntar imagen" type="button">
-                <i data-lucide="image"></i>
-              </button>
               <textarea id="messageInput" rows="1" class="composer-input" placeholder="Escribe un mensaje..."></textarea>
               <button class="btn-icon ghost glow" id="sendBtn" title="Enviar" type="button">
                 <i data-lucide="send"></i>
