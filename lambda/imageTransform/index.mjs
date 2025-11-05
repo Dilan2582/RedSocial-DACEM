@@ -37,23 +37,35 @@ export const handler = async (event) => {
     const basePath = key.replace(/original\.\w+$/, '');
 
     // Generar todas las transformaciones en paralelo
-    console.log('🎨 Generando 4 transformaciones...');
-    const [thumb, t1, t2, t3, t4] = await Promise.all([
+    console.log('🎨 Generando 10 transformaciones...');
+    const [thumb, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10] = await Promise.all([
       makeThumb(imageBuffer),
       makeBlackWhite(imageBuffer),
       makeSepia(imageBuffer),
       makeBlur(imageBuffer),
-      makeUpscale(imageBuffer)
+      makeUpscale(imageBuffer),
+      makeBright(imageBuffer),
+      makeDark(imageBuffer),
+      makeVibrant(imageBuffer),
+      makeWarm(imageBuffer),
+      makeCool(imageBuffer),
+      makeInvert(imageBuffer)
     ]);
 
     // Subir todas las transformaciones a S3 en paralelo
-    console.log('☁️  Subiendo 5 transformaciones a S3...');
+    console.log('☁️  Subiendo 11 transformaciones a S3...');
     await Promise.all([
       uploadToS3(bucket, `${basePath}thumb.jpg`, thumb),
       uploadToS3(bucket, `${basePath}t1_bw.jpg`, t1),
       uploadToS3(bucket, `${basePath}t2_sepia.jpg`, t2),
       uploadToS3(bucket, `${basePath}t3_blur.jpg`, t3),
-      uploadToS3(bucket, `${basePath}t4_upscale.jpg`, t4)
+      uploadToS3(bucket, `${basePath}t4_upscale.jpg`, t4),
+      uploadToS3(bucket, `${basePath}t5_bright.jpg`, t5),
+      uploadToS3(bucket, `${basePath}t6_dark.jpg`, t6),
+      uploadToS3(bucket, `${basePath}t7_vibrant.jpg`, t7),
+      uploadToS3(bucket, `${basePath}t8_warm.jpg`, t8),
+      uploadToS3(bucket, `${basePath}t9_cool.jpg`, t9),
+      uploadToS3(bucket, `${basePath}t10_invert.jpg`, t10)
     ]);
 
     console.log('✅ Transformaciones completadas y subidas');
@@ -68,7 +80,13 @@ export const handler = async (event) => {
           `${basePath}t1_bw.jpg`,
           `${basePath}t2_sepia.jpg`,
           `${basePath}t3_blur.jpg`,
-          `${basePath}t4_upscale.jpg`
+          `${basePath}t4_upscale.jpg`,
+          `${basePath}t5_bright.jpg`,
+          `${basePath}t6_dark.jpg`,
+          `${basePath}t7_vibrant.jpg`,
+          `${basePath}t8_warm.jpg`,
+          `${basePath}t9_cool.jpg`,
+          `${basePath}t10_invert.jpg`
         ]
       })
     };
@@ -119,6 +137,55 @@ async function makeUpscale(buffer) {
   return sharp(buffer)
     .resize({ width: newWidth, kernel: 'lanczos3' })
     .jpeg({ quality: 90, progressive: true })
+    .toBuffer();
+}
+
+async function makeBright(buffer) {
+  return sharp(buffer)
+    .modulate({ brightness: 1.4 })
+    .linear(1.1, 0) // Aumentar contraste
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+}
+
+async function makeDark(buffer) {
+  return sharp(buffer)
+    .modulate({ brightness: 0.7 })
+    .linear(1.3, -10) // Aumentar contraste y reducir brillo
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+}
+
+async function makeVibrant(buffer) {
+  return sharp(buffer)
+    .modulate({ saturation: 1.8 })
+    .linear(1.1, 0) // Poco más de contraste
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+}
+
+async function makeWarm(buffer) {
+  return sharp(buffer)
+    .modulate({ brightness: 1.05 })
+    .tint({ r: 255, g: 200, b: 150 }) // Tonos cálidos
+    .linear(1.05, 0)
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+}
+
+async function makeCool(buffer) {
+  return sharp(buffer)
+    .modulate({ brightness: 0.98 })
+    .tint({ r: 150, g: 180, b: 255 }) // Tonos fríos (azules)
+    .linear(1.05, 0)
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
+}
+
+async function makeInvert(buffer) {
+  return sharp(buffer)
+    .negate()
+    .jpeg({ quality: 85, progressive: true })
     .toBuffer();
 }
 

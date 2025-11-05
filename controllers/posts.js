@@ -30,12 +30,14 @@ async function createPost(req, res) {
       return await createVideoPost(req, res, userId);
     }
 
-    // === PROCESAMIENTO DE IMÁGENES CON AWS LAMBDA ===
+    // === PROCESAMIENTO DE IMÁGENES CON FILTRO SELECCIONADO ===
     if (!env.upload.allowed.includes(req.file.mimetype))
       return res.status(400).json({ ok: false, message: 'MIME no permitido' });
 
     const buffer = req.file.buffer;
-    console.log(`📸 Procesando imagen (${(buffer.length / 1024).toFixed(2)} KB)...`);
+    const selectedFilter = req.body.filter || 'original'; // Filtro elegido por el usuario
+    
+    console.log(`📸 Procesando imagen con filtro: ${selectedFilter} (${(buffer.length / 1024).toFixed(2)} KB)...`);
     
     const meta = await readMeta(buffer);
 
@@ -46,16 +48,41 @@ async function createPost(req, res) {
     const ext = (meta.mime.split('/')[1] || 'jpg').toLowerCase();
     const keyOriginal = buildPostKey(userId, postId, `original.${ext}`);
     const keyThumb    = buildPostKey(userId, postId, 'thumb.jpg');
-    const keyT1       = buildPostKey(userId, postId, 't1_bw.jpg');
-    const keyT2       = buildPostKey(userId, postId, 't2_sepia.jpg');
-    const keyT3       = buildPostKey(userId, postId, 't3_blur.jpg');
-    const keyT4       = buildPostKey(userId, postId, 't4_upscale.jpg');
+    
+    // Determinar qué transformación aplicar según filtro seleccionado
+    let keyTransformed = null;
+    let transformationType = null;
+    
+    if (selectedFilter !== 'original') {
+      const filterMap = {
+        't1': 't1_bw.jpg',        // Blanco y Negro
+        't2': 't2_sepia.jpg',     // Sepia
+        't3': 't3_blur.jpg',      // Blur
+        't4': 't4_upscale.jpg',   // HD 2x
+        't5': 't5_bright.jpg',    // Bright
+        't6': 't6_dark.jpg',      // Dark
+        't7': 't7_vibrant.jpg',   // Vibrant
+        't8': 't8_warm.jpg',      // Warm
+        't9': 't9_cool.jpg',      // Cool
+        't10': 't10_invert.jpg'   // Invert
+      };
+      
+      if (filterMap[selectedFilter]) {
+        transformationType = selectedFilter;
+        keyTransformed = buildPostKey(userId, postId, filterMap[selectedFilter]);
+      }
+    }
 
-    // 3) SOLO sube la imagen ORIGINAL a S3
-    // AWS Lambda se encargará automáticamente de crear las transformaciones
-    console.log('☁️  Subiendo imagen original a S3 (Lambda procesará transformaciones)...');
+    // 3) Sube la imagen ORIGINAL a S3
+    console.log(`☁️  Subiendo imagen original a S3...`);
     await uploadBuffer({ Key: keyOriginal, Body: buffer, ContentType: meta.mime });
-    console.log('✅ Original subido. Lambda generará 4 transformaciones automáticamente.');
+    
+    // Si el usuario seleccionó un filtro, Lambda lo procesará
+    if (transformationType) {
+      console.log(`✅ Original subido. Lambda generará transformación: ${transformationType}`);
+    } else {
+      console.log(`✅ Original subido sin transformaciones.`);
+    }
 
     // 4) Analizar imagen con Rekognition (si está habilitado)
     let visionData = { tags: [], nsfw: false, faceCount: 0, raw: null };
@@ -90,20 +117,28 @@ async function createPost(req, res) {
     // TODO: Integrar Face-API.js cuando esté disponible para Windows
     // const faceApiData = await analyzeFaces(buffer);
 
-    // 6) Ahora sí, crea el documento completo (cumple los required)
+    // 6) Crear documento del post con el filtro seleccionado
+    const mediaData = {
+      keyOriginal,
+      keyThumb,
+      width: meta.width,
+      height: meta.height,
+      mime: meta.mime,
+      size: buffer.length,
+      selectedFilter: selectedFilter, // Guardar filtro elegido por el usuario
+      variants: {}
+    };
+
+    // Solo agregar la variante si se seleccionó un filtro
+    if (keyTransformed && transformationType) {
+      mediaData.variants[transformationType] = keyTransformed;
+    }
+
     const post = await Post.create({
       _id: postId,
       userId: new Types.ObjectId(userId),
       caption: (req.body.caption || '').trim(),
-      media: {
-        keyOriginal,
-        keyThumb,
-        variants: { t1: keyT1, t2: keyT2, t3: keyT3, t4: keyT4 },
-        width: meta.width,
-        height: meta.height,
-        mime: meta.mime,
-        size: buffer.length
-      },
+      media: mediaData,
       tags: visionData.tags,
       nsfw: visionData.nsfw,
       faceCount: visionData.faceCount,
@@ -112,8 +147,23 @@ async function createPost(req, res) {
       status: 'ready'
     });
 
-    // 7) Respuesta (transformaciones se generan asíncronamente por Lambda)
-    console.log('✅ Post creado. Lambda procesará transformaciones en background.');
+    // 7) Preparar respuesta con las URLs correctas
+    const mediaResponse = {
+      original: publicUrl(keyOriginal),
+      thumb: publicUrl(keyThumb),
+      width: post.media.width,
+      height: post.media.height,
+      mime: post.media.mime,
+      selectedFilter: selectedFilter
+    };
+
+    // Agregar URL de la transformación si existe
+    if (keyTransformed) {
+      mediaResponse.transformed = publicUrl(keyTransformed);
+      mediaResponse.transformationType = transformationType;
+    }
+
+    console.log(`✅ Post creado con filtro: ${selectedFilter}${transformationType ? ' (Lambda procesando)' : ''}`);
     res.json({
       ok: true,
       post: {
@@ -126,17 +176,7 @@ async function createPost(req, res) {
         tags: post.tags || [],
         nsfw: post.nsfw || false,
         faceCount: post.faceCount || 0,
-        media: {
-          original: publicUrl(keyOriginal),
-          thumb:    publicUrl(keyThumb),     // Lambda lo generará
-          t1:       publicUrl(keyT1),        // Blanco y Negro (Lambda)
-          t2:       publicUrl(keyT2),        // Sepia (Lambda)
-          t3:       publicUrl(keyT3),        // Blur (Lambda)
-          t4:       publicUrl(keyT4),        // Ampliación 2x (Lambda)
-          width: post.media.width,
-          height: post.media.height,
-          mime: post.media.mime
-        }
+        media: mediaResponse
       }
     });
   } catch (err) {

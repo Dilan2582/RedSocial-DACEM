@@ -4,11 +4,18 @@ const { Schema, model, Types } = require('mongoose');
 const MediaSchema = new Schema({
   keyOriginal: { type: String, required: true },
   keyThumb:    { type: String, required: true },
+  selectedFilter: { type: String, default: 'original' }, // Filtro elegido por el usuario
   variants: {
-    t1: { type: String, required: true }, // Blanco y Negro
-    t2: { type: String, required: true }, // Sepia
-    t3: { type: String, required: true }, // Blur
-    t4: { type: String, required: false }, // Ampliación (opcional)
+    t1: { type: String, required: false },  // Blanco y Negro
+    t2: { type: String, required: false },  // Sepia
+    t3: { type: String, required: false },  // Blur
+    t4: { type: String, required: false },  // Ampliación 2x
+    t5: { type: String, required: false },  // Bright
+    t6: { type: String, required: false },  // Dark
+    t7: { type: String, required: false },  // Vibrant
+    t8: { type: String, required: false },  // Warm
+    t9: { type: String, required: false },  // Cool
+    t10: { type: String, required: false }, // Invert
   },
   width: Number,
   height: Number,

@@ -136,10 +136,23 @@
           </div>
 
           <div id="cmpPreview" class="cmp-preview" style="display:none">
-            <img id="cmpPreviewImg" alt="preview">
-            <button id="cmpRemoveImg" class="btn ghost small">
+            <div class="cmp-preview-main">
+              <img id="cmpPreviewImg" alt="preview" class="cmp-preview-img">
+              <div class="cmp-filter-badge" id="cmpFilterBadge">🎞️ Original</div>
+            </div>
+            <button id="cmpRemoveImg" class="btn ghost small cmp-remove-btn">
               <i class="nav-ico" data-lucide="x"></i> Quitar
             </button>
+          </div>
+
+          <!-- Filtros de imagen -->
+          <div class="cmp-filters-container" id="cmpFiltersContainer">
+            <div class="cmp-filters-label">
+              👇 Selecciona un filtro para publicar
+            </div>
+            <div class="cmp-filters-scroll" id="cmpFiltersScroll">
+              <!-- Los botones se generan dinámicamente -->
+            </div>
           </div>
 
           <div class="cmp-tools">
@@ -366,24 +379,59 @@
     cmp.pick.onclick = ()=> cmp.fileEl.click();
     cmp.fileEl.onchange = e=>{
       const f = e.target.files?.[0];
-      if(!f){ selectedFile=null; cmp.imgBox.style.display='none'; return; }
-      selectedFile = f; cmp.img.src = URL.createObjectURL(f); cmp.imgBox.style.display='flex';
+      if(!f){ 
+        selectedFile=null; 
+        cmp.imgBox.style.display='none';
+        // Limpiar filtros
+        if (window.composerFilters) {
+          window.composerFilters.clearFilters();
+        }
+        return; 
+      }
+      selectedFile = f; 
+      const url = URL.createObjectURL(f);
+      cmp.img.src = url;
+      cmp.imgBox.style.display='flex';
+      
+      // Generar previews de filtros
+      if (window.composerFilters && f.type.startsWith('image/')) {
+        window.composerFilters.setImage(url);
+      }
     };
-    cmp.rm.onclick = ()=>{ selectedFile=null; cmp.fileEl.value=''; cmp.imgBox.style.display='none'; cmp.img.removeAttribute('src'); };
+    cmp.rm.onclick = ()=>{ 
+      selectedFile=null; 
+      cmp.fileEl.value=''; 
+      cmp.imgBox.style.display='none'; 
+      cmp.img.removeAttribute('src');
+      // Limpiar filtros
+      if (window.composerFilters) {
+        window.composerFilters.clearFilters();
+      }
+    };
 
     async function publish(){
       cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
       try{
         const fd = new FormData();
         
-        // Usar imagen filtrada si existe, sino usar la seleccionada
+        // Obtener información del filtro seleccionado
         if (selectedFile) {
-          // Si hay filtros activados, usar la imagen filtrada
+          // Si hay filtros activados, usar el filtro seleccionado
           if (window.composerFilters && window.composerFilters.currentImage) {
-            const filteredBlob = await window.composerFilters.getFilteredImageBlob();
-            fd.append('image', filteredBlob, 'filtered-image.jpg');
+            const filterInfo = window.composerFilters.getCurrentFilterInfo();
+            const selectedImage = window.composerFilters.getSelectedImage();
+            
+            // Convertir dataURL a Blob
+            const response = await fetch(selectedImage.dataUrl);
+            const blob = await response.blob();
+            
+            fd.append('image', blob, 'image.jpg');
+            fd.append('filter', filterInfo.filterType); // Enviar tipo de filtro al backend
+            
+            console.log('📤 Publicando con filtro:', filterInfo.label);
           } else {
             fd.append('image', selectedFile);
+            fd.append('filter', 'original');
           }
         }
         
@@ -392,9 +440,18 @@
         const d = await r.json();
         if(!d.ok) throw new Error(d.message||'Error');
         prependPost(d.post);
+        
+        // Limpiar filtros
+        if (window.composerFilters) {
+          window.composerFilters.clearFilters();
+        }
+        
         cmp.msg.textContent = '¡Publicado!'; cmp.txt.value=''; cmp.rm.click();
         setTimeout(()=>cmp.msg.textContent='', 1200);
-      }catch{ cmp.msg.textContent = 'No se pudo publicar'; }
+      }catch(err){ 
+        console.error('Error publicando:', err);
+        cmp.msg.textContent = 'No se pudo publicar'; 
+      }
       finally{ cmp.post.disabled=false; }
     }
     cmp.post.onclick = publish;
