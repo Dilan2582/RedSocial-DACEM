@@ -186,10 +186,6 @@
             <div id="lbName" style="font-weight:700"></div>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
-          <!-- botón transformaciones de imagen -->
-          <button id="lbTransformations" class="btn ghost small" title="Ver transformaciones">
-            <i data-lucide="layers"></i>
-          </button>
           <!-- botón reconocimiento facial -->
           <button id="lbFaceRecognition" class="btn ghost small" title="Analizar rostro">
             <i data-lucide="smile"></i>
@@ -568,7 +564,6 @@
     const lbCommentsCount = document.getElementById('lbCommentsCount');
     const lbShareBtn = document.getElementById('lbShare');
     const lbFaceRecognitionBtn = document.getElementById('lbFaceRecognition');
-    const lbTransformationsBtn = document.getElementById('lbTransformations');
 
     let currentPost = null;
 
@@ -643,19 +638,6 @@
       // reconocimiento facial
       lbFaceRecognitionBtn.onclick = async ()=> {
         await analyzeFaceInPost(p);
-      };
-
-      // transformaciones de imagen
-      lbTransformationsBtn.onclick = ()=> {
-        if (p.media && window.imageTransformations) {
-          window.imageTransformations.showTransformations({
-            original: p.media.original,
-            thumb: p.media.thumb,
-            t1: p.media.t1,
-            t2: p.media.t2,
-            t3: p.media.t3
-          });
-        }
       };
 
       lb.setAttribute('aria-hidden','false');
