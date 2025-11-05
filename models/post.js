@@ -5,9 +5,10 @@ const MediaSchema = new Schema({
   keyOriginal: { type: String, required: true },
   keyThumb:    { type: String, required: true },
   variants: {
-    t1: { type: String, required: true }, // ej. B/N
-    t2: { type: String, required: true }, // ej. Sepia
-    t3: { type: String, required: true }, // ej. Blur
+    t1: { type: String, required: true }, // Blanco y Negro
+    t2: { type: String, required: true }, // Sepia
+    t3: { type: String, required: true }, // Blur
+    t4: { type: String, required: false }, // Ampliación (opcional)
   },
   width: Number,
   height: Number,
