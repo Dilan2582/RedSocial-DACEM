@@ -45,8 +45,6 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/test-upload", require("./routes/test-upload"));
 app.use("/api/posts", require("./routes/posts"));
 app.use("/api/messages", require("./routes/messages"));
-app.use("/api/notifications", require("./routes/notifications"));
-app.use("/api/face-recognition", require("./routes/facerecognition"));
 
 // Ruta de prueba
 app.get("/ruta-prueba", (_req, res) => {

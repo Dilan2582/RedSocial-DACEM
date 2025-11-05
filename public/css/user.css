@@ -67,18 +67,11 @@
     /* Sidebar */
     .sidebar{position:sticky; top:84px; align-self:start; height:max-content}
     .nav{display:grid;gap:10px;padding:14px}
-    .nav-item{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;color:var(--text);text-decoration:none;border:1px solid transparent;transition:.15s ease;position:relative}
+    .nav-item{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;color:var(--text);text-decoration:none;border:1px solid transparent;transition:.15s ease}
     .nav-item:hover{background:rgba(124,92,252,.08);border-color:rgba(124,92,252,.15)}
     .nav-item.active{background:rgba(124,92,252,.15);border-color:rgba(124,92,252,.35);color:var(--primary)}
     .nav-ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center}
     .nav-ico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2}
-
-    /* Badge de notificaciones/mensajes no leídos */
-    .unread-badge{
-      margin-left:auto; background:#ef4444; color:#fff; font-size:11px; font-weight:700;
-      min-width:20px; height:20px; border-radius:10px; display:inline-flex;
-      align-items:center; justify-content:center; padding:0 6px;
-    }
 
     /* Aside */
     .aside{position:sticky; top:84px; align-self:start; height:max-content}

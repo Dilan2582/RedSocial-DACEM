@@ -12,8 +12,6 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/user.css">
-  <link rel="stylesheet" href="css/transformations.css">
-  <link rel="stylesheet" href="css/composer-filters.css">
 
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -113,10 +111,6 @@
           <a class="nav-item active" href="user.html">
             <i class="nav-ico" data-lucide="home"></i> Inicio
           </a>
-          <a class="nav-item" href="notifications.html">
-            <i class="nav-ico" data-lucide="heart"></i> Notificaciones
-            <span class="unread-badge" id="notificationsBadge" style="display:none"></span>
-          </a>
           <a class="nav-item" href="messages.html">
             <i class="nav-ico" data-lucide="message-circle"></i> Mensajes
             <span class="unread-badge" id="unreadBadge" style="display:none"></span>
@@ -186,10 +180,6 @@
             <div id="lbName" style="font-weight:700"></div>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
-          <!-- botón reconocimiento facial -->
-          <button id="lbFaceRecognition" class="btn ghost small" title="Analizar rostro">
-            <i data-lucide="smile"></i>
-          </button>
           <!-- botón compartir dentro del modal -->
           <button id="lbShare" class="btn ghost small" title="Compartir">
             <i data-lucide="send"></i>
@@ -375,18 +365,7 @@
       cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
       try{
         const fd = new FormData();
-        
-        // Usar imagen filtrada si existe, sino usar la seleccionada
-        if (selectedFile) {
-          // Si hay filtros activados, usar la imagen filtrada
-          if (window.composerFilters && window.composerFilters.currentImage) {
-            const filteredBlob = await window.composerFilters.getFilteredImageBlob();
-            fd.append('image', filteredBlob, 'filtered-image.jpg');
-          } else {
-            fd.append('image', selectedFile);
-          }
-        }
-        
+        if (selectedFile) fd.append('image', selectedFile);
         if (cmp.txt.value.trim()) fd.append('caption', cmp.txt.value.trim());
         const r = await fetch(API('/posts'), { method:'POST', headers:H, body:fd });
         const d = await r.json();
@@ -413,146 +392,6 @@
       return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
     }
 
-    // Función para analizar rostros en la publicación
-    async function analyzeFaceInPost(post) {
-      const btn = lbFaceRecognitionBtn;
-      const originalText = btn.innerHTML;
-      
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader"></i>';
-      if (window.lucide) lucide.createIcons();
-
-      try {
-        const imageUrl = post.media.t1 || post.media.original || post.media.thumb;
-        
-        const res = await fetch(API('/face-recognition/analyze'), {
-          method: 'POST',
-          headers: { ...H, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl })
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          alert('Error: ' + data.message);
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-          return;
-        }
-
-        if (data.facesDetected === 0) {
-          alert('No se detectaron rostros en la imagen');
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-          return;
-        }
-
-        // Crear modal con los resultados
-        showFaceAnalysisResults(data.faces);
-
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        if (window.lucide) lucide.createIcons();
-
-      } catch (error) {
-        console.error('Error analizando rostro:', error);
-        alert('Error al analizar la imagen: ' + error.message);
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    }
-
-    // Función para mostrar resultados del análisis facial
-    function showFaceAnalysisResults(faces) {
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
-        display: flex; align-items: center; justify-content: center; 
-        z-index: 1000; padding: 20px;
-      `;
-
-      let html = `
-        <div style="background: var(--panel); color: var(--text); border-radius: 12px; 
-                    max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin: 0; font-size: 24px;">Análisis Facial</h2>
-            <button onclick="this.closest('div').parentElement.remove()" 
-                    style="background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 24px;">
-              ✕
-            </button>
-          </div>
-          
-          <p style="color: var(--muted); margin-bottom: 20px;">
-            Se detectaron <strong>${faces.length}</strong> rostro(s) en la imagen
-          </p>
-      `;
-
-      faces.forEach((face, idx) => {
-        const mainEmotion = face.emotions.length > 0 ? face.emotions[0] : null;
-        
-        html += `
-          <div style="border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <h3 style="margin: 0 0 12px 0; color: var(--primary);">Rostro ${idx + 1}</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div>
-                <strong>Edad estimada:</strong><br>
-                ${face.ageRange ? `${face.ageRange.low} - ${face.ageRange.high} años` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Género:</strong><br>
-                ${face.gender ? `${face.gender.value} (${face.gender.confidence}%)` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Confianza:</strong><br>
-                ${face.confidence}%
-              </div>
-              <div>
-                <strong>Expresión:</strong><br>
-                ${mainEmotion ? `${mainEmotion.type} (${mainEmotion.confidence}%)` : 'No disponible'}
-              </div>
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <strong>Características detectadas:</strong>
-              <ul style="margin: 8px 0; padding-left: 20px;">
-                ${face.eyeglasses.present ? `<li>Gafas (${face.eyeglasses.confidence}%)</li>` : ''}
-                ${face.sunglasses.present ? `<li>Gafas de sol (${face.sunglasses.confidence}%)</li>` : ''}
-                ${face.beard.present ? `<li>Barba (${face.beard.confidence}%)</li>` : ''}
-                ${face.mustache.present ? `<li>Bigote (${face.mustache.confidence}%)</li>` : ''}
-                ${face.mouthOpen.present ? `<li>Boca abierta (${face.mouthOpen.confidence}%)</li>` : ''}
-                ${!face.eyesOpen.present ? `<li>Ojos cerrados (${face.eyesOpen.confidence}%)</li>` : ''}
-                ${face.smiling.present ? `<li>Sonriendo (${face.smiling.confidence}%)</li>` : ''}
-              </ul>
-            </div>
-
-            ${face.emotions.length > 0 ? `
-              <div>
-                <strong>Emociones detectadas:</strong>
-                <div style="margin-top: 8px;">
-                  ${face.emotions.map(e => `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                      <span>${e.type}</span>
-                      <span style="color: var(--primary); font-weight: 600;">${e.confidence}%</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-
-      html += `</div>`;
-
-      modal.innerHTML = html;
-      document.body.appendChild(modal);
-
-      modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-      };
-    }
-
     /* ====== Lightbox ====== */
     const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
@@ -563,7 +402,6 @@
     const lbLikes = document.getElementById('lbLikes');
     const lbCommentsCount = document.getElementById('lbCommentsCount');
     const lbShareBtn = document.getElementById('lbShare');
-    const lbFaceRecognitionBtn = document.getElementById('lbFaceRecognition');
 
     let currentPost = null;
 
@@ -635,11 +473,6 @@
       // compartir desde el visor
       lbShareBtn.onclick = ()=> openShareModal(p);
 
-      // reconocimiento facial
-      lbFaceRecognitionBtn.onclick = async ()=> {
-        await analyzeFaceInPost(p);
-      };
-
       lb.setAttribute('aria-hidden','false');
       if (window.lucide) lucide.createIcons();
     }
@@ -657,9 +490,7 @@
     /* ====== Tarjeta de post ====== */
     function postCard(p){
       const cls = ratioClass(p.media.width, p.media.height);
-      const el = document.createElement('article'); 
-      el.className='post-card';
-      el.dataset.postId = p.id || p._id;
+      const el = document.createElement('article'); el.className='post-card';
       const author = userCache.get(p.userId) || {};
       const isMyPost = me && (String(p.userId) === String(me._id || me.id));
 
@@ -865,86 +696,9 @@
       if (m) location.hash = '';
     })();
 
-    // Actualizar badge de notificaciones
-    // Actualizar badge de notificaciones
-    async function updateNotificationBadge() {
-      try {
-        const res = await fetch(API('/notifications/unread-count'), { headers: H });
-        const data = await res.json();
-        const badge = document.getElementById('notificationsBadge');
-        if (data.ok && data.count > 0) {
-          badge.textContent = data.count > 99 ? '99+' : data.count;
-          badge.style.display = 'inline-flex';
-        } else {
-          badge.style.display = 'none';
-        }
-      } catch (error) {
-        console.error('Error actualizando badge de notificaciones:', error);
-      }
-    }
-
-    // Actualizar badge de mensajes no leídos
-    async function updateMessagesBadge() {
-      try {
-        const res = await fetch(API('/messages/conversations'), { headers: H });
-        const data = await res.json();
-        if (data.ok) {
-          const unreadCount = data.conversations.filter(c => c.hasUnread).length;
-          const badge = document.getElementById('unreadBadge');
-          if (unreadCount > 0) {
-            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = 'inline-flex';
-          } else {
-            badge.style.display = 'none';
-          }
-        }
-      } catch (error) {
-        console.error('Error actualizando badge de mensajes:', error);
-      }
-    }
-
-    // Actualizar ambos badges cada 30 segundos
-    updateNotificationBadge();
-    updateMessagesBadge();
-    setInterval(() => {
-      updateNotificationBadge();
-      updateMessagesBadge();
-    }, 30000);
-
-    // Manejar notificaciones - abrir post si viene del parámetro postId
-    (async function() {
-      const params = new URLSearchParams(window.location.search);
-      const postId = params.get('postId');
-      
-      if (postId) {
-        console.log('Abriendo post desde notificación:', postId);
-        
-        try {
-          // Obtener los datos del post desde la API
-          const res = await fetch(API(`/posts/${postId}`), { headers: H });
-          const data = await res.json();
-          
-          if (data.ok && data.post) {
-            console.log('Post obtenido de la API:', data.post);
-            // Abrir el modal directamente con los datos del post
-            openPostModal(data.post);
-          } else {
-            console.error('No se pudo obtener el post');
-          }
-        } catch (error) {
-          console.error('Error obteniendo post:', error);
-        }
-      }
-    })();
-
     // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
   </script>
-
-  <!-- Sistema de Transformaciones de Imágenes -->
-  <script src="js/transformations.js"></script>
-  <!-- Sistema de Filtros en el Compositor -->
-  <script src="js/composer-filters.js"></script>
 
   <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">
     © 2025 Proyecto Desarrollo Web - Desarrollado por Dilan Escobar y Andrea Chafolla
