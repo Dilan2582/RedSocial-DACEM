@@ -5,3 +5,4 @@ uploads/**
 bfg.jar
 *.bfg-report
 RedSocial-DACEM.git/
+node_modules
