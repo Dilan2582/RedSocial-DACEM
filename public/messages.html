@@ -213,12 +213,14 @@
       try {
         const res = await fetch(API('/notifications/unread-count'), { headers: H });
         const data = await res.json();
-        const badge = document.getElementById('notificationBadge');
-        if (data.ok && data.count > 0) {
-          badge.textContent = data.count > 99 ? '99+' : data.count;
-          badge.style.display = 'inline-flex';
-        } else {
-          badge.style.display = 'none';
+        const badge = document.getElementById('notificationsBadge');
+        if (badge) {
+          if (data.ok && data.count > 0) {
+            badge.textContent = data.count > 99 ? '99+' : data.count;
+            badge.style.display = 'inline-flex';
+          } else {
+            badge.style.display = 'none';
+          }
         }
       } catch (error) {
         console.error('Error actualizando badge de notificaciones:', error);

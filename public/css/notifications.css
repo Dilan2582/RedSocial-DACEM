@@ -521,3 +521,73 @@ body::after{
     font-size:13px;
   }
 }
+
+/* Botones de acción para solicitudes de seguimiento */
+.follow-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.follow-actions button {
+  flex: 1;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.btn-accept {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+}
+
+.btn-accept:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.btn-reject {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+[data-theme="dark"] .btn-reject {
+  background: #374151;
+  color: #9ca3af;
+}
+
+.btn-reject:hover {
+  background: #e5e7eb;
+}
+
+[data-theme="dark"] .btn-reject:hover {
+  background: #4b5563;
+}
+
+/* Animaciones para toast */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
