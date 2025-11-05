@@ -237,10 +237,42 @@ async function toggleLike(req, res) {
     if (exists) {
       await Like.deleteOne({ _id: exists._id });
       await Post.updateOne({ _id: postId }, { $inc: { 'counts.likes': -1 } });
+      
+      // Eliminar notificación de like si existe
+      const { createNotification } = require('./notifications');
+      try {
+        const Notification = require('../models/notification');
+        await Notification.deleteOne({
+          recipient: exists.userId,
+          sender: userId,
+          type: 'like',
+          post: postId
+        });
+      } catch (err) {
+        console.error('Error eliminando notificación de like:', err);
+      }
+      
       return res.json({ ok: true, liked: false });
     }
-    await Like.create({ postId, userId });
+    
+    const like = await Like.create({ postId, userId });
     await Post.updateOne({ _id: postId }, { $inc: { 'counts.likes': 1 } });
+    
+    // Crear notificación de like
+    try {
+      const post = await Post.findById(postId);
+      console.log('[toggleLike] Post encontrado:', post?._id, 'Owner:', post?.userId, 'Liker:', userId);
+      if (post && post.userId.toString() !== userId) {
+        const { createNotification } = require('./notifications');
+        const notif = await createNotification(post.userId, userId, 'like', { postId });
+        console.log('[toggleLike] Notificación creada:', notif?._id);
+      } else {
+        console.log('[toggleLike] No se crea notificación (mismo usuario)');
+      }
+    } catch (err) {
+      console.error('Error creando notificación de like:', err);
+    }
+    
     return res.json({ ok: true, liked: true });
   } catch (e) {
     console.error('[toggleLike] error', e);
@@ -279,6 +311,22 @@ async function addComment(req, res) {
 
     const c = await Comment.create({ postId: id, userId, text });
     await Post.updateOne({ _id: id }, { $inc: { 'counts.comments': 1 } });
+    
+    // Crear notificación de comentario
+    try {
+      const post = await Post.findById(id);
+      if (post && post.userId.toString() !== userId) {
+        const { createNotification } = require('./notifications');
+        await createNotification(post.userId, userId, 'comment', {
+          postId: id,
+          commentId: c._id,
+          commentText: text
+        });
+      }
+    } catch (err) {
+      console.error('Error creando notificación de comentario:', err);
+    }
+    
     res.json({ ok: true, comment: c });
   } catch (e) {
     console.error('[addComment] error', e);

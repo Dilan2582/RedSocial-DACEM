@@ -65,12 +65,34 @@ async function toggleFollow(req, res) {
     const found = await Follow.findOne({ user: me, followed: targetId }).lean();
     if (found) {
       await Follow.deleteOne({ _id: found._id });
+      
+      // Eliminar notificación de solicitud de seguimiento
+      try {
+        const Notification = require('../models/notification');
+        await Notification.deleteOne({
+          recipient: targetId,
+          sender: me,
+          type: 'follow_request'
+        });
+      } catch (err) {
+        console.error('Error eliminando notificación de follow:', err);
+      }
+      
       return res.json({ ok:true, following:false });
     } else {
       const exists = await User.findById(targetId).select('_id').lean();
       if (!exists) return res.status(404).json({ ok:false, message:'Usuario no existe' });
 
       await Follow.create({ user: me, followed: targetId });
+      
+      // Crear notificación de solicitud de seguimiento
+      try {
+        const { createNotification } = require('./notifications');
+        await createNotification(targetId, me, 'follow_request');
+      } catch (err) {
+        console.error('Error creando notificación de follow:', err);
+      }
+      
       return res.json({ ok:true, following:true });
     }
   } catch (e) {

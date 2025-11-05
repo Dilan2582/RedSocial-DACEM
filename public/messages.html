@@ -53,6 +53,10 @@
           <a class="nav-item" href="user.html">
             <i class="nav-ico" data-lucide="home"></i> Inicio
           </a>
+          <a class="nav-item" href="notifications.html">
+            <i class="nav-ico" data-lucide="heart"></i> Notificaciones
+            <span class="unread-badge" id="notificationsBadge" style="display:none"></span>
+          </a>
           <a class="nav-item active" href="messages.html">
             <i class="nav-ico" data-lucide="message-circle"></i> Mensajes
           </a>
@@ -199,6 +203,31 @@
     document.getElementById('logoutBtnTop')?.addEventListener('click', ()=>{
       localStorage.removeItem('token'); localStorage.removeItem('user'); location.replace('index.html');
     });
+
+    // Actualizar badge de notificaciones
+    const API = (p)=>`${location.origin}/api${p}`;
+    const token = localStorage.getItem('token');
+    const H = { 'Authorization':`Bearer ${token}` };
+    
+    async function updateNotificationBadge() {
+      try {
+        const res = await fetch(API('/notifications/unread-count'), { headers: H });
+        const data = await res.json();
+        const badge = document.getElementById('notificationBadge');
+        if (data.ok && data.count > 0) {
+          badge.textContent = data.count > 99 ? '99+' : data.count;
+          badge.style.display = 'inline-flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error actualizando badge de notificaciones:', error);
+      }
+    }
+
+    // Actualizar badge cada 30 segundos
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 30000);
   </script>
 
   <script src="js/messages.js"></script>
