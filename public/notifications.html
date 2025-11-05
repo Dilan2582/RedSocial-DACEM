@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Notificaciones – DACEM</title>
+  
+  <!-- Fuente Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Iconos Lucide -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  
+  <!-- Pre-aplica el tema para evitar FOUC -->
+  <script>
+    (function(){
+      const saved = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
+  
+  <link rel="stylesheet" href="css/notifications.css">
+</head>
+<body class="notifications-page">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM"></span>
+        DACEM
+      </div>
+      <div class="topbar-actions">
+        <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
+          <i class="nav-ico" data-lucide="moon"></i>
+          <span id="themeTxt">Modo oscuro</span>
+        </button>
+        <button id="logoutBtnTop" class="btn danger small">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="layout">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <nav class="nav">
+          <a class="nav-item" href="user.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Inicio
+          </a>
+          <a class="nav-item active" href="notifications.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Notificaciones
+            <span class="notif-badge" id="notifBadge" style="display:none"></span>
+          </a>
+          <a class="nav-item" href="messages.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Mensajes
+            <span class="unread-badge" id="unreadBadge" style="display:none"></span>
+          </a>
+          <a class="nav-item" href="profile.html">
+            <span class="nav-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            Mi perfil
+          </a>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <!-- Header de notificaciones -->
+        <div class="notifications-header">
+          <h1>Notificaciones</h1>
+          <button id="markAllRead" class="btn ghost small">Marcar todas como leídas</button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="notifications-filters">
+          <button class="filter-btn active" data-filter="all">
+            <span>Todas</span>
+            <span class="filter-count" id="countAll">0</span>
+          </button>
+          <button class="filter-btn" data-filter="like">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>Likes</span>
+            <span class="filter-count" id="countLikes">0</span>
+          </button>
+          <button class="filter-btn" data-filter="comment">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Comentarios</span>
+            <span class="filter-count" id="countComments">0</span>
+          </button>
+          <button class="filter-btn" data-filter="follow_request">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <line x1="19" y1="8" x2="19" y2="14"></line>
+              <line x1="22" y1="11" x2="16" y2="11"></line>
+            </svg>
+            <span>Solicitudes</span>
+            <span class="filter-count" id="countFollows">0</span>
+          </button>
+        </div>
+
+        <!-- Lista de notificaciones -->
+        <div class="notifications-list" id="notificationsList">
+          <!-- Se llenará con JavaScript -->
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading" style="display:none">
+          <div class="spinner"></div>
+          <p>Cargando notificaciones...</p>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <h3>No hay notificaciones</h3>
+          <p>Cuando alguien interactúe con tu contenido, lo verás aquí</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Toggle tema
+    const themeBtn = document.getElementById('themeToggle');
+    const themeTxt = document.getElementById('themeTxt');
+
+    function applyTheme(t){
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      const icon = themeBtn?.querySelector('[data-lucide]');
+      if(icon) icon.setAttribute('data-lucide', t === 'dark' ? 'sun' : 'moon');
+      themeTxt.textContent = t === 'dark' ? 'Modo claro' : 'Modo oscuro';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    themeBtn?.addEventListener('click', ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    (function(){ 
+      const t=document.documentElement.getAttribute('data-theme'); 
+      themeTxt.textContent = t==='dark' ? 'Modo claro' : 'Modo oscuro'; 
+    })();
+
+    // Helpers
+    const API = (p)=>`${location.origin}/api${p}`;
+    const token = localStorage.getItem('token');
+    if(!token){ location.replace('index.html'); }
+    const H  = { 'Authorization':`Bearer ${token}` };
+
+    function displayName(u){ return u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario'); }
+    function abs(url){ return url?.startsWith('http') ? url : `${location.origin}${url?.startsWith('/')?url:'/'+url}`; }
+    function resolveAvatar(u){
+      if(u?.avatar) return abs(u.avatar);
+      const seed = encodeURIComponent(displayName(u) || u?.nickname || 'U');
+      return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
+    }
+    function timeAgo(iso){ 
+      try{ 
+        const d=new Date(iso); 
+        const s=(Date.now()-d)/1000; 
+        if(s<60) return 'ahora'; 
+        if(s<3600) return Math.floor(s/60)+' min'; 
+        if(s<86400) return Math.floor(s/3600)+' h'; 
+        if(s<604800) return Math.floor(s/86400)+' d';
+        return Math.floor(s/604800)+' sem';
+      }catch{ return ''; } 
+    }
+
+    // Estado
+    let currentFilter = 'all';
+    let allNotifications = [];
+
+    // Cargar notificaciones
+    async function loadNotifications() {
+      const loading = document.getElementById('loading');
+      const emptyState = document.getElementById('emptyState');
+      const list = document.getElementById('notificationsList');
+
+      loading.style.display = 'flex';
+      emptyState.style.display = 'none';
+
+      try {
+        const params = new URLSearchParams();
+        if (currentFilter !== 'all') {
+          params.append('type', currentFilter);
+        }
+
+        const res = await fetch(API(`/notifications?${params}`), { headers: H });
+        const data = await res.json();
+
+        loading.style.display = 'none';
+
+        if (!data.ok || !data.notifications.length) {
+          emptyState.style.display = 'flex';
+          list.innerHTML = '';
+          updateCounts({ notifications: [], unreadCount: 0 });
+          return;
+        }
+
+        allNotifications = data.notifications;
+        renderNotifications(data.notifications);
+        updateCounts(data);
+
+        // Actualizar badge del sidebar
+        const badge = document.getElementById('notifBadge');
+        if (data.unreadCount > 0) {
+          badge.textContent = data.unreadCount;
+          badge.style.display = 'inline-flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error cargando notificaciones:', error);
+        loading.style.display = 'none';
+        emptyState.style.display = 'flex';
+      }
+    }
+
+    // Renderizar notificaciones
+    function renderNotifications(notifications) {
+      const list = document.getElementById('notificationsList');
+      
+      list.innerHTML = notifications.map(notif => {
+        const sender = notif.sender || {};
+        const avatar = resolveAvatar(sender);
+        const name = displayName(sender);
+        const time = timeAgo(notif.createdAt);
+
+        let message = '';
+        let actionUrl = '';
+        let thumbnail = '';
+
+        switch(notif.type) {
+          case 'like':
+            message = `<strong>${name}</strong> le dio like a tu publicación`;
+            actionUrl = notif.post ? `user.html?postId=${notif.post._id}` : '';
+            thumbnail = notif.post?.image ? `<img src="${abs(notif.post.image)}" alt="Post" class="notification-thumb">` : '';
+            break;
+          case 'comment':
+            message = `<strong>${name}</strong> comentó: "${notif.commentText || 'comentario'}"`;
+            actionUrl = notif.post ? `user.html?postId=${notif.post._id}` : '';
+            thumbnail = notif.post?.image ? `<img src="${abs(notif.post.image)}" alt="Post" class="notification-thumb">` : '';
+            break;
+          case 'follow_request':
+            message = `<strong>${name}</strong> comenzó a seguirte`;
+            actionUrl = `profile.html?id=${sender._id}`;
+            break;
+          case 'follow_accepted':
+            message = `<strong>${name}</strong> aceptó tu solicitud`;
+            actionUrl = `profile.html?id=${sender._id}`;
+            break;
+          default:
+            message = `<strong>${name}</strong> interactuó contigo`;
+        }
+
+        return `
+          <div class="notification-item ${notif.read ? 'read' : ''}" data-id="${notif._id}" data-url="${actionUrl}" data-type="item">
+            <div class="notif-avatar">
+              <img src="${avatar}" alt="${name}">
+              <div class="notif-icon ${notif.type === 'like' ? 'like' : notif.type === 'comment' ? 'comment' : 'follow'}">
+                <i data-lucide="${notif.type === 'like' ? 'heart' : notif.type === 'comment' ? 'message-circle' : 'user-plus'}"></i>
+              </div>
+            </div>
+            <div class="notif-content">
+              <div class="notif-text">${message}</div>
+              <div class="notif-time">${time}</div>
+            </div>
+            ${thumbnail}
+            ${notif.read ? '' : '<div class="unread-dot"></div>'}
+            <button class="notification-delete" data-id="${notif._id}" title="Eliminar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // Agregar event listeners después de renderizar
+      addNotificationListeners();
+    }
+
+    // Agregar event listeners a las notificaciones
+    function addNotificationListeners() {
+      // Event listeners para items
+      const items = document.querySelectorAll('[data-type="item"]');
+      console.log('Agregando listeners a', items.length, 'notificaciones');
+      
+      items.forEach((item, index) => {
+        item.style.cursor = 'pointer';
+        
+        item.addEventListener('click', async (e) => {
+          console.log('Click detectado en notificación', index);
+          
+          // No hacer nada si es click en botón de eliminar
+          if (e.target.closest('.notification-delete')) {
+            console.log('Click en botón de eliminar, cancelando');
+            return;
+          }
+          
+          const notifId = item.dataset.id;
+          const url = item.dataset.url;
+
+          console.log('Notificación clickeada:', { notifId, url, index });
+
+          if (!url) {
+            console.warn('No hay URL para redirigir');
+            return;
+          }
+
+          // Marcar como leída
+          try {
+            console.log('Marcando como leída:', notifId);
+            await fetch(API(`/notifications/${notifId}/read`), {
+              method: 'PATCH',
+              headers: H
+            });
+            console.log('Marcado como leído');
+          } catch (error) {
+            console.error('Error marcando notificación:', error);
+          }
+
+          // Redirigir
+          console.log('Redirigiendo a:', url);
+          setTimeout(() => {
+            window.location.href = url;
+          }, 100);
+        });
+      });
+
+      // Event listeners para botones de eliminar
+      const deleteButtons = document.querySelectorAll('.notification-delete');
+      console.log('Agregando listeners a', deleteButtons.length, 'botones de eliminar');
+      
+      deleteButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          console.log('Click en botón eliminar');
+          
+          const notifId = btn.dataset.id;
+          console.log('Eliminando notificación:', notifId);
+
+          if (!confirm('¿Eliminar esta notificación?')) return;
+
+          try {
+            const res = await fetch(API(`/notifications/${notifId}`), {
+              method: 'DELETE',
+              headers: H
+            });
+
+            if (res.ok) {
+              console.log('Notificación eliminada');
+              loadNotifications();
+            } else {
+              console.error('Error en respuesta de eliminar');
+            }
+          } catch (error) {
+            console.error('Error eliminando notificación:', error);
+          }
+        });
+      });
+    }
+
+    // Actualizar contadores
+    function updateCounts(data) {
+      const notifications = data.notifications || [];
+      
+      const likes = notifications.filter(n => n.type === 'like').length;
+      const comments = notifications.filter(n => n.type === 'comment').length;
+      const follows = notifications.filter(n => n.type === 'follow_request').length;
+      
+      document.getElementById('countAll').textContent = notifications.length;
+      document.getElementById('countLikes').textContent = likes;
+      document.getElementById('countComments').textContent = comments;
+      document.getElementById('countFollows').textContent = follows;
+    }
+
+    // Manejar clic en notificación
+    async function handleNotificationClick(notifId, url) {
+      try {
+        // Marcar como leída
+        await fetch(API(`/notifications/${notifId}/read`), {
+          method: 'PATCH',
+          headers: H
+        });
+
+        // Redirigir
+        if (url && url !== '#') {
+          window.location.href = url;
+        }
+      } catch (error) {
+        console.error('Error marcando notificación:', error);
+      }
+    }
+
+    // Eliminar notificación
+    async function deleteNotification(notifId) {
+      if (!confirm('¿Eliminar esta notificación?')) return;
+
+      try {
+        const res = await fetch(API(`/notifications/${notifId}`), {
+          method: 'DELETE',
+          headers: H
+        });
+
+        if (res.ok) {
+          loadNotifications();
+        }
+      } catch (error) {
+        console.error('Error eliminando notificación:', error);
+      }
+    }
+
+    // Marcar todas como leídas
+    document.getElementById('markAllRead').addEventListener('click', async () => {
+      try {
+        const res = await fetch(API('/notifications/mark-all-read'), {
+          method: 'PATCH',
+          headers: H
+        });
+
+        if (res.ok) {
+          loadNotifications();
+        }
+      } catch (error) {
+        console.error('Error marcando todas como leídas:', error);
+      }
+    });
+
+    // Filtros
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        loadNotifications();
+      });
+    });
+
+    // Logout
+    document.getElementById('logoutBtnTop')?.addEventListener('click', ()=>{
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      location.replace('index.html');
+    });
+
+    // Inicializar
+    loadNotifications();
+    if (window.lucide) lucide.createIcons();
+
+    // Auto-refresh cada 30 segundos
+    setInterval(loadNotifications, 30000);
+  </script>
+</body>
+</html>

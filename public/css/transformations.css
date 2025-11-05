@@ -1,0 +1,318 @@
+/* Transformaciones de Imágenes - Galería de variantes */
+
+.transformation-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--surface, #f5f5f5);
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .transformation-gallery {
+    grid-template-columns: 1fr;
+  }
+}
+
+.transformation-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--panel, #fff);
+  border: 1px solid var(--line, #e0e0e0);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.transformation-item:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary, #7c5cfc);
+}
+
+.transformation-item img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.transformation-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.transformation-label-icon {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+/* Botón para ver transformaciones */
+.btn-view-transformations {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, var(--primary, #7c5cfc), var(--secondary, #5a3fbf));
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view-transformations:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.4);
+}
+
+.btn-view-transformations:active {
+  transform: translateY(0);
+}
+
+/* Modal para mostrar transformaciones en grande */
+.transformation-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+.transformation-modal.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.transformation-modal-content {
+  background: var(--panel, #fff);
+  border-radius: 12px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 20px;
+  position: relative;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.transformation-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--destructive, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.transformation-modal-close:hover {
+  background: var(--destructive-hover, #dc2626);
+}
+
+.transformation-modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.transformation-modal-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text, #000);
+}
+
+.transformation-modal-header p {
+  font-size: 13px;
+  color: var(--muted, #666);
+  margin: 4px 0 0 0;
+}
+
+.transformation-modal-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.transformation-card {
+  border: 1px solid var(--line, #e0e0e0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface, #f5f5f5);
+  transition: all 0.2s ease;
+}
+
+.transformation-card:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary, #7c5cfc);
+}
+
+.transformation-card img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  display: block;
+}
+
+.transformation-card-info {
+  padding: 12px;
+}
+
+.transformation-card-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text, #000);
+  margin: 0 0 4px 0;
+}
+
+.transformation-card-desc {
+  font-size: 12px;
+  color: var(--muted, #666);
+  margin: 0;
+}
+
+/* Indicador de carga */
+.transformation-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(124, 92, 252, 0.1);
+  color: var(--primary, #7c5cfc);
+  border: 1px solid var(--primary, #7c5cfc);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.transformation-loading::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid transparent;
+  border-top-color: var(--primary, #7c5cfc);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Badge de transformaciones */
+.transformation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #7c5cfc, #5a3fbf);
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.transformation-badge::before {
+  content: '🖼️';
+  font-size: 12px;
+}
+
+/* Estados de error */
+.transformation-error {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: var(--destructive, #ef4444);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Animación de generación */
+.transformation-generating {
+  position: relative;
+  overflow: hidden;
+}
+
+.transformation-generating::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 100%;
+  }
+}

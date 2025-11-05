@@ -1,0 +1,330 @@
+/* Filtros en el Compositor de Publicaciones */
+
+.cmp-filters-container {
+  display: none;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface, #f5f5f5);
+  border-radius: 8px;
+  border: 1px solid var(--line, #e0e0e0);
+  margin-top: 12px;
+}
+
+.cmp-filters-container.active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cmp-filters-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cmp-filters-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 4px;
+  scroll-behavior: smooth;
+}
+
+.cmp-filters-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.cmp-filters-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cmp-filters-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary, #7c5cfc);
+  border-radius: 2px;
+}
+
+.cmp-filters-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover, #6b4ce8);
+}
+
+.cmp-filter-btn {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line, #e0e0e0);
+  border-radius: 6px;
+  background: var(--panel, #fff);
+  color: var(--text, #000);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.cmp-filter-btn:hover {
+  border-color: var(--primary, #7c5cfc);
+  background: rgba(124, 92, 252, 0.05);
+  transform: translateY(-2px);
+}
+
+.cmp-filter-btn.active {
+  background: var(--primary, #7c5cfc);
+  color: white;
+  border-color: var(--primary, #7c5cfc);
+  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.3);
+}
+
+.cmp-filter-btn:active {
+  transform: translateY(0);
+}
+
+.cmp-filter-btn::before {
+  content: attr(data-icon);
+  margin-right: 4px;
+}
+
+/* Preview de filtro aplicado */
+.cmp-filter-preview {
+  position: relative;
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 300px;
+  display: none;
+}
+
+.cmp-filter-preview.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cmp-filter-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cmp-filter-preview-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: white;
+  padding: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Galería de filtros (modo grid) */
+.cmp-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cmp-filter-thumbnail {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 2px solid var(--line, #e0e0e0);
+  cursor: pointer;
+  aspect-ratio: 1;
+  transition: all 0.2s ease;
+  background: var(--surface, #f5f5f5);
+}
+
+.cmp-filter-thumbnail:hover {
+  border-color: var(--primary, #7c5cfc);
+  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.2);
+  transform: scale(1.05);
+}
+
+.cmp-filter-thumbnail.active {
+  border-color: var(--primary, #7c5cfc);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
+}
+
+.cmp-filter-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cmp-filter-thumbnail-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Indicador de carga */
+.cmp-filter-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(124, 92, 252, 0.1);
+  color: var(--primary, #7c5cfc);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.cmp-filter-loading::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid transparent;
+  border-top-color: var(--primary, #7c5cfc);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mensaje de información */
+.cmp-filter-info {
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--info, #3b82f6);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Vista previa de imagen original */
+.cmp-preview-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface, #f5f5f5);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted, #666);
+  margin-top: 8px;
+}
+
+.cmp-preview-info strong {
+  color: var(--text, #000);
+}
+
+/* Botones de acción */
+.cmp-filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+
+.cmp-filter-actions .btn {
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .cmp-filters-scroll {
+    overflow-x: scroll;
+  }
+
+  .cmp-filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  }
+
+  .cmp-filter-preview {
+    max-height: 250px;
+  }
+}
+
+/* Estado deshabilitado */
+.cmp-filters-container:disabled,
+.cmp-filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Animación de aplicación de filtro */
+.cmp-filter-applying {
+  position: relative;
+  overflow: hidden;
+}
+
+.cmp-filter-applying::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  to {
+    left: 100%;
+  }
+}
