@@ -295,11 +295,17 @@
           body: formData
         });
 
+        // Verificar tipo de contenido
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('El servidor no respondió con JSON. Verifica que estés autenticado correctamente.');
+        }
+
         const data = await response.json();
 
         if (data.ok) {
           status.className = 'status success';
-          status.textContent = '✅ Imagen procesada con éxito! Se generaron 4 transformaciones automáticas.';
+          status.textContent = '✅ Imagen procesada con éxito! Lambda generará las transformaciones en 5-10 segundos.';
           displayResults(data.post);
         } else {
           throw new Error(data.message || 'Error al subir');
