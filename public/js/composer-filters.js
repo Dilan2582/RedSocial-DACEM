@@ -1,8 +1,3 @@
-/**
- * Sistema de Filtros para el Compositor
- * Permite aplicar transformaciones a la imagen ANTES de publicar
- */
-
 class ComposerFilters {
   constructor() {
     this.currentImage = null;
@@ -159,7 +154,7 @@ class ComposerFilters {
       const img = new Image();
       img.crossOrigin = 'anonymous';
 
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -203,10 +198,10 @@ class ComposerFilters {
         const sepia = canvas.toDataURL('image/jpeg', 0.8);
 
         // Blur (usando filtro CSS simulado)
-        const blur = this.applyBlurEffect(imageUrl);
-
+        const blur = await this.applyBlurEffect(imageUrl);
         resolve({ blackWhite, sepia, blur: blur || imageUrl });
       };
+      
 
       img.onerror = () => {
         resolve({ blackWhite: imageUrl, sepia: imageUrl, blur: imageUrl });
@@ -224,7 +219,7 @@ class ComposerFilters {
     img.crossOrigin = 'anonymous';
 
     return new Promise((resolve) => {
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;

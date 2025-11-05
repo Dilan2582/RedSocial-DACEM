@@ -1,8 +1,3 @@
-/**
- * Sistema de Transformaciones de Imágenes
- * Muestra y gestiona las variantes de imágenes (B/N, Sepia, Blur, etc.)
- */
-
 class ImageTransformations {
   constructor() {
     this.currentPost = null;
@@ -10,7 +5,7 @@ class ImageTransformations {
   }
 
   init() {
-    // Crear modal para transformaciones si no existe
+    // Crear modal para transformaciones si no existe1
     if (!document.getElementById('transformationModal')) {
       this.createModal();
     }

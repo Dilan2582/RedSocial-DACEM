@@ -16,6 +16,12 @@
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
+  <!-- Filtros en el composer (UI + preview) -->
+  <script src="js/composer-filters.js" defer></script>
+
+  <!-- Modal para ver transformaciones de posts (opcional) -->
+  <script src="js/transformations.js" defer></script>
+
   <!-- Tema inicial para evitar FOUC -->
   <script>
     (function () {
@@ -25,62 +31,32 @@
     })();
   </script>
 
-  <!-- Mejora visual solo para el modal Compartir (coincide con tu estética) -->
+  <!-- Ajustes mínimos embebidos (sin tocar .btn-icon) -->
   <style>
-    /* Búsqueda estilo "Mensajes" */
-    .share-search{
-      width:100%;
-      padding:10px 16px;
-      border:1px solid var(--line);
-      border-radius:999px;
-      background:var(--panel);
-      color:var(--text);
-      outline:none;
-      transition:all .15s ease;
+    /* Lightbox responsive con letterboxing */
+    .lightbox .lb-content{ grid-template-columns:minmax(0,1fr) 420px; }
+    @media (max-width: 960px){
+      .lightbox .lb-content{ grid-template-columns:minmax(0,1fr); }
+      .lightbox .lb-side{ order:2 }
+      .lightbox .lb-media{ order:1 }
     }
-    .share-search::placeholder{ color:var(--muted) }
-    .share-search:focus{
-      border-color:var(--primary);
-      box-shadow:0 0 0 3px var(--ring);
-      background:var(--panel);
-    }
-    /* Grid de destinatarios con hover tipo "Personas sugeridas" */
-    .share-grid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:14px;
-      max-height:50vh;
-      overflow:auto;
-      padding:2px;
-    }
-    .share-pick{
-      border:1px solid var(--line);
-      background:var(--panel);
-      border-radius:12px;
-      padding:10px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-      position:relative;
-      transition:.15s ease;
-      color:var(--text);
-    }
-    .share-pick:hover{
-      background:rgba(124,92,252,.06);
-      border-color:rgba(124,92,252,.25);
-      box-shadow:0 4px 12px rgba(124,92,252,.1);
-    }
-    .share-mark{
-      position:absolute;right:8px;top:8px;width:18px;height:18px;border-radius:50%;
-      border:2px solid var(--line);display:grid;place-items:center;background:transparent;
-    }
-    .share-mark[data-on="true"]{ background:var(--primary) }
-    .share-name{
-      font-weight:700;font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
-    }
-    .lb-head strong{ font-weight:800 }
+    .lb-media{ display:grid; place-items:center; background:#000; min-height:40vh; max-height:85vh; overflow:hidden; border-radius:14px; }
+    .lb-media>img{ max-width:100%; max-height:80vh; width:auto; height:auto; object-fit:contain; }
+
+    /* Imagen del feed adaptada al slot (el recorte lo decide el CSS del proyecto) */
+    .post-media{ position:relative; overflow:hidden; border-radius:16px; background:#0b0f1a; display:grid; place-items:center; }
+    .post-media img.post-img{ width:100%; height:100%; object-fit:cover; }
+
+    .ratio-square{ aspect-ratio:1/1; }
+    .ratio-portrait{ aspect-ratio:3/4; }
+    .ratio-landscape{ aspect-ratio:16/9; }
+
+    /* Comentarios en visor: nombre clicable */
+    .lb-cmt .nm{ margin-right:8px; font-weight:700; color:var(--text); text-decoration:none; }
+    .lb-cmt .nm:hover{ text-decoration:underline; }
+
+    /* Ocultamos bloque de contadores viejo en feed (ya van junto al icono) */
+    .post-counts{ display:none !important; }
   </style>
 </head>
 
@@ -172,33 +148,30 @@
       <button class="btn ghost small lb-close" id="lbClose">
         <i class="nav-ico" data-lucide="x"></i>
       </button>
+
       <div class="lb-media"><img id="lbImg" alt=""></div>
+
       <aside class="lb-side">
         <header class="lb-head">
           <img id="lbAva" class="lb-ava" alt="">
           <div style="flex:1">
-            <div id="lbName" style="font-weight:700"></div>
-            <div id="lbUser" class="muted" style="font-size:12px"></div>
+            <a id="lbName" href="#" style="font-weight:700;text-decoration:none;color:var(--text)"></a>
+            <div><a id="lbUser" href="#" class="muted" style="font-size:12px;text-decoration:none"></a></div>
           </div>
-          <!-- botón compartir dentro del modal -->
-          <button id="lbShare" class="btn ghost small" title="Compartir">
-            <i data-lucide="send"></i>
-          </button>
+          <!-- Solo queda la X del modal -->
         </header>
-        <div class="lb-body" id="lbComments"></div>
 
         <div class="lb-actions">
-          <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta">
-            <i data-lucide="heart"></i>
+          <button id="lbLike" class="btn-icon has-count" aria-pressed="false" title="Me gusta">
+            <i data-lucide="heart"></i><span id="lbLikes" class="count">0</span>
           </button>
-          <button id="lbComment" class="btn-icon" title="Comentar">
-            <i data-lucide="message-circle"></i>
+          <button id="lbComment" class="btn-icon has-count" title="Comentar">
+            <i data-lucide="message-circle"></i><span id="lbCommentsCount" class="count">0</span>
           </button>
           <div class="spacer"></div>
-          <div class="post-counts">
-            <span id="lbLikes">0</span> · <span id="lbCommentsCount">0</span>
-          </div>
         </div>
+
+        <div class="lb-body" id="lbComments"></div>
 
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
@@ -219,7 +192,6 @@
         </header>
 
         <div style="padding:12px; border-bottom:1px solid var(--line)">
-          <!-- misma estética que la búsqueda de mensajes -->
           <input id="shareSearch" class="share-search" placeholder="Buscar conversación o usuario…"/>
         </div>
 
@@ -359,22 +331,44 @@
       if(!f){ selectedFile=null; cmp.imgBox.style.display='none'; return; }
       selectedFile = f; cmp.img.src = URL.createObjectURL(f); cmp.imgBox.style.display='flex';
     };
-    cmp.rm.onclick = ()=>{ selectedFile=null; cmp.fileEl.value=''; cmp.imgBox.style.display='none'; cmp.img.removeAttribute('src'); };
+    cmp.rm.onclick = ()=>{ selectedFile=null; cmp.fileEl.value=''; cmp.imgBox.style.display='none'; cmp.img.removeAttribute('src'); window.composerFilters?.clearFilters() };
 
-    async function publish(){
-      cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
-      try{
+    async function publish() {
+      cmp.post.disabled = true;
+      cmp.msg.textContent = 'Publicando...';
+
+      try {
         const fd = new FormData();
-        if (selectedFile) fd.append('image', selectedFile);
-        if (cmp.txt.value.trim()) fd.append('caption', cmp.txt.value.trim());
-        const r = await fetch(API('/posts'), { method:'POST', headers:H, body:fd });
+
+        if (selectedFile) {
+          if (window.composerFilters?.currentImage) {
+            const finalBlob = await window.composerFilters.getFilteredImageBlob();
+            const fileName = selectedFile?.name || 'photo.jpg';
+            fd.append('image', new File([finalBlob], fileName, { type: 'image/jpeg' }));
+            const f = window.composerFilters.getCurrentFilterInfo?.().filter || 'original';
+            fd.append('filter', f);
+          } else {
+            fd.append('image', selectedFile);
+          }
+        }
+
+        const caption = cmp.txt.value.trim();
+        if (caption) fd.append('caption', caption);
+
+        const r = await fetch(API('/posts'), { method: 'POST', headers: H, body: fd });
         const d = await r.json();
-        if(!d.ok) throw new Error(d.message||'Error');
+        if (!d.ok) throw new Error(d.message || 'Error');
+
         prependPost(d.post);
-        cmp.msg.textContent = '¡Publicado!'; cmp.txt.value=''; cmp.rm.click();
-        setTimeout(()=>cmp.msg.textContent='', 1200);
-      }catch{ cmp.msg.textContent = 'No se pudo publicar'; }
-      finally{ cmp.post.disabled=false; }
+        cmp.msg.textContent = '¡Publicado!';
+        cmp.txt.value = '';
+        cmp.rm.click();
+        setTimeout(() => (cmp.msg.textContent = ''), 1200);
+      } catch (e) {
+        cmp.msg.textContent = 'No se pudo publicar';
+      } finally {
+        cmp.post.disabled = false;
+      }
     }
     cmp.post.onclick = publish;
 
@@ -384,12 +378,12 @@
     let nextCursor = null, loading = false;
 
     function ratioClass(w,h){ const r=w/h; if(r<0.95) return 'ratio-portrait'; if(r>1.6) return 'ratio-landscape'; return 'ratio-square'; }
-
+        
     async function getUserCached(id){
       if (userCache.has(id)) return userCache.get(id);
       const r = await fetch(API(`/user/${id}/public`), { headers:H });
       const d = await r.json(); if (d.ok){ userCache.set(id,d.user); return d.user; }
-      return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
+      return { nickname:'usuario', firstName:'', lastName:'', avatar:null, _id:id, id };
     }
 
     /* ====== Lightbox ====== */
@@ -401,7 +395,6 @@
     const lbComment = document.getElementById('lbComment');
     const lbLikes = document.getElementById('lbLikes');
     const lbCommentsCount = document.getElementById('lbCommentsCount');
-    const lbShareBtn = document.getElementById('lbShare');
 
     let currentPost = null;
 
@@ -417,9 +410,9 @@
       lbBody.innerHTML='';
       for (const c of list) if (!userCache.has(c.userId)) await getUserCached(c.userId);
       list.forEach(c=>{
-        const u=userCache.get(c.userId), nm=displayName(u)||'usuario';
+        const u=userCache.get(c.userId), nm=displayName(u)||'usuario', uid=(u._id||u.id);
         const row=document.createElement('div'); row.className='lb-cmt';
-        row.innerHTML=`<span class="nm">${nm}</span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
+        row.innerHTML=`<a class="nm" href="profile.html?id=${uid}">${nm}</a>${c.text}<span class="dt" style="margin-left:8px;color:var(--muted);font-size:12px">${timeAgo(c.createdAt)}</span>`;
         lbBody.appendChild(row);
       });
       lbBody.scrollTop = lbBody.scrollHeight;
@@ -427,12 +420,13 @@
     async function openPostModal(p){
       currentPost = p;
 
-      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
-
+      lbImg.src = p.media?.original || p.media?.t1 || p.media?.thumb || '';
       const u = await getUserCached(p.userId);
       lbAva.src = resolveAvatar(u);
       lbName.textContent = displayName(u);
+      lbName.href = `profile.html?id=${u._id||u.id}`;
       lbUser.textContent = `@${u.nickname || 'usuario'}`;
+      lbUser.href = `profile.html?id=${u._id||u.id}`;
 
       lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
       lbLikes.textContent = p.counts?.likes || 0;
@@ -470,9 +464,6 @@
 
       lbComment.onclick = ()=>{ lbInp.focus(); lbBody.scrollTop = lbBody.scrollHeight; };
 
-      // compartir desde el visor
-      lbShareBtn.onclick = ()=> openShareModal(p);
-
       lb.setAttribute('aria-hidden','false');
       if (window.lucide) lucide.createIcons();
     }
@@ -489,7 +480,7 @@
 
     /* ====== Tarjeta de post ====== */
     function postCard(p){
-      const cls = ratioClass(p.media.width, p.media.height);
+      const cls = ratioClass(p.media?.width||1, p.media?.height||1);
       const el = document.createElement('article'); el.className='post-card';
       const author = userCache.get(p.userId) || {};
       const isMyPost = me && (String(p.userId) === String(me._id || me.id));
@@ -502,13 +493,18 @@
             <div class="post-userid">@${author.nickname || 'usuario'}</div>
           </div>
         </header>
-        <div class="post-media ${cls}"><img class="post-img" src="${p.media.thumb}" alt=""></div>
+        <div class="post-media ${cls}">
+          <img class="post-img" src="${p.media?.thumb || p.media?.original || ''}" alt="">
+        </div>
         <div class="post-actions">
-          <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta"><i data-lucide="heart"></i></button>
-          <button class="btn-icon btn-comment" title="Comentar"><i data-lucide="message-circle"></i></button>
+          <button class="btn-icon has-count btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta">
+            <i data-lucide="heart"></i><span class="count likes">${p.counts?.likes||0}</span>
+          </button>
+          <button class="btn-icon has-count btn-comment" title="Comentar">
+            <i data-lucide="message-circle"></i><span class="count comments">${p.counts?.comments||0}</span>
+          </button>
           <button class="btn-icon btn-share" title="Compartir"><i data-lucide="send"></i></button>
           <div class="spacer"></div>
-          <div class="post-counts"><span class="likes">${p.counts?.likes||0}</span> · <span class="comments">${p.counts?.comments||0}</span></div>
         </div>
         ${p.caption ? `<div class="post-caption">${p.caption}</div>` : '' }`;
 
@@ -650,12 +646,10 @@
       return d.conversation.id;
     }
 
-    // ENVÍO COMO TARJETA (no solo link). Enviamos un payload con tipo 'post-card'.
     async function sendShare(){
       if (!shareTargetPost || selectedRecipients.size===0) return;
       shareSendBtn.disabled = true;
 
-      // armamos un payload estructurado para que messages.js pinte la tarjeta
       const payload = {
         type: 'post-card',
         postId: shareTargetPost.id,
@@ -667,7 +661,6 @@
         caption: shareTargetPost.caption || ''
       };
 
-      // mensaje opcional del usuario
       const extra = shareMsg.value.trim();
       const content = extra ? `${extra}\n${JSON.stringify(payload)}` : JSON.stringify(payload);
 
@@ -690,13 +683,11 @@
     }
     shareSendBtn.onclick = sendShare;
 
-    // Abrir modal de compartir por hash (limpieza)
     (function(){
       const m = location.hash.match(/post=([^&]+)/);
       if (m) location.hash = '';
     })();
 
-    // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
   </script>
 
