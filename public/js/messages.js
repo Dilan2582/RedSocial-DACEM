@@ -218,6 +218,12 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Botón opciones (…)
   $('#msgOptionsBtn')?.addEventListener('click', openDeleteModal);
 
+  // Cerrar modal cuando se hace clic fuera
+  delModal?.addEventListener('click', (e)=>{ if(e.target === delModal) closeDeleteModal(); });
+
+  // Cerrar modal con Escape
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && delModal?.getAttribute('aria-hidden')==='false') closeDeleteModal(); });
+
   // Logout
   $('#logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); location.href='/index.html'; });
 

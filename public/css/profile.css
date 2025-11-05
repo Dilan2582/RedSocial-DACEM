@@ -241,10 +241,10 @@ body::after{
 .stat-overlay{ display:flex; align-items:center; gap:8px; font-size:16px }
 
 /* ===== Lightbox / visor de publicación ===== */
-.lightbox{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.65); z-index:90 }
+.lightbox{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.65); z-index:90; padding:20px; backdrop-filter:blur(4px) }
 .lightbox[aria-hidden="false"]{ display:flex }
 .lb-content{
-  position:relative; width:min(935px,96vw); height:min(90vh,820px);
+  position:relative; width:min(700px,90vw); height:auto; max-height:80vh;
   display:flex; background:var(--panel); border:1px solid var(--line);
   border-radius:16px; overflow:hidden; box-shadow:0 20px 80px rgba(0,0,0,.6);
 }
@@ -480,14 +480,15 @@ body::after{
   
   /* Lightbox mobile */
   .lb-content{ 
-    width:100vw; 
-    height:100vh; 
-    border-radius:0;
+    width:95vw;
+    height:auto;
+    max-height:90vh;
+    border-radius:12px;
     flex-direction:column;
   }
   .lb-media{ 
     flex:1 1 auto;
-    max-height:60vh;
+    max-height:50vh;
   }
   .lb-side{ 
     flex:0 0 auto;
