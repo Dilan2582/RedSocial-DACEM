@@ -100,7 +100,9 @@
             <div class="chat-body" id="chatBody">
               <div class="no-chat-selected">
                 <section class="empty-state" id="emptyMessages">
-                  <img src="/img/mainmes.svg" alt="" class="empty-illustration" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-illustration" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
                   <h2 class="empty-title">Tus mensajes</h2>
                   <p class="empty-sub">Selecciona una conversación para empezar a chatear</p>
                 </section>
@@ -121,7 +123,7 @@
   </div>
 
   <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lightbox" id="lightbox" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose"><i class="nav-ico" data-lucide="x"></i></button>
       <div class="lb-media"><img id="lbImg" alt=""></div>
@@ -150,7 +152,7 @@
   </div>
 
   <!-- Modal adjuntar imagen -->
-  <div class="lightbox" id="mediaModal" aria-hidden="true">
+  <div class="lightbox" id="mediaModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Adjuntar imagen"
          style="grid-template-columns:min(90vw,560px);max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -180,7 +182,7 @@
   </div>
 
   <!-- Modal borrar conversaciones -->
-  <div class="lightbox" id="delModal" aria-hidden="true">
+  <div class="lightbox" id="delModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
          style="grid-template-columns:min(92vw,560px);max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -196,8 +198,8 @@
     </div>
   </div>
 
-  <!-- NUEVO: Modal “Nuevo mensaje” (lista SOLO seguidos) -->
-  <div class="lightbox" id="newMsgModal" aria-hidden="true">
+  <!-- NUEVO: Modal "Nuevo mensaje" (lista SOLO seguidos) -->
+  <div class="lightbox" id="newMsgModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Nuevo mensaje"
          style="grid-template-columns:min(94vw,760px);max-width:760px">
       <div class="lb-side" style="display:flex;flex-direction:column">

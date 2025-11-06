@@ -337,10 +337,12 @@ async function openPostModal(p){
   };
 
   lb.setAttribute('aria-hidden','false');
+  lb.removeAttribute('inert');
   try{ if(window.lucide) window.lucide.createIcons(); }catch(_){}
 }
 function closePostModal(){
   lb.setAttribute('aria-hidden','true');
+  lb.setAttribute('inert', '');
   lbImg.removeAttribute('src'); lbBody.innerHTML=''; lbInp.value='';
   lbLike.setAttribute('aria-pressed','false'); lbLikes.textContent='0'; lbCommentsCount.textContent='0';
   currentPost=null;
@@ -378,43 +380,59 @@ document.addEventListener('DOMContentLoaded', ()=>{
 /* ================== CONVERSATIONS ================= */
 async function loadConversations(){
   try{
-    const url = API_BASE+'/messages/conversations';
+    const url = API_BASE+'/messages';
+    console.log('📍 Cargando conversaciones desde:', url);
+    console.log('🔐 Token enviado:', authToken);
+    
     const r = await fetch(url, { 
       method: 'GET',
       headers:{ 
-        Authorization:authToken
+        'Authorization': authToken,
+        'Content-Type': 'application/json'
       }
     });
+    
+    console.log('📊 Response status:', r.status, r.statusText);
     
     if(!r.ok){ 
       if(r.status===401) { 
         localStorage.removeItem('token'); 
         location.href='/index.html'; 
       } 
-      console.error('loadConversations error:', r.status, r.statusText);
+      const errorText = await r.text();
+      console.error('loadConversations error:', r.status, r.statusText, errorText);
       return; 
     }
     
     const d = await r.json();
+    console.log('✅ Conversaciones recibidas:', d);
     conversations = d.conversations || d.data || [];
     renderConversations(conversations);
   }catch(e){ 
-    console.error('loadConversations error:', e); 
+    console.error('❌ loadConversations error:', e); 
   }
 }
 
 function renderConversations(convs){
   const container = $('#conversationsBody');
-  if(!container) return;
+  console.log('🎨 renderConversations llamado con', convs.length, 'conversaciones');
+  console.log('📦 Contenedor encontrado:', !!container);
+  
+  if(!container) {
+    console.error('❌ #conversationsBody no encontrado en el DOM');
+    return;
+  }
 
   if(!convs.length){
+    console.log('📭 Sin conversaciones, mostrando estado vacío');
     container.innerHTML = `<div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a 2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <p>No tienes conversaciones aún</p></div>`;
     return;
   }
 
-  container.innerHTML = convs.map(conv=>{
+  const html = convs.map(conv=>{
+    console.log('📝 Renderizando conversación:', conv);
     const isActive = currentConversation && currentConversation.id===conv.id;
     const last = conv.lastMessage;
     const isUnread = last && !last.read && !last.isMine;
@@ -434,6 +452,9 @@ function renderConversations(convs){
       </div>
     </div>`;
   }).join('');
+  
+  container.innerHTML = html;
+  console.log('✅ Conversaciones renderizadas en el DOM');
 }
 
 function handleSearch(e){
@@ -759,9 +780,11 @@ function openDeleteModal(){
   delCancel.onclick = closeDeleteModal;
   delConfirm.onclick = confirmDeleteSelected;
   delModal.setAttribute('aria-hidden','false');
+  delModal.removeAttribute('inert');
 }
 function closeDeleteModal(){
   delModal?.setAttribute('aria-hidden','true');
+  delModal?.setAttribute('inert', '');
   if(delList) delList.innerHTML = '';
   updateDelCount();
 }
@@ -827,6 +850,11 @@ function wireNewMessageModal(){
 
   function setVisible(flag){
     modal.setAttribute('aria-hidden', (!flag) + '');
+    if (flag) {
+      modal.removeAttribute('inert');
+    } else {
+      modal.setAttribute('inert', '');
+    }
   }
 
   async function refreshList(q=''){

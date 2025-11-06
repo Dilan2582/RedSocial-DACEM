@@ -172,7 +172,7 @@
   </div>
 
   <!-- Lightbox (ver publicación) -->
-  <div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lightbox" id="lightbox" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose">
         <i class="nav-ico" data-lucide="x"></i>
@@ -222,7 +222,7 @@
   </div>
 
   <!-- Modal Compartir publicación -->
-  <div class="lightbox" id="shareModal" aria-hidden="true">
+  <div class="lightbox" id="shareModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Compartir" style="grid-template-columns: min(90vw,560px); max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
         <header class="lb-head" style="gap:8px">
@@ -699,10 +699,12 @@
       };
 
       lb.setAttribute('aria-hidden','false');
+      lb.removeAttribute('inert');
       if (window.lucide) lucide.createIcons();
     }
     function closePostModal(){
       lb.setAttribute('aria-hidden','true');
+      lb.setAttribute('inert', '');
       lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML='';
       lbLike.setAttribute('aria-pressed','false');
       lbLikes.textContent = '0';
@@ -834,10 +836,12 @@
       shareInfo.textContent = '';
       listFollowing().then(()=> filterShareList(''));
       shareModal.setAttribute('aria-hidden','false');
+      shareModal.removeAttribute('inert');
       if (window.lucide) lucide.createIcons();
     }
     function closeShareModal(){
       shareModal.setAttribute('aria-hidden','true');
+      shareModal.setAttribute('inert', '');
       shareList.innerHTML = '';
     }
     shareClose.onclick = closeShareModal;
@@ -969,7 +973,7 @@
     // Actualizar badge de mensajes no leídos
     async function updateMessagesBadge() {
       try {
-        const res = await fetch(API('/messages/conversations'), { headers: H });
+        const res = await fetch(API('/messages'), { headers: H });
         const data = await res.json();
         if (data.ok) {
           const unreadCount = data.conversations.filter(c => c.hasUnread).length;
