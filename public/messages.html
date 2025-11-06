@@ -110,11 +110,18 @@
             <!-- Composer -->
             <footer class="chat-composer" id="chatComposer" style="display:none">
               <textarea id="messageInput" rows="1" class="composer-input" placeholder="Escribe un mensaje..."></textarea>
-              <button class="btn-icon ghost glow" id="sendBtn" title="Enviar" type="button">
+              <button id="sendBtn" title="Enviar mensaje" type="button" aria-label="Enviar">
                 <i data-lucide="send"></i>
               </button>
             </footer>
           </section>
+          
+          <!-- Panel de personas sugeridas -->
+          <aside class="suggestions-panel">
+            <h3 class="suggestions-header">Personas sugeridas</h3>
+            <div id="suggestedPeople" class="suggestions-list"></div>
+          </aside>
+
         </div>
       </main>
     </div>

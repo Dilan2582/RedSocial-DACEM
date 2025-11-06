@@ -514,7 +514,12 @@ function selectConversation(id,userId,name,image){
   body.style.overflow = 'auto';
 
   const composer = $('#chatComposer');
-  composer.style.display = 'flex';
+  if (composer) {
+    composer.style.display = 'flex';
+    console.log('✅ Compositor mostrado');
+  } else {
+    console.error('❌ Compositor no encontrado');
+  }
 
   const backBtn = $('#backToList');
   if (window.innerWidth <= 768) {
@@ -522,6 +527,8 @@ function selectConversation(id,userId,name,image){
     backBtn.onclick = ()=>{
       $('#conversationsList').classList.remove('hidden');
       $('#chatView').classList.add('hidden');
+      const composer = $('#chatComposer');
+      if (composer) composer.style.display = 'none';
     };
   }
 
