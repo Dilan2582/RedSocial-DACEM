@@ -152,9 +152,10 @@
     .feed{display:grid;gap:20px}
     .post-card{overflow:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);transition:.2s ease}
     .post-head{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
-    .post-ava{width:44px;height:44px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--primary),var(--primary2))}
+    .post-ava{width:44px;height:44px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,var(--primary),var(--primary2));cursor:pointer;transition:.2s ease}
+    .post-ava:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(124,92,252,.3)}
     .post-user{display:grid;line-height:1.2;flex:1}
-    .post-name{font-weight:700;color:var(--text);text-decoration:none}
+    .post-name{font-weight:700;color:var(--text);text-decoration:none;transition:.15s ease}
     .post-name:hover{color:var(--primary)}
     .post-userid{color:var(--muted);font-size:.85rem}
     .post-media{position:relative;background:#f6f7fb;cursor:pointer}
@@ -165,13 +166,48 @@
     .post-media.ratio-landscape img,.post-media.ratio-landscape video{aspect-ratio:16/9}
     .post-video{max-height:600px;background:#000}
     .post-actions{display:flex;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--line)}
-    .btn-icon{display:inline-flex;align-items:center;justify-content:center;width:48px;height:44px;border-radius:999px;border:1px solid transparent;background:transparent;color:var(--text);cursor:pointer;transition:.15s ease}
+    .btn-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      min-width:48px;
+      height:44px;
+      padding:0 14px;
+      border-radius:999px;
+      border:1px solid transparent;
+      background:transparent;
+      color:var(--text);
+      cursor:pointer;
+      transition:.15s ease;
+      font-weight:600;
+      font-size:.95rem;
+    }
     .btn-icon:hover{background:rgba(124,92,252,.08)}
     .btn-icon:active{background:rgba(124,92,252,.15);transform:scale(0.95)}
-    .btn-icon i,.btn-icon svg{width:24px;height:24px}
-    .btn-icon svg{stroke: currentColor; fill: none; stroke-width: 2;}
+    .btn-icon i,
+    .btn-icon i svg,
+    .btn-icon svg{
+      width:24px;
+      height:24px;
+      flex-shrink:0;
+      stroke:currentColor;
+      fill:none;
+      stroke-width:2;
+    }
     .btn-icon[aria-pressed="true"]{color:var(--accent)}
-    .post-counts{color:var(--muted);font-size:.9rem;font-weight:600}
+    .btn-icon[aria-pressed="true"] svg{
+      stroke:var(--accent);
+      fill:var(--accent);
+    }
+    .btn-icon span{
+      line-height:1;
+      font-size:1rem;
+      font-weight:600;
+      display:inline-block;
+      min-width:16px;
+      text-align:center;
+    }
     .post-caption{padding:0 16px 16px;color:var(--text);line-height:1.5;font-size:.95rem}
 
     /* People */
@@ -189,44 +225,102 @@
     /* Lightbox */
     .lightbox{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.65);z-index:100;padding:20px;backdrop-filter:blur(4px)}
     .lightbox[aria-hidden="false"]{display:flex}
-    .lb-content{display:grid;grid-template-columns:min(62vw,760px) 380px;gap:0;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+    .lb-content{display:grid;grid-template-columns:min(62vw,760px) 380px;gap:0;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden;max-height:90vh}
     @media (max-width:1080px){ .lb-content{grid-template-columns:1fr;max-height:85vh} }
     .lb-close{position:absolute;right:16px;top:16px;z-index:10}
-    .lb-media{background:#000;display:flex;align-items:center;justify-content:center}
-    .lb-media img{display:block;max-width:100%;max-height:100%;object-fit:contain}
-    .lb-side{display:grid;grid-template-rows:auto 1fr auto;background:var(--panel)}
+    .lb-media{background:#000;display:flex;align-items:center;justify-content:center;min-height:400px;max-height:90vh}
+    .lb-media img{display:block;width:100%;height:100%;object-fit:contain;max-height:90vh}
+    /* Sidebar del lightbox con 4 secciones: header, body, actions, input */
+    .lb-side{display:grid;grid-template-rows:auto 1fr auto auto;background:var(--panel)}
     .lb-head{display:flex;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
     .lb-ava{width:40px;height:40px;border-radius:50%;object-fit:cover}
-    .lb-body{padding:16px;display:grid;gap:12px;max-height:50vh;overflow-y:auto}
-    .lb-cmt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
-    .lb-cmt .nm{font-weight:700;color:var(--text)}
-    .lb-cmt .dt{color:var(--muted);font-size:.85rem;white-space:nowrap}
-    .lb-input{display:flex;gap:10px;padding:16px;border-top:1px solid var(--line)}
-    .lb-input input{flex:1;background:#0b0f1d;border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px}
-    .lb-input input:focus{box-shadow:0 0 0 3px var(--ring)}
+    .lb-body{padding:12px;display:grid;gap:8px;max-height:50vh;overflow-y:auto}
+    .lb-cmt{display:flex;gap:6px;align-items:flex-start;line-height:1.25;font-size:14px}
+    .lb-cmt .nm-wrap{display:inline}
+    .lb-cmt .nm{font-weight:700;color:var(--primary)}
+    .lb-cmt .user-link{color:var(--primary);text-decoration:none;transition:all 0.2s}
+    .lb-cmt .user-link:hover{text-decoration:underline;color:var(--primary-hover, #a855f7)}
+    .lb-cmt .dt{color:var(--muted);font-size:.8rem;white-space:nowrap;flex-shrink:0}
+    
     /* Barra de acciones del modal */
     .lb-actions{
       display:flex;
       align-items:center;
-      gap:12px;
+      gap:8px;
       padding:12px 16px;
       border-top:1px solid var(--line);
       background:var(--panel);
-      flex-wrap:nowrap;            /* evita que salte a otra línea */
+      flex-wrap:nowrap;
+    }
+    
+    /* Contador de likes destacado */
+    .lb-likes-counter{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:12px 16px;
+      background:rgba(124,92,252,.05);
+      border-top:1px solid var(--line);
+      color:var(--text);
+      font-size:.9rem;
+    }
+    .lb-likes-counter svg{
+      flex-shrink:0;
+    }
+    .lb-likes-counter strong{
+      color:var(--primary);
+      font-weight:700;
+      font-size:1rem;
+    }
+    
+    /* Input de comentarios */
+    .lb-input{display:flex;gap:10px;padding:16px;border-top:1px solid var(--line)}
+    .lb-input input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:12px}
+    [data-theme="dark"] .lb-input input{background:#0b0f1d}
+    .lb-input input:focus{box-shadow:0 0 0 3px var(--ring)}
+    .lb-input .btn{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      white-space:nowrap;
+      padding:10px 18px;
+      font-weight:700;
+      font-size:.9rem;
+    }
+    .lb-input .btn svg{
+      flex-shrink:0;
     }
 
     /* Empuja y alinea el recuento a la derecha en una sola línea */
     .lb-actions .post-counts{
-      margin-left:auto;            /* lo manda a la derecha (no depende del .spacer) */
-      white-space:nowrap;          /* evita salto 2 · 1 */
+      margin-left:auto;
+      white-space:nowrap;
       line-height:1;
       display:flex;
       gap:6px;                     /* pequeño espacio entre números y separador */
     }
 
     /* Tamaño/alineación de los íconos */
-    .lb-actions .btn-icon{ width:42px; height:38px }
-    .lb-actions .btn-icon svg{ width:22px; height:22px; vertical-align:middle }
+    .lb-actions .btn-icon{ 
+      width:42px; 
+      height:38px;
+      gap:6px;
+      padding:0 8px;
+    }
+    .lb-actions .btn-icon i,
+    .lb-actions .btn-icon i svg,
+    .lb-actions .btn-icon svg{ 
+      width:22px; 
+      height:22px; 
+      vertical-align:middle;
+      stroke:currentColor;
+      fill:none;
+      stroke-width:2;
+    }
+    .lb-actions .btn-icon[aria-pressed="true"] svg{
+      fill:var(--accent);
+      stroke:var(--accent);
+    }
 
 
 

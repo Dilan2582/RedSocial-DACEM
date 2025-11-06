@@ -21,6 +21,10 @@
     })();
   </script>
   
+  <!-- Navegación suave (cargar antes para prevenir FOUC) -->
+  <script src="js/smooth-navigation.js"></script>
+  
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/notifications.css">
 </head>
 <body class="notifications-page">
@@ -43,37 +47,7 @@
 
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <nav class="nav">
-          <a class="nav-item" href="user.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Inicio
-          </a>
-          <a class="nav-item active" href="notifications.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Notificaciones
-            <span class="unread-badge" id="notificationsBadge" style="display:none"></span>
-          </a>
-          <a class="nav-item" href="messages.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mensajes
-            <span class="unread-badge" id="unreadBadge" style="display:none"></span>
-          </a>
-          <a class="nav-item" href="profile.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mi perfil
-          </a>
-        </nav>
-      </aside>
+      <!-- Sidebar se generará dinámicamente -->
 
       <!-- Main -->
       <main class="main">
@@ -563,5 +537,9 @@
     // Auto-refresh cada 30 segundos
     setInterval(loadNotifications, 30000);
   </script>
+  
+  <!-- Sidebar unificado -->
+  <script src="js/sidebar.js"></script>
 </body>
 </html>
+
