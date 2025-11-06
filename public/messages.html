@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -12,6 +13,7 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/messages.css">
 
   <!-- Iconos -->
@@ -49,24 +51,14 @@
   <!-- Layout -->
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar card">
-        <nav class="nav">
-          <a class="nav-item" href="user.html">
-            <i class="nav-ico" data-lucide="home"></i> Inicio
-          </a>
-          <a class="nav-item active" href="messages.html">
-            <i class="nav-ico" data-lucide="message-circle"></i> Mensajes
-          </a>
-          <a class="nav-item" href="profile.html">
-            <i class="nav-ico" data-lucide="user-2"></i> Mi perfil
-          </a>
-        </nav>
+      <!-- Sidebar dinámico -->
+      <aside class="sidebar" id="sidebar-container">
+        <!-- El sidebar se genera dinámicamente con sidebar.js -->
       </aside>
 
       <!-- Main -->
       <main class="main">
-        <div class="messages-container card" style="box-shadow:var(--shadow);">
+        <div class="messages-container">
           <!-- Lista de conversaciones -->
           <aside class="conversations-list" id="conversationsList">
             <div class="conversations-header">
@@ -118,18 +110,25 @@
             <!-- Composer -->
             <footer class="chat-composer" id="chatComposer" style="display:none">
               <textarea id="messageInput" rows="1" class="composer-input" placeholder="Escribe un mensaje..."></textarea>
-              <button class="btn-icon ghost glow" id="sendBtn" title="Enviar" type="button">
+              <button id="sendBtn" title="Enviar mensaje" type="button" aria-label="Enviar">
                 <i data-lucide="send"></i>
               </button>
             </footer>
           </section>
+          
+          <!-- Panel de personas sugeridas -->
+          <aside class="suggestions-panel">
+            <h3 class="suggestions-header">Personas sugeridas</h3>
+            <div id="suggestedPeople" class="suggestions-list"></div>
+          </aside>
+
         </div>
       </main>
     </div>
   </div>
 
   <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lightbox" id="lightbox" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose"><i class="nav-ico" data-lucide="x"></i></button>
       <div class="lb-media"><img id="lbImg" alt=""></div>
@@ -158,7 +157,7 @@
   </div>
 
   <!-- Modal adjuntar imagen -->
-  <div class="lightbox" id="mediaModal" aria-hidden="true">
+  <div class="lightbox" id="mediaModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Adjuntar imagen"
          style="grid-template-columns:min(90vw,560px);max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -188,7 +187,7 @@
   </div>
 
   <!-- Modal borrar conversaciones -->
-  <div class="lightbox" id="delModal" aria-hidden="true">
+  <div class="lightbox" id="delModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
          style="grid-template-columns:min(92vw,560px);max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -204,8 +203,8 @@
     </div>
   </div>
 
-  <!-- NUEVO: Modal “Nuevo mensaje” (lista SOLO seguidos) -->
-  <div class="lightbox" id="newMsgModal" aria-hidden="true">
+  <!-- NUEVO: Modal "Nuevo mensaje" (lista SOLO seguidos) -->
+  <div class="lightbox" id="newMsgModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Nuevo mensaje"
          style="grid-template-columns:min(94vw,760px);max-width:760px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -262,6 +261,7 @@
     });
   </script>
 
+  <script src="js/sidebar.js"></script>
   <script src="js/messages.js"></script>
 </body>
 </html>

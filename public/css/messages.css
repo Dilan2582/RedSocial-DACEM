@@ -45,7 +45,7 @@ body{
 .messages-container{
   display:flex;
   height:calc(100vh - 58px);
-  max-width:1400px;
+  max-width:1600px;
   margin:0 auto;
   border-left:1px solid var(--line);
   border-right:1px solid var(--line);
@@ -138,6 +138,9 @@ body{
   width:44px; height:44px; border-radius:50%;
   display:inline-flex; align-items:center; justify-content:center; padding:0;
   box-shadow:0 6px 20px rgba(124,92,252,.25);
+  color: white;
+  background: var(--primary);
+  border: none;
 }
 
 /* ===== Tarjeta post en chat ===== */
@@ -199,11 +202,11 @@ body{
 }
 
 /* ==== Composer buttons ==== */
-.chat-composer .btn-icon { background: transparent !important; border: none !important; display:inline-grid; place-items:center; width:40px; height:40px; border-radius:999px; transition:transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease; color:var(--text); opacity:.9; }
-.chat-composer .btn-icon:hover { transform: translateY(-1px) scale(1.05); opacity:1; box-shadow:0 0 0 3px var(--ring); }
-.chat-composer .btn-icon:active { transform:scale(.98); box-shadow:0 0 0 2px var(--ring); }
+.chat-composer .btn-icon:not(#sendBtn) { background: transparent !important; border: none !important; display:inline-grid; place-items:center; width:40px; height:40px; border-radius:999px; transition:transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease; color:var(--text); opacity:.9; }
+.chat-composer .btn-icon:not(#sendBtn):hover { transform: translateY(-1px) scale(1.05); opacity:1; box-shadow:0 0 0 3px var(--ring); }
+.chat-composer .btn-icon:not(#sendBtn):active { transform:scale(.98); box-shadow:0 0 0 2px var(--ring); }
 .chat-composer .btn-icon i { width:22px; height:22px; }
-.chat-composer button { background:transparent; }
+.chat-composer button:not(#sendBtn) { background:transparent; }
 
 /* ==== @nickname clicable ==== */
 .lb-cmt .nm-wrap{ margin-right:6px; }
@@ -286,3 +289,121 @@ a.chat-username:hover{ text-decoration:underline; }
 }
 .pick-item[aria-selected="true"] .pick-radio{ border-color:var(--primary); box-shadow:0 0 0 3px var(--ring); background:color-mix(in srgb, var(--primary) 30%, transparent); }
 .pick-footer{ display:flex; justify-content:flex-end; padding:10px 12px; border-top:1px solid var(--line); }
+
+/* ====== Sidebar de Sugerencias ====== */
+.suggestions-sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.suggestions-header {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.suggested-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--panel2);
+  transition: all 0.2s ease;
+}
+
+.suggested-user:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.suggested-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--panel);
+}
+
+.suggested-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggested-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggested-username {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggested-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-follow {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-follow:hover {
+  background: var(--primary2);
+  transform: translateY(-1px);
+}
+
+.btn-view {
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view:hover {
+  background: var(--panel);
+  transform: translateY(-1px);
+}
+
+/* Responsive para el sidebar de sugerencias */
+@media (max-width: 1200px) {
+  .suggestions-sidebar {
+    width: 260px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .suggestions-sidebar {
+    display: none;
+  }
+}

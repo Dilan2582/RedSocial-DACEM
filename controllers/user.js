@@ -26,13 +26,13 @@ const nickValid = (n) => /^[a-z0-9._-]{3,20}$/i.test(n);
 const publicUserProjection = '-password -__v';
 
 async function countFollowers(userId) {
-  try { return await Follow.countDocuments({ followed: userId }); } catch { return 0; }
+  try { return await Follow.countDocuments({ followed: userId, status: 'accepted' }); } catch { return 0; }
 }
 async function countFollowing(userId) {
-  try { return await Follow.countDocuments({ user: userId }); } catch { return 0; }
+  try { return await Follow.countDocuments({ user: userId, status: 'accepted' }); } catch { return 0; }
 }
 async function amIFollowing(meId, otherId) {
-  try { return !!(await Follow.exists({ user: meId, followed: otherId })); } catch { return false; }
+  try { return !!(await Follow.exists({ user: meId, followed: otherId, status: 'accepted' })); } catch { return false; }
 }
 
 function pickUserFieldsFromBody(body = {}) {
@@ -279,7 +279,7 @@ async function listOthers(req, res) {
     const users = await User.find({ _id: { $ne: uid } })
       .select(publicUserProjection).limit(100).lean();
 
-    const followingDocs = await Follow.find({ user: uid }).select('followed').lean();
+    const followingDocs = await Follow.find({ user: uid, status: 'accepted' }).select('followed').lean();
     const followingSet = new Set(followingDocs.map(f => String(f.followed)));
 
     const enriched = users.map(u => ({ ...u, isFollowing: followingSet.has(String(u._id)) }));
