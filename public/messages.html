@@ -73,10 +73,15 @@
               <div class="conv-head-row">
                 <h1>Mensajes</h1>
 
-                <!-- Botón de 3 puntos, a la derecha del título "Mensajes" -->
-                <button id="msgOptionsBtn" class="btn ghost small" aria-haspopup="dialog" title="Opciones">
-                  …
-                </button>
+                <!-- NUEVO: grupo de acciones a la derecha (lápiz + 3 puntos) -->
+                <div class="head-actions">
+                  <button id="newMsgBtn" class="btn ghost small" title="Nuevo mensaje" aria-haspopup="dialog">
+                    <i class="nav-ico" data-lucide="pencil"></i>
+                  </button>
+                  <!-- Botón de 3 puntos -->
+                  <button id="msgOptionsBtn" class="btn ghost small" aria-haspopup="dialog" title="Opciones">…</button>
+                </div>
+
                 <!-- Menú contextual -->
                 <div id="convMenu" class="menu" hidden>
                   <button id="menuDelete" type="button">Borrar conversaciones</button>
@@ -183,22 +188,48 @@
   </div>
 
   <!-- Modal borrar conversaciones -->
-<div class="lightbox" id="delModal" aria-hidden="true">
-  <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
-       style="grid-template-columns:min(92vw,560px);max-width:560px">
-    <div class="lb-side" style="display:flex;flex-direction:column">
-      <header class="lb-head" style="gap:8px">
-        <strong style="font-size:16px">Borrar conversaciones</strong>
-        <div class="spacer"></div>
-        <button id="delCancel" class="btn ghost small">Cancelar</button>
-        <button id="delConfirm" class="btn danger small" disabled>Eliminar (<span id="delCount">0</span>)</button>
-      </header>
+  <div class="lightbox" id="delModal" aria-hidden="true">
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
+         style="grid-template-columns:min(92vw,560px);max-width:560px">
+      <div class="lb-side" style="display:flex;flex-direction:column">
+        <header class="lb-head" style="gap:8px">
+          <strong style="font-size:16px">Borrar conversaciones</strong>
+          <div class="spacer"></div>
+          <button id="delCancel" class="btn ghost small">Cancelar</button>
+          <button id="delConfirm" class="btn danger small" disabled>Eliminar (<span id="delCount">0</span>)</button>
+        </header>
 
-      <div id="delList" class="lb-body" style="padding:12px"></div>
+        <div id="delList" class="lb-body" style="padding:12px"></div>
+      </div>
     </div>
   </div>
-</div>
 
+  <!-- NUEVO: Modal “Nuevo mensaje” (lista SOLO seguidos) -->
+  <div class="lightbox" id="newMsgModal" aria-hidden="true">
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Nuevo mensaje"
+         style="grid-template-columns:min(94vw,760px);max-width:760px">
+      <div class="lb-side" style="display:flex;flex-direction:column">
+        <header class="lb-head" style="gap:8px">
+          <strong style="font-size:16px">Nuevo mensaje</strong>
+          <div class="spacer"></div>
+          <button id="newMsgClose" class="btn ghost small"><i data-lucide="x"></i></button>
+        </header>
+
+        <div class="pick-search-row">
+          <i class="nav-ico" data-lucide="search"></i>
+          <input id="pickSearch" class="pick-search" placeholder="Buscar usuarios...">
+        </div>
+
+        <div id="pickList" class="lb-body pick-body">
+          <div class="muted" style="padding:10px 0">No se encontraron usuarios</div>
+        </div>
+
+        <footer class="pick-footer">
+          <button id="pickChatBtn" class="btn primary" disabled>Chat</button>
+        </footer>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== JS ===== -->
   <script>

@@ -120,7 +120,7 @@ body{
 .message.mine .msg-bubble{ background:var(--primary); color:#fff; border-color:var(--primary) }
 .msg-time{ font-size:11px; color:var(--muted); margin-top:4px }
 
-/* ===== Composer (barra para escribir) ===== */
+/* ===== Composer ===== */
 .chat-composer{
   position:sticky; bottom:0; z-index:5;
   display:flex; align-items:center; gap:10px;
@@ -140,7 +140,7 @@ body{
   box-shadow:0 6px 20px rgba(124,92,252,.25);
 }
 
-/* ===== Tarjeta de publicación dentro del chat ===== */
+/* ===== Tarjeta post en chat ===== */
 .post-bubble{
   padding:0; border:1px solid var(--line); background:var(--panel);
   border-radius:14px; overflow:hidden; max-width:min(520px, 70vw);
@@ -154,8 +154,7 @@ body{
 .pc-cap{ padding:10px 12px; font-size:14px }
 .pc-loading{ padding:14px; color:var(--muted); font-size:14px }
 
-/* ===== Ajustes Lightbox (igual a feed) ===== */
-/* usa la definición de .lightbox que ya viene en profile.css */
+/* ===== Lightbox ===== */
 .lb-head a{ color:inherit; text-decoration:none }
 .lb-head a:hover{ text-decoration:underline }
 .lb-actions{
@@ -180,7 +179,6 @@ body{
 @media (max-width:1024px){
   .messages-container{ max-width:100% }
 }
-
 @media (max-width:768px){
   .messages-container{ border-left:none; border-right:none }
   .conversations-list{ width:100% }
@@ -192,7 +190,6 @@ body{
   .chat-composer{ padding:10px 12px }
   #sendBtn.btn{ width:40px; height:40px }
 }
-
 @media (max-width:480px){
   .conversations-header h1{ font-size:20px }
   .search-box{ font-size:13px }
@@ -201,91 +198,33 @@ body{
   .composer-input{ font-size:14px }
 }
 
-/* ==== Ajustes composer: iconos sin fondo + animación glow ==== */
-.chat-composer .btn-icon {
-  background: transparent !important;
-  border: none !important;
-  display: inline-grid;
-  place-items: center;
-  width: 40px; height: 40px;
-  border-radius: 999px;
-  transition: transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease;
-  color: var(--text);
-  opacity: .9;
-}
-.chat-composer .btn-icon:hover {
-  transform: translateY(-1px) scale(1.05);
-  opacity: 1;
-  box-shadow: 0 0 0 3px var(--ring);
-}
-.chat-composer .btn-icon:active {
-  transform: scale(.98);
-  box-shadow: 0 0 0 2px var(--ring);
-}
-.chat-composer .btn-icon i { width: 22px; height: 22px; }
+/* ==== Composer buttons ==== */
+.chat-composer .btn-icon { background: transparent !important; border: none !important; display:inline-grid; place-items:center; width:40px; height:40px; border-radius:999px; transition:transform .15s ease, box-shadow .2s ease, background-color .2s ease, opacity .2s ease; color:var(--text); opacity:.9; }
+.chat-composer .btn-icon:hover { transform: translateY(-1px) scale(1.05); opacity:1; box-shadow:0 0 0 3px var(--ring); }
+.chat-composer .btn-icon:active { transform:scale(.98); box-shadow:0 0 0 2px var(--ring); }
+.chat-composer .btn-icon i { width:22px; height:22px; }
+.chat-composer button { background:transparent; }
 
-/* Por si algún reset metía fondo blanco en botones */
-.chat-composer button { background: transparent; }
+/* ==== @nickname clicable ==== */
+.lb-cmt .nm-wrap{ margin-right:6px; }
+.lb-cmt .user-link{ color:var(--text); font-weight:700; text-decoration:none; }
+.lb-cmt .user-link:hover{ color:var(--accent); text-shadow:0 0 .5px var(--accent); }
 
-/* ===== Comentarios: @nickname clicable ===== */
-.lb-cmt .nm-wrap { margin-right:6px; }
-.lb-cmt .user-link {
-  color: var(--text);
-  font-weight: 700;
-  text-decoration: none;
-}
-.lb-cmt .user-link:hover {
-  color: var(--accent);
-  text-shadow: 0 0 0.5px var(--accent);
-}
+/* ==== Acciones: contador ==== */
+.lb-actions{ display:flex; align-items:center; gap:10px; }
+.lb-actions .act-count{ font-size:12px; color:var(--muted); margin-right:12px; }
 
-/* ===== Acciones: contador junto a cada ícono ===== */
-.lb-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.lb-actions .act-count {
-  font-size: 12px;
-  color: var(--muted);
-  margin-right: 12px; /* espacio después de cada par icono-contador */
-}
+/* Chat header: nombre enlace */
+a.chat-username{ color:var(--text)!important; text-decoration:none; }
+a.chat-username:visited{ color:var(--text)!important; }
+a.chat-username:hover{ text-decoration:underline; }
 
-/* Chat header: nombre de usuario como enlace, en blanco/tema */
-a.chat-username{
-  color: var(--text) !important;
-  text-decoration: none;
-}
-a.chat-username:visited{ color: var(--text) !important; }
-a.chat-username:hover{ text-decoration: underline; }
+/* ==== Header lista: acciones a la derecha ==== */
+.conversations-header{ position:relative; }
+.conv-head-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.head-actions{ display:flex; align-items:center; gap:8px; margin-left:auto; } /* <- lápiz pegado a los tres puntos */
 
- /* Enlace del nombre en el header del chat como blanco/tema */
-    a.chat-username{
-      color: var(--text) !important;
-      text-decoration: none;
-    }
-    a.chat-username:visited{ color: var(--text) !important; }
-    a.chat-username:hover{ text-decoration: underline; }
-
-    /* Enlace del nombre en el header del chat en color del tema (blanco en dark) */
-    .chat-header a.chat-username{
-      color: var(--text) !important;
-      text-decoration: none;
-    }
-    .chat-header a.chat-username:visited{
-      color: var(--text) !important;
-    }
-    .chat-header a.chat-username:hover{
-      text-decoration: underline;
-    }
-
-    /* ==== Header lista: kebab + menú ==== */
-.conversations-header { position: relative; }
-.conv-head-row{
-  display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;
-}
-.more-btn .dots{ letter-spacing:2px; font-weight:900; font-size:18px; line-height:1; }
-
+/* ==== Menú contextual ==== */
 .menu{
   position:absolute; right:20px; top:54px; z-index:10;
   background:var(--panel); border:1px solid var(--line); border-radius:12px;
@@ -299,39 +238,19 @@ a.chat-username:hover{ text-decoration: underline; }
 .menu button:hover{ background:var(--panel2); }
 
 /* ==== Barra de selección ==== */
-.select-bar{
-  display:flex; align-items:center; gap:12px; justify-content:flex-end;
-  padding:6px 0 8px 0;
-}
+.select-bar{ display:flex; align-items:center; gap:12px; justify-content:flex-end; padding:6px 0 8px 0; }
 .select-bar .select-info{ color:var(--muted); font-weight:700; margin-right:auto; }
 
-/* ==== Modo selección en lista ==== */
-.sel-check{
-  width:18px; height:18px; border:1.8px solid var(--line); border-radius:6px;
-  display:inline-block; flex-shrink:0; background:transparent;
-  margin-right:6px; transition:all .12s ease;
-}
-.sel-check[data-on="true"]{
-  background:var(--primary); border-color:var(--primary);
-  box-shadow:0 0 0 3px var(--ring);
-}
+/* ==== Modo selección ==== */
+.sel-check{ width:18px; height:18px; border:1.8px solid var(--line); border-radius:6px; display:inline-block; flex-shrink:0; background:transparent; margin-right:6px; transition:.12s ease; }
+.sel-check[data-on="true"]{ background:var(--primary); border-color:var(--primary); box-shadow:0 0 0 3px var(--ring); }
 .conversation-item.selecting{ cursor:default; }
 .conversation-item.selected{ background:rgba(139,92,246,.12); }
 
-/* ====== Modal: borrar conversaciones ====== */
+/* ====== Modal borrar ====== */
 .del-row{
-  display:grid;
-  grid-template-columns:auto 40px 1fr auto;
-  align-items:center;
-  gap:10px;
-  padding:10px 12px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:var(--panel);
-  margin-bottom:10px;
-  cursor:pointer;
-  user-select:none;
-  transition:.15s ease;
+  display:grid; grid-template-columns:auto 40px 1fr auto; align-items:center; gap:10px; padding:10px 12px;
+  border:1px solid var(--line); border-radius:12px; background:var(--panel); margin-bottom:10px; cursor:pointer; user-select:none; transition:.15s ease;
 }
 .del-row:hover{ background:rgba(124,92,252,.06); border-color:rgba(124,92,252,.25); }
 .del-row input[type="checkbox"]{ width:18px; height:18px; accent-color:var(--primary); }
@@ -341,36 +260,29 @@ a.chat-username:hover{ text-decoration: underline; }
 .del-prev{ font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .del-time{ font-size:12px; margin-left:8px; }
 
-/* Estado vacío discreto */
+/* ===== Placeholder derecha ===== */
 .empty-state{
-  height:100%;
-  min-height:480px;
-  display:grid;
-  place-items:center;
-  align-content:center;
-  gap:12px;
-  text-align:center;
-  color: var(--muted, #94a3b8);
+  height:100%; min-height:480px; display:grid; place-items:center; align-content:center; gap:12px; text-align:center; color:var(--muted,#94a3b8);
 }
-
-.empty-illustration{
-  width:min(42vw, 280px);
-  max-width:420px;
-  height:auto;
-  opacity:.95;           /* más suave */
-}
-
-.empty-title{
-  margin:6px 0 0;
-  font-size: clamp(18px, 2.2vw, 22px);
-  color: var(--text, #e6edf7);
-}
-
-.empty-sub{
-  margin:0;
-  font-size: clamp(13px, 1.6vw, 15px);
-  color: var(--muted, #94a3b8);
-}
-
-/* Ocultar el placeholder cuando haya chat abierto (añade .chat-open desde JS) */
+.empty-illustration{ width:min(42vw,280px); max-width:420px; height:auto; opacity:.95; }
+.empty-title{ margin:6px 0 0; font-size:clamp(18px,2.2vw,22px); color:var(--text,#e6edf7); }
+.empty-sub{ margin:0; font-size:clamp(13px,1.6vw,15px); color:var(--muted,#94a3b8); }
 .chat-open .empty-state{ display:none }
+
+/* ====== NUEVO: modal “Nuevo mensaje” ====== */
+.pick-search-row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); }
+.pick-search{ width:100%; background:transparent; border:none; outline:none; color:var(--text); font:inherit; }
+.pick-body{ padding:6px 0; }
+.pick-item{
+  display:grid; grid-template-columns:40px 1fr auto; gap:10px; align-items:center;
+  padding:10px 14px; border-radius:12px; transition:background .15s ease;
+}
+.pick-item:hover{ background:var(--panel2); }
+.pick-ava{ width:40px; height:40px; border-radius:50%; object-fit:cover; background:var(--panel2); }
+.pick-name{ font-weight:700; }
+.pick-nick{ font-size:12px; color:var(--muted); }
+.pick-radio{
+  width:18px; height:18px; border-radius:50%; border:2px solid var(--line); display:inline-block;
+}
+.pick-item[aria-selected="true"] .pick-radio{ border-color:var(--primary); box-shadow:0 0 0 3px var(--ring); background:color-mix(in srgb, var(--primary) 30%, transparent); }
+.pick-footer{ display:flex; justify-content:flex-end; padding:10px 12px; border-top:1px solid var(--line); }

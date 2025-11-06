@@ -39,18 +39,44 @@ function formatTime(ts){
   return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
 }
 
-/* ====== Cache básico de usuarios ====== */
-const userCache = new Map();
-async function fetchUserPublic(uid){
-  if(!uid) return {};
-  if(userCache.has(uid)) return userCache.get(uid);
-  try{
-    const r = await fetch(`${API_BASE}/user/${uid}/public`, { headers:{ Authorization:authToken }});
+/* ===== Helpers: sesión y “siguiendo” para nuevo mensaje ===== */
+function getMeId() {
+  try {
+    const me = JSON.parse(localStorage.getItem('user') || '{}');
+    return me.id || me._id || me.userId || null;
+  } catch { return null; }
+}
+
+async function loadFollowingForNewMsg(q = '') {
+  const meId = getMeId();
+  if (!meId) return [];
+
+  try {
+    const r = await fetch(`${API_BASE}/follow/${meId}/following?limit=50`, {
+      headers: { Authorization: authToken }
+    });
+    if (!r.ok) return [];
+
     const d = await r.json();
-    const u = d.user || d.data || {};
-    userCache.set(uid, u);
-    return u;
-  }catch{ return {}; }
+    let users = d.users || [];
+
+    // Normaliza a formato consistente con tu UI
+    users = users.map(u => ({
+      id: u.id || u._id,
+      name:
+        (u.nickname && u.nickname.trim()) ||
+        `${u.firstName || ''} ${u.lastName || ''}`.trim() ||
+        'Usuario',
+      avatar: u.avatar || u.image || null
+    }));
+
+    const query = (q || '').toLowerCase();
+    if (query) users = users.filter(u => (u.name || '').toLowerCase().includes(query));
+
+    return users;
+  } catch {
+    return [];
+  }
 }
 
 /* ====== Lightbox (posts) ====== */
@@ -239,6 +265,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
   // Polling
   pollInterval = setInterval(()=>{ if(currentConversation){ loadMessages(currentConversation.id, true); } }, 5000);
+
+  /* ===== Nuevo mensaje (modal) ===== */
+  wireNewMessageModal();
 });
 
 /* ================== CONVERSATIONS ================= */
@@ -647,4 +676,83 @@ async function confirmDeleteSelected(){
   closeDeleteModal();
 
   if(!okAll) alert('Algunas conversaciones no pudieron eliminarse.');
+}
+
+/* ====================== NUEVO MENSAJE (MODAL) ====================== */
+/* IDs esperados en messages.html:
+   - Botón abrir:           #newMsgBtn
+   - Modal:                 #newMsgModal
+   - Botón cerrar:          #nmClose
+   - Input búsqueda:        #nmSearch
+   - Lista de usuarios:     #nmList
+   - Botón Chat:            #nmChatBtn
+*/
+let nmSelectedUserId = null;
+
+function wireNewMessageModal(){
+  const btnOpen  = $('#newMsgBtn');
+  const modal    = $('#newMsgModal');
+  const btnClose = $('#nmClose');
+  const inpSearch= $('#nmSearch');
+  const list     = $('#nmList');
+  const btnChat  = $('#nmChatBtn');
+
+  if(!btnOpen || !modal) return;
+
+  function setVisible(flag){
+    modal.setAttribute('aria-hidden', (!flag)+'');
+  }
+
+  async function refreshList(q=''){
+    const users = await loadFollowingForNewMsg(q);
+    renderNewMsgList(users);
+  }
+
+  function renderNewMsgList(users){
+    nmSelectedUserId = null;
+    if(!list) return;
+    if(!users.length){
+      list.innerHTML = `<div class="muted" style="padding:12px">No se encontraron usuarios</div>`;
+      btnChat && (btnChat.disabled = true);
+      return;
+    }
+    list.innerHTML = users.map(u => `
+      <label class="del-row" style="grid-template-columns:auto 40px 1fr auto">
+        <input type="radio" name="nmUser" value="${escapeHtml(u.id)}">
+        <img src="${resolveAvatar(u)}" class="del-ava" alt="">
+        <div class="del-info">
+          <div class="del-name" title="${escapeHtml(u.name)}">${escapeHtml(u.name)}</div>
+        </div>
+      </label>
+    `).join('');
+
+    list.querySelectorAll('input[name="nmUser"]').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        nmSelectedUserId = r.value;
+        if(btnChat) btnChat.disabled = !nmSelectedUserId;
+      });
+    });
+    if(btnChat) btnChat.disabled = true;
+  }
+
+  btnOpen.addEventListener('click', async ()=>{
+    setVisible(true);
+    await refreshList('');
+    inpSearch && (inpSearch.value = '');
+    nmSelectedUserId = null;
+    btnChat && (btnChat.disabled = true);
+  });
+
+  btnClose?.addEventListener('click', ()=> setVisible(false));
+  modal?.addEventListener('click', (e)=>{ if(e.target === modal) setVisible(false); });
+
+  inpSearch?.addEventListener('input', async (e)=>{
+    await refreshList(e.target.value || '');
+  });
+
+  btnChat?.addEventListener('click', async ()=>{
+    if(!nmSelectedUserId) return;
+    setVisible(false);
+    await startConversationWithUser(nmSelectedUserId);
+  });
 }
