@@ -4,8 +4,11 @@ const { env } = require('../config/env');
 
 const storage = multer.memoryStorage();
 const allowed = new Set(env.upload.allowed); // del .env
-// Si quieres permitir mp4 además:
+// Permitir videos además de imágenes:
 allowed.add('video/mp4');
+allowed.add('video/quicktime'); // .mov
+allowed.add('video/x-msvideo'); // .avi
+allowed.add('video/webm'); // .webm
 
 const upload = multer({
   storage,

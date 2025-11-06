@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -12,6 +13,7 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/profile.css">
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/messages.css">
 
   <!-- Iconos -->
@@ -49,34 +51,29 @@
   <!-- Layout -->
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar card">
-        <nav class="nav">
-          <a class="nav-item" href="user.html">
-            <i class="nav-ico" data-lucide="home"></i> Inicio
-          </a>
-          <a class="nav-item active" href="messages.html">
-            <i class="nav-ico" data-lucide="message-circle"></i> Mensajes
-          </a>
-          <a class="nav-item" href="profile.html">
-            <i class="nav-ico" data-lucide="user-2"></i> Mi perfil
-          </a>
-        </nav>
+      <!-- Sidebar dinámico -->
+      <aside class="sidebar" id="sidebar-container">
+        <!-- El sidebar se genera dinámicamente con sidebar.js -->
       </aside>
 
       <!-- Main -->
       <main class="main">
-        <div class="messages-container card" style="box-shadow:var(--shadow);">
+        <div class="messages-container">
           <!-- Lista de conversaciones -->
           <aside class="conversations-list" id="conversationsList">
             <div class="conversations-header">
               <div class="conv-head-row">
                 <h1>Mensajes</h1>
 
-                <!-- Botón de 3 puntos, a la derecha del título "Mensajes" -->
-                <button id="msgOptionsBtn" class="btn ghost small" aria-haspopup="dialog" title="Opciones">
-                  …
-                </button>
+                <!-- NUEVO: grupo de acciones a la derecha (lápiz + 3 puntos) -->
+                <div class="head-actions">
+                  <button id="newMsgBtn" class="btn ghost small" title="Nuevo mensaje" aria-haspopup="dialog">
+                    <i class="nav-ico" data-lucide="pencil"></i>
+                  </button>
+                  <!-- Botón de 3 puntos -->
+                  <button id="msgOptionsBtn" class="btn ghost small" aria-haspopup="dialog" title="Opciones">…</button>
+                </div>
+
                 <!-- Menú contextual -->
                 <div id="convMenu" class="menu" hidden>
                   <button id="menuDelete" type="button">Borrar conversaciones</button>
@@ -103,7 +100,9 @@
             <div class="chat-body" id="chatBody">
               <div class="no-chat-selected">
                 <section class="empty-state" id="emptyMessages">
-                  <img src="/img/mainmes.svg" alt="" class="empty-illustration" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="empty-illustration" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
                   <h2 class="empty-title">Tus mensajes</h2>
                   <p class="empty-sub">Selecciona una conversación para empezar a chatear</p>
                 </section>
@@ -124,7 +123,7 @@
   </div>
 
   <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lightbox" id="lightbox" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose"><i class="nav-ico" data-lucide="x"></i></button>
       <div class="lb-media"><img id="lbImg" alt=""></div>
@@ -153,7 +152,7 @@
   </div>
 
   <!-- Modal adjuntar imagen -->
-  <div class="lightbox" id="mediaModal" aria-hidden="true">
+  <div class="lightbox" id="mediaModal" aria-hidden="true" inert>
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Adjuntar imagen"
          style="grid-template-columns:min(90vw,560px);max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
@@ -183,22 +182,48 @@
   </div>
 
   <!-- Modal borrar conversaciones -->
-<div class="lightbox" id="delModal" aria-hidden="true">
-  <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
-       style="grid-template-columns:min(92vw,560px);max-width:560px">
-    <div class="lb-side" style="display:flex;flex-direction:column">
-      <header class="lb-head" style="gap:8px">
-        <strong style="font-size:16px">Borrar conversaciones</strong>
-        <div class="spacer"></div>
-        <button id="delCancel" class="btn ghost small">Cancelar</button>
-        <button id="delConfirm" class="btn danger small" disabled>Eliminar (<span id="delCount">0</span>)</button>
-      </header>
+  <div class="lightbox" id="delModal" aria-hidden="true" inert>
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Borrar conversaciones"
+         style="grid-template-columns:min(92vw,560px);max-width:560px">
+      <div class="lb-side" style="display:flex;flex-direction:column">
+        <header class="lb-head" style="gap:8px">
+          <strong style="font-size:16px">Borrar conversaciones</strong>
+          <div class="spacer"></div>
+          <button id="delCancel" class="btn ghost small">Cancelar</button>
+          <button id="delConfirm" class="btn danger small" disabled>Eliminar (<span id="delCount">0</span>)</button>
+        </header>
 
-      <div id="delList" class="lb-body" style="padding:12px"></div>
+        <div id="delList" class="lb-body" style="padding:12px"></div>
+      </div>
     </div>
   </div>
-</div>
 
+  <!-- NUEVO: Modal "Nuevo mensaje" (lista SOLO seguidos) -->
+  <div class="lightbox" id="newMsgModal" aria-hidden="true" inert>
+    <div class="lb-content" role="dialog" aria-modal="true" aria-label="Nuevo mensaje"
+         style="grid-template-columns:min(94vw,760px);max-width:760px">
+      <div class="lb-side" style="display:flex;flex-direction:column">
+        <header class="lb-head" style="gap:8px">
+          <strong style="font-size:16px">Nuevo mensaje</strong>
+          <div class="spacer"></div>
+          <button id="newMsgClose" class="btn ghost small"><i data-lucide="x"></i></button>
+        </header>
+
+        <div class="pick-search-row">
+          <i class="nav-ico" data-lucide="search"></i>
+          <input id="pickSearch" class="pick-search" placeholder="Buscar usuarios...">
+        </div>
+
+        <div id="pickList" class="lb-body pick-body">
+          <div class="muted" style="padding:10px 0">No se encontraron usuarios</div>
+        </div>
+
+        <footer class="pick-footer">
+          <button id="pickChatBtn" class="btn primary" disabled>Chat</button>
+        </footer>
+      </div>
+    </div>
+  </div>
 
   <!-- ===== JS ===== -->
   <script>
@@ -231,6 +256,7 @@
     });
   </script>
 
+  <script src="js/sidebar.js"></script>
   <script src="js/messages.js"></script>
 </body>
 </html>

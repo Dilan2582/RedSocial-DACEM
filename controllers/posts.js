@@ -5,7 +5,7 @@ const Like = require('../models/like');
 const Comment = require('../models/comment');
 const { env } = require('../config/env');
 const { buildPostKey, uploadBuffer, publicUrl } = require('../services/s3');
-const { readMeta, makeThumb, varT1, varT2, varT3 } = require('../services/image');
+const { readMeta, processAllTransformations, varT4 } = require('../services/image');
 const { analyzeS3Image } = require('../services/vision');
 // TODO: Face-API requiere TensorFlow compilado en Windows - deshabilitado temporalmente
 // const { analyzeFaces } = require('../services/faceapi');
@@ -21,11 +21,24 @@ async function createPost(req, res) {
   try {
     const userId = ensureAuthUser(req);
 
-    if (!req.file) return res.status(400).json({ ok: false, message: 'Falta imagen' });
+    if (!req.file) return res.status(400).json({ ok: false, message: 'Falta imagen o video' });
+    
+    const isVideo = req.file.mimetype.startsWith('video/');
+    
+    // Si es video, solo subir original sin transformaciones
+    if (isVideo) {
+      return await createVideoPost(req, res, userId);
+    }
+
+    // === PROCESAMIENTO DE IMÁGENES CON FILTRO SELECCIONADO ===
     if (!env.upload.allowed.includes(req.file.mimetype))
       return res.status(400).json({ ok: false, message: 'MIME no permitido' });
 
     const buffer = req.file.buffer;
+    const selectedFilter = req.body.filter || 'original'; // Filtro elegido por el usuario
+    
+    console.log(`📸 Procesando imagen con filtro: ${selectedFilter} (${(buffer.length / 1024).toFixed(2)} KB)...`);
+    
     const meta = await readMeta(buffer);
 
     // 1) Genera un _id de post SIN guardar aún
@@ -35,25 +48,43 @@ async function createPost(req, res) {
     const ext = (meta.mime.split('/')[1] || 'jpg').toLowerCase();
     const keyOriginal = buildPostKey(userId, postId, `original.${ext}`);
     const keyThumb    = buildPostKey(userId, postId, 'thumb.jpg');
-    const keyT1       = buildPostKey(userId, postId, 't1.jpg');
-    const keyT2       = buildPostKey(userId, postId, 't2.jpg');
-    const keyT3       = buildPostKey(userId, postId, 't3.jpg');
+    
+    // Determinar qué transformación aplicar según filtro seleccionado
+    let keyTransformed = null;
+    let transformationType = null;
+    
+    if (selectedFilter !== 'original') {
+      const filterMap = {
+        't1': 't1_bw.jpg',        // Blanco y Negro
+        't2': 't2_sepia.jpg',     // Sepia
+        't3': 't3_blur.jpg',      // Blur
+        't4': 't4_upscale.jpg',   // HD 2x
+        't5': 't5_bright.jpg',    // Bright
+        't6': 't6_dark.jpg',      // Dark
+        't7': 't7_vibrant.jpg',   // Vibrant
+        't8': 't8_warm.jpg',      // Warm
+        't9': 't9_cool.jpg',      // Cool
+        't10': 't10_invert.jpg'   // Invert
+      };
+      
+      if (filterMap[selectedFilter]) {
+        transformationType = selectedFilter;
+        keyTransformed = buildPostKey(userId, postId, filterMap[selectedFilter]);
+      }
+    }
 
-    // 3) Genera las variantes en memoria
-    const [thumbBuf, t1Buf, t2Buf, t3Buf] = await Promise.all([
-      makeThumb(buffer), varT1(buffer), varT2(buffer), varT3(buffer)
-    ]);
+    // 3) Sube la imagen ORIGINAL a S3
+    console.log(`☁️  Subiendo imagen original a S3...`);
+    await uploadBuffer({ Key: keyOriginal, Body: buffer, ContentType: meta.mime });
+    
+    // Si el usuario seleccionó un filtro, Lambda lo procesará
+    if (transformationType) {
+      console.log(`✅ Original subido. Lambda generará transformación: ${transformationType}`);
+    } else {
+      console.log(`✅ Original subido sin transformaciones.`);
+    }
 
-    // 4) Sube todo a S3
-    await Promise.all([
-      uploadBuffer({ Key: keyOriginal, Body: buffer,   ContentType: meta.mime }),
-      uploadBuffer({ Key: keyThumb,    Body: thumbBuf, ContentType: 'image/jpeg' }),
-      uploadBuffer({ Key: keyT1,       Body: t1Buf,    ContentType: 'image/jpeg' }),
-      uploadBuffer({ Key: keyT2,       Body: t2Buf,    ContentType: 'image/jpeg' }),
-      uploadBuffer({ Key: keyT3,       Body: t3Buf,    ContentType: 'image/jpeg' }),
-    ]);
-
-    // 5) Analizar imagen con Rekognition (si está habilitado)
+    // 4) Analizar imagen con Rekognition (si está habilitado)
     let visionData = { tags: [], nsfw: false, faceCount: 0, raw: null };
     
     if (env.rekognition.enabled) {
@@ -86,20 +117,28 @@ async function createPost(req, res) {
     // TODO: Integrar Face-API.js cuando esté disponible para Windows
     // const faceApiData = await analyzeFaces(buffer);
 
-    // 6) Ahora sí, crea el documento completo (cumple los required)
+    // 6) Crear documento del post con el filtro seleccionado
+    const mediaData = {
+      keyOriginal,
+      keyThumb,
+      width: meta.width,
+      height: meta.height,
+      mime: meta.mime,
+      size: buffer.length,
+      selectedFilter: selectedFilter, // Guardar filtro elegido por el usuario
+      variants: {}
+    };
+
+    // Solo agregar la variante si se seleccionó un filtro
+    if (keyTransformed && transformationType) {
+      mediaData.variants[transformationType] = keyTransformed;
+    }
+
     const post = await Post.create({
       _id: postId,
       userId: new Types.ObjectId(userId),
       caption: (req.body.caption || '').trim(),
-      media: {
-        keyOriginal,
-        keyThumb,
-        variants: { t1: keyT1, t2: keyT2, t3: keyT3 },
-        width: meta.width,
-        height: meta.height,
-        mime: meta.mime,
-        size: buffer.length
-      },
+      media: mediaData,
       tags: visionData.tags,
       nsfw: visionData.nsfw,
       faceCount: visionData.faceCount,
@@ -108,7 +147,23 @@ async function createPost(req, res) {
       status: 'ready'
     });
 
-    // 7) Respuesta
+    // 7) Preparar respuesta con las URLs correctas
+    const mediaResponse = {
+      original: publicUrl(keyOriginal),
+      thumb: publicUrl(keyThumb),
+      width: post.media.width,
+      height: post.media.height,
+      mime: post.media.mime,
+      selectedFilter: selectedFilter
+    };
+
+    // Agregar URL de la transformación si existe
+    if (keyTransformed) {
+      mediaResponse.transformed = publicUrl(keyTransformed);
+      mediaResponse.transformationType = transformationType;
+    }
+
+    console.log(`✅ Post creado con filtro: ${selectedFilter}${transformationType ? ' (Lambda procesando)' : ''}`);
     res.json({
       ok: true,
       post: {
@@ -121,22 +176,95 @@ async function createPost(req, res) {
         tags: post.tags || [],
         nsfw: post.nsfw || false,
         faceCount: post.faceCount || 0,
-        media: {
-          original: publicUrl(keyOriginal),
-          thumb:    publicUrl(keyThumb),
-          t1:       publicUrl(keyT1),
-          t2:       publicUrl(keyT2),
-          t3:       publicUrl(keyT3),
-          width: post.media.width,
-          height: post.media.height,
-          mime: post.media.mime
-        }
+        media: mediaResponse
       }
     });
   } catch (err) {
     if (err.message === 'NO_AUTH') return res.status(401).json({ ok:false, message:'No autenticado' });
     console.error('[createPost] error', err);
     res.status(500).json({ ok:false, message:'Error al crear publicación' });
+  }
+}
+
+/* ----------------------------- CREATE VIDEO POST ----------------------------- */
+async function createVideoPost(req, res, userId) {
+  try {
+    const buffer = req.file.buffer;
+    console.log(`🎥 Procesando video (${(buffer.length / 1024 / 1024).toFixed(2)} MB)...`);
+
+    // 1) Genera un _id de post
+    const postId = new Types.ObjectId();
+
+    // 2) Detecta extensión
+    const mimeToExt = {
+      'video/mp4': 'mp4',
+      'video/quicktime': 'mov',
+      'video/x-msvideo': 'avi',
+      'video/webm': 'webm'
+    };
+    const ext = mimeToExt[req.file.mimetype] || 'mp4';
+
+    // 3) Claves S3
+    const keyOriginal = buildPostKey(userId, postId, `video.${ext}`);
+    const keyThumb = buildPostKey(userId, postId, 'thumb.jpg');
+
+    // 4) Para videos, generamos un thumbnail simple (primer frame)
+    // Por ahora, usamos una imagen placeholder o el video mismo como thumb
+    // En producción, usarías FFmpeg para extraer un frame
+    const placeholderThumb = Buffer.from(''); // Placeholder vacío
+
+    // 5) Sube video a S3
+    console.log('☁️  Subiendo video a S3...');
+    await uploadBuffer({ 
+      Key: keyOriginal, 
+      Body: buffer, 
+      ContentType: req.file.mimetype 
+    });
+    
+    // Si tienes thumbnail, súbelo también
+    // await uploadBuffer({ Key: keyThumb, Body: placeholderThumb, ContentType: 'image/jpeg' });
+
+    // 6) Crea el post (videos NO tienen transformaciones)
+    const post = await Post.create({
+      _id: postId,
+      userId: new Types.ObjectId(userId),
+      caption: (req.body.caption || '').trim(),
+      media: {
+        keyOriginal,
+        keyThumb: keyOriginal, // Usa el video como thumb por ahora
+        variants: { t1: '', t2: '', t3: '' }, // Sin variantes para videos
+        width: 1920,  // Valores por defecto
+        height: 1080,
+        mime: req.file.mimetype,
+        size: buffer.length
+      },
+      tags: [],
+      nsfw: false,
+      faceCount: 0,
+      visionRaw: null,
+      status: 'ready'
+    });
+
+    console.log('✅ Video post creado');
+    res.json({
+      ok: true,
+      post: {
+        id: String(post._id),
+        userId: String(post.userId),
+        caption: post.caption || '',
+        createdAt: post.createdAt,
+        counts: { likes: 0, comments: 0 },
+        status: post.status,
+        media: {
+          original: publicUrl(keyOriginal),
+          thumb: publicUrl(keyOriginal),
+          mime: post.media.mime
+        }
+      }
+    });
+  } catch (err) {
+    console.error('[createVideoPost] error', err);
+    res.status(500).json({ ok: false, message: 'Error al crear video' });
   }
 }
 
@@ -300,9 +428,10 @@ function serializePost(post, opts = {}) {
     mime: post.media.mime
   };
   if (include) {
-    if (variants.t1) media.t1 = base(variants.t1);
-    if (variants.t2) media.t2 = base(variants.t2);
-    if (variants.t3) media.t3 = base(variants.t3);
+    if (variants.t1) media.t1 = base(variants.t1);  // Blanco y Negro
+    if (variants.t2) media.t2 = base(variants.t2);  // Sepia
+    if (variants.t3) media.t3 = base(variants.t3);  // Blur
+    if (variants.t4) media.t4 = base(variants.t4);  // Ampliación
   }
 
   return {
