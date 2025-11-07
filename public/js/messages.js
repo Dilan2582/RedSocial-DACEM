@@ -13,6 +13,20 @@ let delModal = null, delList = null, delCount = null, delConfirm = null, delCanc
 /* ========================== HELPERS ========================= */
 const $ = (s)=>document.querySelector(s);
 function safe(v,f=''){ return (v===null||v===undefined)?f:v; }
+function normId(v, depth=0){
+  if (depth > 5 || v == null) return '';
+  if (typeof v === 'string' || typeof v === 'number') return String(v).trim();
+  if (typeof v === 'object'){
+    // formatos típicos de Mongo
+    if (v.$oid) return String(v.$oid).trim();
+    if (v._id)  return normId(v._id, depth+1);
+    if (v.id)   return normId(v.id, depth+1);
+    // último recurso: toString si no es [object Object]
+    const s = v.toString ? String(v.toString()) : '';
+    return s && s !== '[object Object]' ? s.trim() : '';
+  }
+  return '';
+}
 function displayName(u){
   if(!u) return 'Usuario';
   return (u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim() || u.nick || u.nickname || u.username || 'Usuario');
@@ -141,7 +155,7 @@ function normalizeUser(raw){
     raw.displayName || '';
 
   const avatar = raw.avatar || raw.image || prof.avatar || prof.image || null;
-  const id = raw.id || raw._id || prof.id || prof._id || raw.userId || prof.userId || null;
+  const id = normId(raw.id || raw._id || prof.id || prof._id || raw.userId || prof.userId);
 
   if(!nickname){
     if(id && handleCache.has(id)) nickname = handleCache.get(id);
@@ -153,19 +167,21 @@ function normalizeUser(raw){
     handleCache.set(id, nickname);
   }
 
-  return { id, _id:id, name, avatar, nickname, nick: nickname, ...raw };
+  // No hacer spread de raw para evitar referencias circulares
+  return { id, _id:id, name, avatar, nickname, nick: nickname };
 }
 
 /* ====== Perfil público (ruta real de tu backend) ====== */
 const __userPublicCache = new Map();
 async function fetchUserPublic(uid){
-  if(!uid) return null;
+  uid = normId(uid);
+  if(!uid){ return null; }
   if(__userPublicCache.has(uid)) return __userPublicCache.get(uid);
 
   const url = `${API_BASE}/user/${encodeURIComponent(uid)}/public`;
   try{
     const r = await fetch(url, { headers: { Authorization: authToken } });
-    if(!r.ok) { __userPublicCache.set(uid, null); return null; }
+    if(!r.ok){ __userPublicCache.set(uid, null); return null; }
     const d = await r.json().catch(()=>null);
     const u = (d && (d.user || d.profile || d.data)) || null;
     const nu = u ? normalizeUser(u) : null;
@@ -284,11 +300,11 @@ async function addPostComment(postId,text){
 
 /* ---- Comentarios con @nickname clicable ---- */
 function renderCommentRow(c){
-  const cu  = normalizeUser(c.user || c.author || c.owner || {});
-  const uid = c.userId || cu.id || cu._id || '';
-  const nick = getNick(cu);
+  const cu   = c.user || {};
+  const uid  = cu.id || cu._id || c.userId || '';
+  const nick = (cu.nickname || cu.nick || 'usuario').replace(/^@/, '');
   const nmLink = `<a href="profile.html?id=${encodeURIComponent(uid)}" class="nm user-link">@${escapeHtml(nick)}</a>`;
-  return `<span class="nm-wrap">${nmLink}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+  return `<span class="nm-wrap">${nmLink}</span> ${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
 }
 
 function bestMediaUrl(media){
@@ -351,6 +367,38 @@ function ensureNickAndId(u = {}, fallbackId = '') {
   return { id, user: nu, nick };
 }
 
+// Versión async que consulta /api/user/:id/public si es necesario
+async function ensureNickAndIdAsync(u = {}, fallbackId = '') {
+  const id = u.id || u._id || u.userId || fallbackId || '';
+  let nu = normalizeUser({ ...u, id });
+  let nick = getNick(nu);
+
+  // Si aún no hay nick, intenta cache → API → fallback
+  if (!nick && id) {
+    const cached = __userPublicCache.get(id);
+    if (cached) nu = normalizeUser({ ...nu, ...cached });
+    
+    if (!getNick(nu)) {
+      try {
+        const fetched = await fetchUserPublic(id);
+        if (fetched) nu = normalizeUser({ ...nu, ...fetched });
+      } catch(e) {
+        console.warn('Error fetching user public info:', e);
+      }
+    }
+    
+    if (!getNick(nu)) {
+      const fb = buildNickFallback(nu, id);
+      nu.nickname = fb; nu.nick = fb;
+      handleCache.set(id, fb);
+    } else {
+      handleCache.set(id, getNick(nu));
+    }
+    nick = getNick(nu);
+  }
+  return { id, user: nu, nick };
+}
+
 async function openPostModal(p){
   if(!p) return;
   currentPost = p;
@@ -373,80 +421,45 @@ async function openPostModal(p){
 
   const comments = await listPostComments(p.id || p._id);
 
-  // Normaliza todos. Si falta el @, consulta /api/user/:id/public una sola vez por usuario.
-  for (const c of comments){
+  // Normaliza todos los autores de comentarios (id + nick garantizados)
+  const enriched = await Promise.all(comments.map(async (c)=>{
     const baseU = c.user || c.author || c.owner || {};
-    const uid   = c.userId || baseU.id || baseU._id || baseU.userId;
-    let nu = normalizeUser({ ...baseU, id: uid || baseU.id });
+    const uid   = c.userId || baseU.id || baseU._id || baseU.userId || '';
+    const { user: nu } = await ensureNickAndIdAsync({ ...baseU, id: uid }, uid);
+    return { ...c, user: nu, userId: uid }; // Asegurar que userId está presente
+  }));
 
-    if (uid) {
-      if (pid && String(uid) === String(pid) && rawNick){
-        nu.nickname = rawNick; nu.nick = rawNick;
-        handleCache.set(uid, rawNick);
-      } else if (!getNick(nu)) {
-        const cached = __userPublicCache.get(uid);
-        if (cached !== undefined) {
-          if (cached) nu = normalizeUser({ ...nu, ...cached });
-        } else {
-          const fetched = await fetchUserPublic(uid);
-          if (fetched) nu = normalizeUser({ ...nu, ...fetched });
-        }
-        if (!getNick(nu)) {
-          const h = buildNickFallback(nu, uid);
-          nu.nickname = h; nu.nick = h; handleCache.set(uid, h);
-        } else {
-          handleCache.set(uid, getNick(nu));
-        }
-      } else {
-        handleCache.set(uid, getNick(nu));
-      }
-    }
-
-    c.user = nu;
-  }
-
-  lbBody.innerHTML='';
-  comments.forEach(c=>{
-    const row = document.createElement('div'); row.className='lb-cmt';
+  lbBody.innerHTML = '';
+  enriched.forEach(c=>{
+    const row = document.createElement('div');
+    row.className = 'lb-cmt';
+    row.setAttribute('data-cid', c.id || c._id || '');
     row.innerHTML = renderCommentRow(c);
     lbBody.appendChild(row);
   });
   lbBody.scrollTop = lbBody.scrollHeight;
 
+
   lbSend.onclick = async ()=>{
     const t = lbInp.value.trim(); if(!t) return;
     const c = await addPostComment((p.id||p._id), t);
-    if(c){
-      let nu = normalizeUser(c.user || {});
-      const uid = c.userId || nu.id || nu._id;
+    if(!c) return;
 
-      if (uid) {
-        if (pid && String(uid) === String(pid) && rawNick){
-          nu.nickname = rawNick; nu.nick = rawNick;
-          handleCache.set(uid, rawNick);
-        } else if (!getNick(nu)) {
-          const fetched = await fetchUserPublic(uid);
-          if (fetched) nu = normalizeUser({ ...nu, ...fetched });
-          if (!getNick(nu)) {
-            const h = buildNickFallback(nu, uid);
-            nu.nickname = h; nu.nick = h; handleCache.set(uid, h);
-          } else {
-            handleCache.set(uid, getNick(nu));
-          }
-        } else {
-          handleCache.set(uid, getNick(nu));
-        }
-      }
+    // Normaliza el autor del comentario nuevo
+    const baseU = c.user || {};
+    const uid   = c.userId || baseU.id || baseU._id || baseU.userId || '';
+    const { user: nu } = await ensureNickAndIdAsync({ ...baseU, id: uid }, uid);
+    c.user = nu;
+    c.userId = uid; // Asegurar que userId está presente
 
-      c.user = nu;
-
-      lbInp.value='';
-      const row=document.createElement('div'); row.className='lb-cmt';
-      row.innerHTML = renderCommentRow(c);
-      lbBody.appendChild(row);
-      lbBody.scrollTop=lbBody.scrollHeight;
-      lbCommentsCount.textContent = +lbCommentsCount.textContent + 1;
-    }
+    lbInp.value = '';
+    const row = document.createElement('div');
+    row.className = 'lb-cmt';
+    row.setAttribute('data-cid', c.id || c._id || '');
+    row.innerHTML = renderCommentRow(c);
+    lbBody.appendChild(row);
+    lbBody.scrollTop = lbBody.scrollHeight;
+    lbCommentsCount.textContent = (+lbCommentsCount.textContent || 0) + 1;
   };
 
   lbLike.onclick = async ()=>{
@@ -719,7 +732,16 @@ function buildPostBubble(msg, data){
   const ava = resolveAvatar(auUser);
   const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
   
-  const mediaUrl = bestMediaUrl(data.media || {});
+  console.log('🏗️ buildPostBubble data:', data);
+  
+  let mediaUrl = '';
+  if(data.media) {
+    mediaUrl = bestMediaUrl(data.media);
+  } else if(data.postId) {
+    // Si no hay media inline, marcar para cargar después
+    console.log('📍 Post-card sin media inline, será cargado después');
+  }
+  console.log('🖼️ mediaUrl result:', mediaUrl);
 
   const header = `
     <div class="pc-head">
@@ -732,10 +754,13 @@ function buildPostBubble(msg, data){
       </div>
     </div>`;
 
-  const media = `
+  const media = mediaUrl ? `
     <div class="pc-media">
       <img src="${escapeHtml(mediaUrl)}" alt=""
            onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+    </div>` : `
+    <div class="pc-media">
+      <div class="pc-loading" data-postid="${escapeHtml(data.postId||'')}">Cargando imagen...</div>
     </div>`;
 
   const caption = data.caption ? `<div class="pc-cap">${escapeHtml(data.caption)}</div>` : '';
@@ -857,6 +882,45 @@ async function upgradeLinkShares(){
   attachPostCardHandlers();
 }
 
+async function loadPostCardImages(){
+  const loadingEls = document.querySelectorAll('.pc-loading[data-postid]');
+  console.log('🔍 loadPostCardImages: encontrados', loadingEls.length, 'elementos cargando...');
+  
+  for(const el of loadingEls){
+    const postId = el.getAttribute('data-postid');
+    if(!postId) continue;
+    
+    try {
+      console.log('⏳ Cargando imagen para post:', postId);
+      const p = await fetchPost(postId);
+      if(!p || !p.media){
+        console.warn('⚠️ Post sin media:', postId);
+        el.innerHTML = 'No se pudo cargar la imagen';
+        continue;
+      }
+      
+      const mediaUrl = bestMediaUrl(p.media);
+      if(!mediaUrl){
+        console.warn('⚠️ No se pudo obtener URL de media para:', postId);
+        el.innerHTML = 'No se pudo obtener la imagen';
+        continue;
+      }
+      
+      console.log('✅ Renderizando imagen para post:', postId, 'URL:', mediaUrl);
+      
+      // Reemplazar el div de carga con la imagen
+      const pcMedia = el.closest('.pc-media');
+      if(pcMedia){
+        pcMedia.innerHTML = `<img src="${escapeHtml(mediaUrl)}" alt=""
+                                 onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">`;
+      }
+    } catch(e) {
+      console.error('❌ Error cargando imagen para post', postId, ':', e);
+      el.innerHTML = 'Error al cargar';
+    }
+  }
+}
+
 function attachPostCardHandlers(){
   document.getElementById('chatBody')?.addEventListener('click', async (e)=>{
     const el = e.target.closest('.post-bubble');
@@ -889,6 +953,7 @@ function renderMessages(list){
   body.innerHTML = list.map(buildMessageHTML).join('');
   attachPostCardHandlers();
   upgradeLinkShares();
+  loadPostCardImages(); // Cargar imágenes de post-cards que tengan data-postid
 
   body.scrollTop = body.scrollHeight;
 }
