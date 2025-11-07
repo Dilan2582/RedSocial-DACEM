@@ -98,6 +98,13 @@
         <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM logo"></span>
         <span>DACEM</span>
       </div>
+
+      <!-- ===== BUSCADOR GLOBAL DE USUARIOS (CENTRO) ===== -->
+      <div class="top-search">
+        <input id="topSearch" type="search" placeholder="Buscar usuarios…">
+        <div id="topSearchResults" class="top-search-results"></div>
+      </div>
+
       <div style="margin-left:auto" class="topbar-actions">
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
           <i class="nav-ico" data-lucide="moon"></i> <span id="themeTxt">Modo oscuro</span>
@@ -283,6 +290,119 @@
     }
     function timeAgo(iso){ try{ const d=new Date(iso); const s=(Date.now()-d)/1000; if(s<60) return 'ahora'; if(s<3600) return Math.floor(s/60)+' min'; if(s<86400) return Math.floor(s/3600)+' h'; return Math.floor(s/86400)+' d'; }catch{ return ''; } }
 
+    /* ====== BUSCADOR GLOBAL: lógica ====== */
+const gsInput   = document.getElementById('topSearch');
+const gsResults = document.getElementById('topSearchResults');
+
+function gsShow(flag){ gsResults.classList.toggle('show', !!flag); }
+function gsClear(){ if(gsResults){ gsResults.innerHTML = ''; gsShow(false); } }
+function userRowHTML(u){
+  const id   = u._id || u.id;
+  const name = displayName(u) || 'Usuario';
+  const nick = u.nickname || (u.email ? u.email.split('@')[0] : 'usuario');
+  return `
+    <div class="top-search-item" data-id="${id}">
+      <img src="${resolveAvatar(u)}" alt="">
+      <div>
+        <div style="font-weight:700">${name}</div>
+        <div class="nick">@${nick}</div>
+      </div>
+    </div>`;
+}
+function bindResultClicks(){
+  gsResults.querySelectorAll('.top-search-item').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.getAttribute('data-id');
+      if (id) location.href = `profile.html?id=${encodeURIComponent(id)}`;
+    });
+  });
+}
+
+// — helpers de filtrado (ignoran acentos y mayúsculas)
+const norm = s => (s||'').toString()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+function matchUser(u, qn){
+  const fields = [
+    u.nickname,
+    u.name,
+    `${u.firstName||''} ${u.lastName||''}`,
+    u.email ? u.email.split('@')[0] : ''
+  ];
+  return fields.some(f => norm(f).includes(qn));
+}
+function scoreUser(u, qn){
+  // prioridad: nickname exacto > empieza por q > contiene
+  const nk = norm(u.nickname);
+  const nm = norm(u.name);
+  const fl = norm(`${u.firstName||''} ${u.lastName||''}`);
+  if (nk === qn) return 300;
+  if (nm === qn || fl === qn) return 250;
+  if (nk.startsWith(qn)) return 200;
+  if (nm.startsWith(qn) || fl.startsWith(qn)) return 160;
+  if (nk.includes(qn)) return 120;
+  if (nm.includes(qn) || fl.includes(qn)) return 100;
+  return 0;
+}
+
+async function searchUsersBackend(q){
+  if (!q) return [];
+  const endpoints = [
+    `/users/search?q=${encodeURIComponent(q)}&limit=200`,
+    `/user/search?q=${encodeURIComponent(q)}&limit=200`,
+    `/user/others?q=${encodeURIComponent(q)}&limit=200`
+  ];
+  for (const ep of endpoints){
+    try{
+      const r = await fetch(API(ep), { headers: H });
+      if (!r.ok) continue;
+      const d = await r.json().catch(()=>null);
+      const list = d?.users || d?.data || [];
+      if (Array.isArray(list)) return list;
+    }catch{}
+  }
+  return [];
+}
+
+// input con debounce + filtrado y orden
+let gsTimer = null;
+gsInput?.addEventListener('input', ()=>{
+  const q = gsInput.value.trim();
+  clearTimeout(gsTimer);
+  if (!q){ gsClear(); return; }
+
+  gsTimer = setTimeout(async ()=>{
+    const raw = await searchUsersBackend(q);
+    const qn  = norm(q);
+
+    // deduplicar por id
+    const map = new Map();
+    raw.forEach(u => {
+      const id = u._id || u.id || u.email || (u.nickname && `@${u.nickname}`);
+      if (!map.has(id)) map.set(id, u);
+    });
+    const list = [...map.values()]
+      .filter(u => matchUser(u, qn))
+      .map(u => ({ u, s: scoreUser(u, qn) }))
+      .sort((a,b) => b.s - a.s)
+      .map(x => x.u)
+      .slice(0, 50); // muestra hasta 50 coincidencias
+
+    if (!list.length){ gsClear(); return; }
+
+    gsResults.innerHTML = list.map(userRowHTML).join('');
+    bindResultClicks();
+    gsShow(true);
+  }, 180);
+});
+
+document.addEventListener('click', (e)=>{
+  if (!gsResults) return;
+  if (e.target === gsInput || gsResults.contains(e.target)) return;
+  gsClear();
+});
+
+
     /* ===== Sugerencias / follow ===== */
     async function toggleFollow(id, isFollowing){
       try{
@@ -372,7 +492,6 @@
       if(!f){ 
         selectedFile=null; 
         cmp.imgBox.style.display='none';
-        // Limpiar filtros
         if (window.composerFilters) {
           window.composerFilters.clearFilters();
         }
@@ -382,8 +501,6 @@
       const url = URL.createObjectURL(f);
       cmp.img.src = url;
       cmp.imgBox.style.display='flex';
-      
-      // Generar previews de filtros
       if (window.composerFilters && f.type.startsWith('image/')) {
         window.composerFilters.setImage(url);
       }
@@ -393,7 +510,6 @@
       cmp.fileEl.value=''; 
       cmp.imgBox.style.display='none'; 
       cmp.img.removeAttribute('src');
-      // Limpiar filtros
       if (window.composerFilters) {
         window.composerFilters.clearFilters();
       }
@@ -403,39 +519,27 @@
       cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
       try{
         const fd = new FormData();
-        
-        // Obtener información del filtro seleccionado
         if (selectedFile) {
-          // Si hay filtros activados, usar el filtro seleccionado
           if (window.composerFilters && window.composerFilters.currentImage) {
             const filterInfo = window.composerFilters.getCurrentFilterInfo();
             const selectedImage = window.composerFilters.getSelectedImage();
-            
-            // Convertir dataURL a Blob
             const response = await fetch(selectedImage.dataUrl);
             const blob = await response.blob();
-            
             fd.append('image', blob, 'image.jpg');
-            fd.append('filter', filterInfo.filterType); // Enviar tipo de filtro al backend
-            
-            console.log('📤 Publicando con filtro:', filterInfo.label);
+            fd.append('filter', filterInfo.filterType);
           } else {
             fd.append('image', selectedFile);
             fd.append('filter', 'original');
           }
         }
-        
         if (cmp.txt.value.trim()) fd.append('caption', cmp.txt.value.trim());
         const r = await fetch(API('/posts'), { method:'POST', headers:H, body:fd });
         const d = await r.json();
         if(!d.ok) throw new Error(d.message||'Error');
         prependPost(d.post);
-        
-        // Limpiar filtros
         if (window.composerFilters) {
           window.composerFilters.clearFilters();
         }
-        
         cmp.msg.textContent = '¡Publicado!'; cmp.txt.value=''; cmp.rm.click();
         setTimeout(()=>cmp.msg.textContent='', 1200);
       }catch(err){ 
@@ -460,47 +564,36 @@
       return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
     }
 
-    // Función para analizar rostros en la publicación
     async function analyzeFaceInPost(post) {
       const btn = lbFaceRecognitionBtn;
       const originalText = btn.innerHTML;
-      
       btn.disabled = true;
       btn.innerHTML = '<i data-lucide="loader"></i>';
       if (window.lucide) lucide.createIcons();
-
       try {
         const imageUrl = post.media.t1 || post.media.original || post.media.thumb;
-        
         const res = await fetch(API('/face-recognition/analyze'), {
           method: 'POST',
           headers: { ...H, 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl })
         });
-
         const data = await res.json();
-
         if (!data.ok) {
           alert('Error: ' + data.message);
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
         }
-
         if (data.facesDetected === 0) {
           alert('No se detectaron rostros en la imagen');
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
         }
-
-        // Crear modal con los resultados
         showFaceAnalysisResults(data.faces);
-
         btn.disabled = false;
         btn.innerHTML = originalText;
         if (window.lucide) lucide.createIcons();
-
       } catch (error) {
         console.error('Error analizando rostro:', error);
         alert('Error al analizar la imagen: ' + error.message);
@@ -509,7 +602,6 @@
       }
     }
 
-    // Función para mostrar resultados del análisis facial
     function showFaceAnalysisResults(faces) {
       const modal = document.createElement('div');
       modal.style.cssText = `
@@ -517,7 +609,6 @@
         display: flex; align-items: center; justify-content: center; 
         z-index: 1000; padding: 20px;
       `;
-
       let html = `
         <div style="background: var(--panel); color: var(--text); border-radius: 12px; 
                     max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 24px;">
@@ -528,38 +619,21 @@
               ✕
             </button>
           </div>
-          
           <p style="color: var(--muted); margin-bottom: 20px;">
             Se detectaron <strong>${faces.length}</strong> rostro(s) en la imagen
           </p>
       `;
-
       faces.forEach((face, idx) => {
         const mainEmotion = face.emotions.length > 0 ? face.emotions[0] : null;
-        
         html += `
           <div style="border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
             <h3 style="margin: 0 0 12px 0; color: var(--primary);">Rostro ${idx + 1}</h3>
-            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div>
-                <strong>Edad estimada:</strong><br>
-                ${face.ageRange ? `${face.ageRange.low} - ${face.ageRange.high} años` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Género:</strong><br>
-                ${face.gender ? `${face.gender.value} (${face.gender.confidence}%)` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Confianza:</strong><br>
-                ${face.confidence}%
-              </div>
-              <div>
-                <strong>Expresión:</strong><br>
-                ${mainEmotion ? `${mainEmotion.type} (${mainEmotion.confidence}%)` : 'No disponible'}
-              </div>
+              <div><strong>Edad estimada:</strong><br>${face.ageRange ? `${face.ageRange.low} - ${face.ageRange.high} años` : 'No disponible'}</div>
+              <div><strong>Género:</strong><br>${face.gender ? `${face.gender.value} (${face.gender.confidence}%)` : 'No disponible'}</div>
+              <div><strong>Confianza:</strong><br>${face.confidence}%</div>
+              <div><strong>Expresión:</strong><br>${mainEmotion ? `${mainEmotion.type} (${mainEmotion.confidence}%)` : 'No disponible'}</div>
             </div>
-
             <div style="margin-bottom: 12px;">
               <strong>Características detectadas:</strong>
               <ul style="margin: 8px 0; padding-left: 20px;">
@@ -572,7 +646,6 @@
                 ${face.smiling.present ? `<li>Sonriendo (${face.smiling.confidence}%)</li>` : ''}
               </ul>
             </div>
-
             ${face.emotions.length > 0 ? `
               <div>
                 <strong>Emociones detectadas:</strong>
@@ -589,15 +662,10 @@
           </div>
         `;
       });
-
       html += `</div>`;
-
       modal.innerHTML = html;
       document.body.appendChild(modal);
-
-      modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-      };
+      modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     }
 
     /* ====== Lightbox ====== */
@@ -608,7 +676,7 @@
     const lbLike = document.getElementById('lbLike');
     const lbComment = document.getElementById('lbComment');
     const lbLikes = document.getElementById('lbLikes');
-    const lbLikesCount = document.getElementById('lbLikesCount'); // Contador destacado
+    const lbLikesCount = document.getElementById('lbLikesCount');
     const lbCommentsCount = document.getElementById('lbCommentsCount');
     const lbShareBtn = document.getElementById('lbShare');
     const lbFaceRecognitionBtn = document.getElementById('lbFaceRecognition');
@@ -636,9 +704,7 @@
     }
     async function openPostModal(p){
       currentPost = p;
-
       lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
-
       const u = await getUserCached(p.userId);
       lbAva.src = resolveAvatar(u);
       lbName.textContent = displayName(u);
@@ -651,7 +717,7 @@
       lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
       const likesCount = p.counts?.likes || 0;
       lbLikes.textContent = likesCount;
-      if (lbLikesCount) lbLikesCount.textContent = likesCount; // Actualizar contador destacado
+      if (lbLikesCount) lbLikesCount.textContent = likesCount;
       lbCommentsCount.textContent = p.counts?.comments || 0;
 
       const comments = await listPostComments(p.id);
@@ -675,7 +741,7 @@
         lbLike.setAttribute('aria-pressed', (!pressed) + '');
         const newCount = (+lbLikes.textContent + (pressed ? -1 : 1));
         lbLikes.textContent = newCount;
-        if (lbLikesCount) lbLikesCount.textContent = newCount; // Actualizar contador destacado
+        if (lbLikesCount) lbLikesCount.textContent = newCount;
         try{
           const r = await fetch(API(`/posts/${p.id}/likes/toggle`), { method:'POST', headers:H });
           const d = await r.json();
@@ -684,19 +750,13 @@
           lbLike.setAttribute('aria-pressed', pressed + '');
           const revertCount = (+lbLikes.textContent + (pressed ? 1 : -1));
           lbLikes.textContent = revertCount;
-          if (lbLikesCount) lbLikesCount.textContent = revertCount; // Revertir contador destacado
+          if (lbLikesCount) lbLikesCount.textContent = revertCount;
         }
       };
 
       lbComment.onclick = ()=>{ lbInp.focus(); lbBody.scrollTop = lbBody.scrollHeight; };
-
-      // compartir desde el visor
       lbShareBtn.onclick = ()=> openShareModal(p);
-
-      // reconocimiento facial
-      lbFaceRecognitionBtn.onclick = async ()=> {
-        await analyzeFaceInPost(p);
-      };
+      lbFaceRecognitionBtn.onclick = async ()=> { await analyzeFaceInPost(p); };
 
       lb.setAttribute('aria-hidden','false');
       lb.removeAttribute('inert');
@@ -708,7 +768,7 @@
       lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML='';
       lbLike.setAttribute('aria-pressed','false');
       lbLikes.textContent = '0';
-      if (lbLikesCount) lbLikesCount.textContent = '0'; // Limpiar contador destacado
+      if (lbLikesCount) lbLikesCount.textContent = '0';
       lbCommentsCount.textContent = '0';
       currentPost = null;
     }
@@ -723,12 +783,6 @@
       el.className='post-card';
       el.dataset.postId = p.id || p._id;
       const author = userCache.get(p.userId) || {};
-      const isMyPost = me && (String(p.userId) === String(me._id || me.id));
-
-      // Debug: verificar datos del autor
-      console.log('Post author data:', { userId: p.userId, author, nickname: author.nickname });
-
-      // Detectar si es video o imagen
       const isVideo = p.media?.mime && p.media.mime.startsWith('video/');
       const mediaHtml = isVideo 
         ? `<video class="post-video" src="${p.media.thumb}" controls playsinline></video>`
@@ -742,6 +796,7 @@
             <div class="post-userid">@${author.nickname || author.email?.split('@')[0] || 'usuario'}</div>
           </div>
         </header>
+        
         <div class="post-media ${cls}">${mediaHtml}</div>
         <div class="post-actions">
           <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta">
@@ -756,13 +811,10 @@
         </div>
         ${p.caption ? `<div class="post-caption">${p.caption}</div>` : '' }`;
 
-      // Event listeners
-      const avatarImg = el.querySelector('.post-ava');
-      avatarImg.onclick = (e) => {
+      el.querySelector('.post-ava').onclick = (e) => {
         e.stopPropagation();
         location.href = `profile.html?id=${p.userId}`;
       };
-
       const likeBtn = el.querySelector('.btn-like'); const likesEl = el.querySelector('.likes');
       likeBtn.onclick = async ()=>{
         const pressed = likeBtn.getAttribute('aria-pressed')==='true';
@@ -776,12 +828,10 @@
           likesEl.textContent=(+likesEl.textContent+(pressed?1:-1));
         }
       };
-
       el.querySelector('.btn-comment').onclick = ()=> openPostModal(p);
       const mediaElement = el.querySelector(isVideo ? '.post-video' : '.post-img');
       if (mediaElement) mediaElement.onclick = ()=> openPostModal(p);
       el.querySelector('.btn-share').onclick  = ()=> openShareModal(p);
-
       if (window.lucide) lucide.createIcons();
       return el;
     }
@@ -791,13 +841,11 @@
       feedEl.appendChild(postCard(p));
       refreshIcons();
     }
-
     function prependPost(p){
       if(!userCache.has(p.userId)) userCache.set(p.userId, me);
       feedEl.prepend(postCard(p));
       refreshIcons();
     }
-
     async function loadFeed(first=false){
       if (loading) return; loading=true;
       try{
@@ -856,7 +904,6 @@
       const d = await r.json();
       followingCache = d?.users || [];
     }
-
     function renderUserPick(u){
       const el = document.createElement('button');
       el.type = 'button';
@@ -868,7 +915,6 @@
       const mark = document.createElement('div');
       mark.className = 'share-mark';
       el.appendChild(mark);
-
       const id = u.id || u._id;
       const updateMark = ()=> mark.setAttribute('data-on', selectedRecipients.has(id) ? 'true' : 'false');
       el.onclick = ()=>{
@@ -881,7 +927,6 @@
       updateMark();
       return el;
     }
-
     function filterShareList(q){
       const query = (q||'').toLowerCase();
       shareList.innerHTML = '';
@@ -903,13 +948,9 @@
       if (!d?.conversation?.id) throw new Error('No se pudo crear conversación');
       return d.conversation.id;
     }
-
-    // ENVÍO COMO TARJETA (no solo link). Enviamos un payload con tipo 'post-card'.
     async function sendShare(){
       if (!shareTargetPost || selectedRecipients.size===0) return;
       shareSendBtn.disabled = true;
-
-      // armamos un payload estructurado para que messages.js pinte la tarjeta
       const payload = {
         type: 'post-card',
         postId: shareTargetPost.id,
@@ -920,11 +961,8 @@
         mediaThumb: shareTargetPost.media?.thumb || shareTargetPost.media?.original || '',
         caption: shareTargetPost.caption || ''
       };
-
-      // mensaje opcional del usuario
       const extra = shareMsg.value.trim();
       const content = extra ? `${extra}\n${JSON.stringify(payload)}` : JSON.stringify(payload);
-
       try{
         for (const uid of selectedRecipients){
           const convId = await ensureConversation(uid);
@@ -944,14 +982,7 @@
     }
     shareSendBtn.onclick = sendShare;
 
-    // Abrir modal de compartir por hash (limpieza)
-    (function(){
-      const m = location.hash.match(/post=([^&]+)/);
-      if (m) location.hash = '';
-    })();
-
-    // Actualizar badge de notificaciones
-    // Actualizar badge de notificaciones
+    // Badges
     async function updateNotificationBadge() {
       try {
         const res = await fetch(API('/notifications/unread-count'), { headers: H });
@@ -969,8 +1000,6 @@
         console.error('Error actualizando badge de notificaciones:', error);
       }
     }
-
-    // Actualizar badge de mensajes no leídos
     async function updateMessagesBadge() {
       try {
         const res = await fetch(API('/messages'), { headers: H });
@@ -989,42 +1018,24 @@
         console.error('Error actualizando badge de mensajes:', error);
       }
     }
-
-    // Actualizar ambos badges cada 30 segundos
     updateNotificationBadge();
     updateMessagesBadge();
-    setInterval(() => {
-      updateNotificationBadge();
-      updateMessagesBadge();
-    }, 30000);
+    setInterval(() => { updateNotificationBadge(); updateMessagesBadge(); }, 30000);
 
-    // Manejar notificaciones - abrir post si viene del parámetro postId
     (async function() {
       const params = new URLSearchParams(window.location.search);
       const postId = params.get('postId');
-      
       if (postId) {
-        console.log('Abriendo post desde notificación:', postId);
-        
         try {
-          // Obtener los datos del post desde la API
           const res = await fetch(API(`/posts/${postId}`), { headers: H });
           const data = await res.json();
-          
-          if (data.ok && data.post) {
-            console.log('Post obtenido de la API:', data.post);
-            // Abrir el modal directamente con los datos del post
-            openPostModal(data.post);
-          } else {
-            console.error('No se pudo obtener el post');
-          }
+          if (data.ok && data.post) { openPostModal(data.post); }
         } catch (error) {
           console.error('Error obteniendo post:', error);
         }
       }
     })();
 
-    // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
   </script>
 
@@ -1041,4 +1052,3 @@
   <script src="js/sidebar.js"></script>
 </body>
 </html>
-

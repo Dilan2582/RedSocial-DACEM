@@ -387,3 +387,56 @@
       .btn-icon{width:40px;height:36px}
       .btn-icon i,.btn-icon svg{width:20px;height:20px}
     }
+
+    /* ====== Top Search (dropdown siempre hacia abajo) ====== */
+.top-search {
+  position: relative;
+  flex: 1 1 auto;
+  max-width: 560px;
+  margin: 0 24px;
+}
+
+.top-search input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  outline: none;
+}
+
+.top-search-results {
+  position: absolute;
+  top: calc(100% + 8px);       /* ↓ siempre abajo del input */
+  left: 50%;
+  transform: translateX(-50%); /* centrado bajo el input */
+  width: min(560px, 90vw);
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(2,6,23,.24);
+  z-index: 9999;
+  display: none;                /* se muestra con .show */
+}
+
+.top-search-results.show { display: block; }
+
+.top-search-item {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+.top-search-item:hover {
+  background: rgba(124,92,252,.06);
+}
+.top-search-item img {
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+}
+.top-search-item .nick { color: var(--muted); font-size: 12px; }
+
