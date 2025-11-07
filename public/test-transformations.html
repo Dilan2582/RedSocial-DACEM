@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test - Transformaciones Automáticas</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    .upload-section {
+      background: #f8f9fa;
+      border: 2px dashed #ddd;
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 30px;
+      transition: all 0.3s;
+    }
+    .upload-section:hover {
+      border-color: #667eea;
+      background: #f0f2ff;
+    }
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .file-input-wrapper input {
+      position: absolute;
+      left: -9999px;
+    }
+    .file-input-wrapper label {
+      display: inline-block;
+      padding: 15px 40px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .file-input-wrapper label:hover {
+      transform: translateY(-2px);
+    }
+    .file-name {
+      margin-top: 15px;
+      color: #666;
+      font-size: 14px;
+    }
+    .upload-btn {
+      margin-top: 20px;
+      padding: 15px 50px;
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .upload-btn:hover {
+      transform: translateY(-2px);
+    }
+    .upload-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .results {
+      margin-top: 40px;
+    }
+    .results h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .transformations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .transformation-card {
+      background: #f8f9fa;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: transform 0.3s;
+    }
+    .transformation-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .transformation-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+    .transformation-info {
+      padding: 15px;
+    }
+    .transformation-title {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+      font-size: 16px;
+    }
+    .transformation-desc {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .download-btn {
+      display: inline-block;
+      padding: 8px 20px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    .download-btn:hover {
+      background: #764ba2;
+    }
+    .metadata {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+    .metadata h3 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .metadata-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .metadata-item {
+      display: flex;
+      flex-direction: column;
+    }
+    .metadata-label {
+      color: #666;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    .metadata-value {
+      color: #333;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎨 Test de Transformaciones Automáticas</h1>
+    <p class="subtitle">Sube una imagen y obtén 4 transformaciones diferentes automáticamente</p>
+    
+    <div class="upload-section">
+      <div class="file-input-wrapper">
+        <input type="file" id="imageFile" accept="image/*">
+        <label for="imageFile">📁 Seleccionar Imagen</label>
+      </div>
+      <div class="file-name" id="fileName">Ningún archivo seleccionado</div>
+      
+      <button class="upload-btn" id="uploadBtn" disabled>
+        🚀 Subir y Transformar
+      </button>
+      
+      <div id="status" class="status" style="display: none;"></div>
+    </div>
+    
+    <div class="results" id="results" style="display: none;">
+      <h2>✨ Resultados</h2>
+      
+      <div class="metadata" id="metadata">
+        <h3>📊 Información del Post</h3>
+        <div class="metadata-grid" id="metadataGrid"></div>
+      </div>
+      
+      <div class="transformations-grid" id="transformationsGrid"></div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('imageFile');
+    const fileName = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
+    const metadataGrid = document.getElementById('metadataGrid');
+    const transformationsGrid = document.getElementById('transformationsGrid');
+
+    // Obtener token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('No hay token. Inicia sesión primero.');
+      window.location.href = '/index.html';
+    }
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        fileName.textContent = `Archivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+        uploadBtn.disabled = false;
+      } else {
+        fileName.textContent = 'Ningún archivo seleccionado';
+        uploadBtn.disabled = true;
+      }
+    });
+
+    uploadBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('image', file);  // Cambiar 'file' a 'image'
+      formData.append('caption', 'Test de transformaciones automáticas');
+
+      // Show loading
+      status.style.display = 'block';
+      status.className = 'status loading';
+      status.innerHTML = '<span class="loading-spinner"></span> Procesando imagen y generando 4 transformaciones...';
+      uploadBtn.disabled = true;
+      results.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        // Verificar tipo de contenido
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('El servidor no respondió con JSON. Verifica que estés autenticado correctamente.');
+        }
+
+        const data = await response.json();
+
+        if (data.ok) {
+          status.className = 'status success';
+          status.textContent = '✅ Imagen procesada con éxito! Lambda generará las transformaciones en 5-10 segundos.';
+          displayResults(data.post);
+        } else {
+          throw new Error(data.message || 'Error al subir');
+        }
+      } catch (error) {
+        status.className = 'status error';
+        status.textContent = `❌ Error: ${error.message}`;
+        console.error(error);
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+
+    function displayResults(post) {
+      results.style.display = 'block';
+
+      // Metadata
+      metadataGrid.innerHTML = `
+        <div class="metadata-item">
+          <span class="metadata-label">Post ID</span>
+          <span class="metadata-value">${post.id}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Dimensiones</span>
+          <span class="metadata-value">${post.media.width} × ${post.media.height}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">MIME Type</span>
+          <span class="metadata-value">${post.media.mime}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Fecha</span>
+          <span class="metadata-value">${new Date(post.createdAt).toLocaleString('es-ES')}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Tags Detectados</span>
+          <span class="metadata-value">${post.tags.length} tags</span>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Rostros</span>
+          <span class="metadata-value">${post.faceCount}</span>
+        </div>
+      `;
+
+      // Transformaciones
+      const transformations = [
+        {
+          title: 'Original',
+          desc: 'Imagen sin procesar',
+          url: post.media.original,
+          icon: '📸'
+        },
+        {
+          title: 'Thumbnail (640px)',
+          desc: 'Optimizada para web, carga rápida',
+          url: post.media.thumb,
+          icon: '🖼️'
+        },
+        {
+          title: 'Blanco y Negro',
+          desc: 'Sin saturación, estilo clásico',
+          url: post.media.t1,
+          icon: '⚫'
+        },
+        {
+          title: 'Sepia',
+          desc: 'Tono vintage, fotografía antigua',
+          url: post.media.t2,
+          icon: '🟤'
+        },
+        {
+          title: 'Blur Artístico',
+          desc: 'Desenfoque suave tipo bokeh',
+          url: post.media.t3,
+          icon: '🌫️'
+        },
+        {
+          title: 'Ampliación 2x',
+          desc: 'Interpolación Lanczos3, alta calidad',
+          url: post.media.t4,
+          icon: '🔍'
+        }
+      ];
+
+      transformationsGrid.innerHTML = transformations.map(t => `
+        <div class="transformation-card">
+          <img src="${t.url}" alt="${t.title}" loading="lazy">
+          <div class="transformation-info">
+            <div class="transformation-title">${t.icon} ${t.title}</div>
+            <div class="transformation-desc">${t.desc}</div>
+            <a href="${t.url}" class="download-btn" target="_blank" download>⬇️ Descargar</a>
+          </div>
+        </div>
+      `).join('');
+
+      // Scroll to results
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+</body>
+</html>

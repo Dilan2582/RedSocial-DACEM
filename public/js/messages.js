@@ -1,3 +1,4 @@
+/* ========================== messages.js ========================== */
 /* ========================== CONFIG ========================== */
 const API_BASE = '/api';
 let currentConversation = null;
@@ -12,6 +13,20 @@ let delModal = null, delList = null, delCount = null, delConfirm = null, delCanc
 /* ========================== HELPERS ========================= */
 const $ = (s)=>document.querySelector(s);
 function safe(v,f=''){ return (v===null||v===undefined)?f:v; }
+function normId(v, depth=0){
+  if (depth > 5 || v == null) return '';
+  if (typeof v === 'string' || typeof v === 'number') return String(v).trim();
+  if (typeof v === 'object'){
+    // formatos típicos de Mongo
+    if (v.$oid) return String(v.$oid).trim();
+    if (v._id)  return normId(v._id, depth+1);
+    if (v.id)   return normId(v.id, depth+1);
+    // último recurso: toString si no es [object Object]
+    const s = v.toString ? String(v.toString()) : '';
+    return s && s !== '[object Object]' ? s.trim() : '';
+  }
+  return '';
+}
 function displayName(u){
   if(!u) return 'Usuario';
   return (u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim() || u.nick || u.nickname || u.username || 'Usuario');
@@ -25,11 +40,75 @@ function goToProfile(u){
 function resolveAvatar(u){
   if(!u) return 'img/default-avatar.png';
   const img = u.image || u.avatar;
-  if (img){ if(img.startsWith('http')) return img; return `${location.origin}${img.startsWith('/')?img:'/'+img}`; }
+  if (img){ 
+    if(img.startsWith('http')) return img; 
+    return `${location.origin}${img.startsWith('/') ? img : '/' + img}`; 
+  }
   const seed = encodeURIComponent(u.nick || u.nickname || u.name || 'U');
   return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
 }
 function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+function absUrl(u){
+  if(!u) return '';
+  const s = String(u);
+  // deja pasar http/https, data:, blob:
+  if (/^(https?:|data:|blob:)/i.test(s)) return s;
+  // normaliza duplicados de /
+  const join = (a,b)=> a.replace(/\/+$/,'') + '/' + b.replace(/^\/+/,'');
+  return join(location.origin, s);
+}
+
+function previewCandidates(media){
+  // Acepta tanto objeto como string plano
+  if(!media) return [];
+  if (typeof media === 'string') return [absUrl(media)];
+
+  console.log('🔍 previewCandidates input:', media);
+  
+  const v = media.variants || {};
+  const sel = media.selectedFilter && (v[media.selectedFilter] || media[media.selectedFilter]);
+
+  const list = [
+    sel,
+    v.preview, v.small, v.medium, v.large, v.final, v.output,
+    media.filtered,        // si tu backend guarda una url ya filtrada
+    media.url,             // url genérica
+    media.t1,              // miniatura
+    media.thumb,
+    media.original
+  ].filter(Boolean).map(absUrl);
+
+  console.log('✅ previewCandidates output:', list);
+  // dedup
+  return [...new Set(list)];
+}
+
+function imgWithFallback(media){
+  const cand = previewCandidates(media);
+  if(!cand.length){
+    return `<div class="pc-media-error">No se pudo cargar la imagen</div>`;
+  }
+  const [first, ...rest] = cand;
+  const fb = rest.join('|').replace(/"/g,'&quot;');
+
+  // Un solo mensaje de error, sin duplicados
+  return `
+    <img class="pc-img" src="${first}" alt=""
+         loading="lazy" decoding="async"
+         data-fallbacks="${fb}"
+         onerror="
+           const q=this.dataset.fallbacks||'';
+           if(q){
+             const a=q.split('|'); const nx=a.shift();
+             this.dataset.fallbacks=a.join('|');
+             if(nx){ this.src=nx; return; }
+           }
+           this.outerHTML='<div class=&quot;pc-media-error&quot;>No se pudo cargar la imagen</div>';
+         ">
+  `;
+}
+
 function formatTime(ts){
   if(!ts) return ''; const d=new Date(ts); const diff=Date.now()-d;
   if(diff<60000) return 'Ahora';
@@ -39,18 +118,119 @@ function formatTime(ts){
   return d.toLocaleDateString('es-ES',{day:'numeric',month:'short'});
 }
 
-/* ====== Cache básico de usuarios ====== */
-const userCache = new Map();
+/* ===== Nick/handle normalizado ===== */
+function getNick(u){
+  if(!u) return '';
+  const cand = [
+    u.nickname, u.nick, u.username, u.handle,
+    u.user_name, u.userName, u.login, u.nickName,
+    u.screen_name, u.slug, u.account, u.handle_name
+  ];
+  const n = cand.find(v => typeof v === 'string' && v.trim());
+  return n ? n.replace(/^@/, '') : '';
+}
+
+/* ---------- nick fallback determinista + cache ---------- */
+function hash4(s){
+  let h=0; for(let i=0;i<s.length;i++) h=(h*31 + s.charCodeAt(i))|0;
+  h=Math.abs(h)%10000; return (''+h).padStart(4,'0');
+}
+function buildNickFallback(u, id){
+  const base =
+    (u && (u.name || u.fullName || `${safe(u.firstName)} ${safe(u.lastName)}`.trim())) || '';
+  const clean = base.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'.').replace(/^\.+|\.+$/g,'');
+  const shortId = (id || '').toString().slice(-4) || hash4(clean || 'user');
+  return clean ? `${clean}.${shortId}` : `user.${shortId}`;
+}
+const handleCache = new Map();
+function normalizeUser(raw){
+  if(!raw || typeof raw !== 'object') return {};
+  const prof = raw.profile && typeof raw.profile === 'object' ? raw.profile : {};
+  let nickname = getNick(raw) || getNick(prof);
+
+  const name =
+    raw.name || raw.fullName ||
+    (prof.name || prof.fullName) ||
+    `${safe(raw.firstName||prof.firstName)} ${safe(raw.lastName||prof.lastName)}`.trim() ||
+    raw.displayName || '';
+
+  const avatar = raw.avatar || raw.image || prof.avatar || prof.image || null;
+  const id = normId(raw.id || raw._id || prof.id || prof._id || raw.userId || prof.userId);
+
+  if(!nickname){
+    if(id && handleCache.has(id)) nickname = handleCache.get(id);
+    else{
+      nickname = buildNickFallback({ name, firstName: raw.firstName, lastName: raw.lastName }, id);
+      if(id) handleCache.set(id, nickname);
+    }
+  }else if(id){
+    handleCache.set(id, nickname);
+  }
+
+  // No hacer spread de raw para evitar referencias circulares
+  return { id, _id:id, name, avatar, nickname, nick: nickname };
+}
+
+/* ====== Perfil público (ruta real de tu backend) ====== */
+const __userPublicCache = new Map();
 async function fetchUserPublic(uid){
-  if(!uid) return {};
-  if(userCache.has(uid)) return userCache.get(uid);
+  uid = normId(uid);
+  if(!uid){ return null; }
+  if(__userPublicCache.has(uid)) return __userPublicCache.get(uid);
+
+  const url = `${API_BASE}/user/${encodeURIComponent(uid)}/public`;
   try{
-    const r = await fetch(`${API_BASE}/user/${uid}/public`, { headers:{ Authorization:authToken }});
+    const r = await fetch(url, { headers: { Authorization: authToken } });
+    if(!r.ok){ __userPublicCache.set(uid, null); return null; }
+    const d = await r.json().catch(()=>null);
+    const u = (d && (d.user || d.profile || d.data)) || null;
+    const nu = u ? normalizeUser(u) : null;
+    __userPublicCache.set(uid, nu);
+    if(nu && nu.id) handleCache.set(nu.id, getNick(nu) || nu.nick || nu.nickname || '');
+    return nu;
+  }catch(_){
+    __userPublicCache.set(uid, null);
+    return null;
+  }
+}
+
+/* ===== Helpers: sesión y "siguiendo" para nuevo mensaje ===== */
+function getMeId() {
+  try {
+    const me = JSON.parse(localStorage.getItem('user') || '{}');
+    return me.id || me._id || me.userId || null;
+  } catch { return null; }
+}
+
+async function loadFollowingForNewMsg(q = '') {
+  const meId = getMeId();
+  if (!meId) return [];
+
+  try {
+    const r = await fetch(`${API_BASE}/follow/${meId}/following?limit=50`, {
+      headers: { Authorization: authToken }
+    });
+    if (!r.ok) return [];
+
     const d = await r.json();
-    const u = d.user || d.data || {};
-    userCache.set(uid, u);
-    return u;
-  }catch{ return {}; }
+    let users = d.users || [];
+
+    users = users.map(u => ({
+      id: u.id || u._id,
+      name:
+        (u.nickname && u.nickname.trim()) ||
+        `${u.firstName || ''} ${u.lastName || ''}`.trim() ||
+        'Usuario',
+      avatar: u.avatar || u.image || null
+    }));
+
+    const query = (q || '').toLowerCase();
+    if (query) users = users.filter(u => (u.name || '').toLowerCase().includes(query));
+
+    return users;
+  } catch {
+    return [];
+  }
 }
 
 /* ====== Lightbox (posts) ====== */
@@ -98,8 +278,13 @@ async function refreshCounts(postId){
 
 let currentPost = null;
 async function fetchPost(postId){
-  const r = await fetch(`${API_BASE}/posts/${postId}`, { headers:{ Authorization:authToken }});
-  const d = await r.json(); return d.ok ? d.post : null;
+  const r = await fetch(`${API_BASE}/posts/${postId}?variants=1`, { headers:{ Authorization:authToken }});
+  const d = await r.json(); 
+  if(d.ok){
+    console.log('📦 fetchPost response:', d.post);
+    console.log('📷 Media object:', d.post?.media);
+  }
+  return d.ok ? d.post : null;
 }
 async function listPostComments(postId){
   const r=await fetch(`${API_BASE}/posts/${postId}/comments?limit=100`,{headers:{Authorization:authToken}});
@@ -119,23 +304,113 @@ function renderCommentRow(c){
   const uid  = cu.id || cu._id || c.userId || '';
   const nick = (cu.nickname || cu.nick || 'usuario').replace(/^@/, '');
   const nmLink = `<a href="profile.html?id=${encodeURIComponent(uid)}" class="nm user-link">@${escapeHtml(nick)}</a>`;
-  return `<span class="nm-wrap">${nmLink}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+  return `<span class="nm-wrap">${nmLink}</span> ${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
+}
+
+function bestMediaUrl(media){
+  if(!media) {
+    console.warn('❌ bestMediaUrl: media is empty');
+    return '';
+  }
+  
+  console.log('🎯 bestMediaUrl input:', JSON.stringify(media));
+  
+  // Si original es una URL válida, usarla directamente
+  if(media.original && typeof media.original === 'string') {
+    console.log('✅ Using original:', media.original);
+    return media.original;
+  }
+  
+  // Si thumb es una URL válida, usarlo
+  if(media.thumb && typeof media.thumb === 'string') {
+    console.log('✅ Using thumb:', media.thumb);
+    return media.thumb;
+  }
+  
+  // Intentar variantes
+  const v = media.variants || {};
+  const sf = media.selectedFilter && (v[media.selectedFilter] || media[media.selectedFilter]);
+
+  const list = [
+    sf,
+    v.preview, v.small, v.medium, v.large, v.final,
+    v.t1_bw, v.t2_sepia, v.t3_blur, v.t4_upscale, v.t5_bright,
+    v.t6_dark, v.t7_vibrant, v.t8_warm, v.t9_cool, v.t10_invert,
+    media.filtered, media.url,
+  ].filter(Boolean);
+
+  if(list.length) {
+    console.log('✅ Using variant:', list[0]);
+    return list[0];
+  }
+  
+  console.warn('⚠️ bestMediaUrl: No valid URL found');
+  return '';
+}
+
+function ensureNickAndId(u = {}, fallbackId = '') {
+  const id = u.id || u._id || u.userId || fallbackId || '';
+  let nu = normalizeUser({ ...u, id });
+  let nick = getNick(nu);
+
+  // Si aún no hay nick, intenta cache o fallback determinista
+  if (!nick && id) {
+    const cached = __userPublicCache.get(id);
+    if (cached) nu = normalizeUser({ ...nu, ...cached });
+    if (!getNick(nu)) {
+      const fb = buildNickFallback(nu, id);
+      nu.nickname = fb; nu.nick = fb;
+      handleCache.set(id, fb);
+    }
+    nick = getNick(nu);
+  }
+  return { id, user: nu, nick };
+}
+
+// Versión async que consulta /api/user/:id/public si es necesario
+async function ensureNickAndIdAsync(u = {}, fallbackId = '') {
+  const id = u.id || u._id || u.userId || fallbackId || '';
+  let nu = normalizeUser({ ...u, id });
+  let nick = getNick(nu);
+
+  // Si aún no hay nick, intenta cache → API → fallback
+  if (!nick && id) {
+    const cached = __userPublicCache.get(id);
+    if (cached) nu = normalizeUser({ ...nu, ...cached });
+    
+    if (!getNick(nu)) {
+      try {
+        const fetched = await fetchUserPublic(id);
+        if (fetched) nu = normalizeUser({ ...nu, ...fetched });
+      } catch(e) {
+        console.warn('Error fetching user public info:', e);
+      }
+    }
+    
+    if (!getNick(nu)) {
+      const fb = buildNickFallback(nu, id);
+      nu.nickname = fb; nu.nick = fb;
+      handleCache.set(id, fb);
+    } else {
+      handleCache.set(id, getNick(nu));
+    }
+    nick = getNick(nu);
+  }
+  return { id, user: nu, nick };
 }
 
 async function openPostModal(p){
   if(!p) return;
   currentPost = p;
 
-  lbImg.src = p.media?.t1 || p.media?.original || p.media?.thumb || '';
-  const au = p.author || p.user || {};
-  lbAva.src = resolveAvatar(au);
-
-  const nm      = displayName(au);
-  const pid     = au.id || au._id || p.userId || '';
-  const rawNick = (au.nickname || au.nick || '').replace(/^@/, '');
+  lbImg.src = bestMediaUrl(p.media) || '';
+  
+  const baseAu = p.author || p.user || {};
+  const { id: pid, user: au, nick: rawNick } = ensureNickAndId(baseAu, p.userId);
   const profHref = pid ? `profile.html?id=${encodeURIComponent(pid)}` : '#';
 
-  lbName.innerHTML = `<a href="${profHref}" class="lb-author">${escapeHtml(nm)}</a>`;
+  lbAva.src = resolveAvatar(au);
+  lbName.innerHTML = `<a href="${profHref}" class="lb-author">${escapeHtml(displayName(au))}</a>`;
   lbUser.innerHTML = rawNick ? `<a href="${profHref}" class="lb-author muted">@${escapeHtml(rawNick)}</a>` : '';
   lbAva.onclick = () => goToProfile({ id: pid });
 
@@ -145,38 +420,46 @@ async function openPostModal(p){
   refreshCounts(p.id || p._id);
 
   const comments = await listPostComments(p.id || p._id);
-  for(const c of comments){
-    const cu = c.user || {};
-    const uid = c.userId || cu.id || cu._id;
-    const hasNick = !!(cu.nickname || cu.nick);
-    if(uid && !hasNick){
-      const u = await fetchUserPublic(uid);
-      c.user = { id: uid, _id: uid, ...u, ...c.user };
-    }
-  }
-  lbBody.innerHTML='';
-  comments.forEach(c=>{
-    const row = document.createElement('div'); row.className='lb-cmt';
+
+  // Normaliza todos los autores de comentarios (id + nick garantizados)
+  const enriched = await Promise.all(comments.map(async (c)=>{
+    const baseU = c.user || c.author || c.owner || {};
+    const uid   = c.userId || baseU.id || baseU._id || baseU.userId || '';
+    const { user: nu } = await ensureNickAndIdAsync({ ...baseU, id: uid }, uid);
+    return { ...c, user: nu, userId: uid }; // Asegurar que userId está presente
+  }));
+
+  lbBody.innerHTML = '';
+  enriched.forEach(c=>{
+    const row = document.createElement('div');
+    row.className = 'lb-cmt';
+    row.setAttribute('data-cid', c.id || c._id || '');
     row.innerHTML = renderCommentRow(c);
     lbBody.appendChild(row);
   });
   lbBody.scrollTop = lbBody.scrollHeight;
 
+
   lbSend.onclick = async ()=>{
     const t = lbInp.value.trim(); if(!t) return;
     const c = await addPostComment((p.id||p._id), t);
-    if(c){
-      if(!(c.user && (c.user.nickname||c.user.nick))){
-        const uid = c.userId || c.user?.id || c.user?._id;
-        if(uid){ const u = await fetchUserPublic(uid); c.user = { id: uid, _id: uid, ...c.user, ...u }; }
-      }
-      lbInp.value='';
-      const row=document.createElement('div'); row.className='lb-cmt';
-      row.innerHTML = renderCommentRow(c);
-      lbBody.appendChild(row);
-      lbBody.scrollTop=lbBody.scrollHeight;
-      lbCommentsCount.textContent = +lbCommentsCount.textContent + 1;
-    }
+    if(!c) return;
+
+    // Normaliza el autor del comentario nuevo
+    const baseU = c.user || {};
+    const uid   = c.userId || baseU.id || baseU._id || baseU.userId || '';
+    const { user: nu } = await ensureNickAndIdAsync({ ...baseU, id: uid }, uid);
+    c.user = nu;
+    c.userId = uid; // Asegurar que userId está presente
+
+    lbInp.value = '';
+    const row = document.createElement('div');
+    row.className = 'lb-cmt';
+    row.setAttribute('data-cid', c.id || c._id || '');
+    row.innerHTML = renderCommentRow(c);
+    lbBody.appendChild(row);
+    lbBody.scrollTop = lbBody.scrollHeight;
+    lbCommentsCount.textContent = (+lbCommentsCount.textContent || 0) + 1;
   };
 
   lbLike.onclick = async ()=>{
@@ -193,10 +476,12 @@ async function openPostModal(p){
   };
 
   lb.setAttribute('aria-hidden','false');
+  lb.removeAttribute('inert');
   try{ if(window.lucide) window.lucide.createIcons(); }catch(_){}
 }
 function closePostModal(){
   lb.setAttribute('aria-hidden','true');
+  lb.setAttribute('inert', '');
   lbImg.removeAttribute('src'); lbBody.innerHTML=''; lbInp.value='';
   lbLike.setAttribute('aria-pressed','false'); lbLikes.textContent='0'; lbCommentsCount.textContent='0';
   currentPost=null;
@@ -208,62 +493,85 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!token){ location.href='/index.html'; return; }
   authToken = 'Bearer ' + token;
 
-  // Referencias modal borrar
   delModal   = $('#delModal');
   delList    = $('#delList');
   delCount   = $('#delCount');
   delConfirm = $('#delConfirm');
   delCancel  = $('#delCancel');
 
-  // Botón opciones (…)
   $('#msgOptionsBtn')?.addEventListener('click', openDeleteModal);
-
-  // Cerrar modal cuando se hace clic fuera
   delModal?.addEventListener('click', (e)=>{ if(e.target === delModal) closeDeleteModal(); });
-
-  // Cerrar modal con Escape
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && delModal?.getAttribute('aria-hidden')==='false') closeDeleteModal(); });
 
-  // Logout
   $('#logoutBtnTop')?.addEventListener('click', ()=>{ localStorage.removeItem('token'); location.href='/index.html'; });
-
-  // Buscar
   $('#searchBox')?.addEventListener('input', handleSearch);
 
-  // Cargar conversaciones
   loadConversations();
 
-  // Abrir conversación directa por query
   const userId = new URLSearchParams(location.search).get('userId');
   if(userId) startConversationWithUser(userId);
 
-  // Polling
   pollInterval = setInterval(()=>{ if(currentConversation){ loadMessages(currentConversation.id, true); } }, 5000);
+
+  wireNewMessageModal();
 });
 
 /* ================== CONVERSATIONS ================= */
 async function loadConversations(){
   try{
-    const r = await fetch(API_BASE+'/messages', { headers:{ Authorization:authToken }});
-    if(!r.ok){ if(r.status===401) { localStorage.removeItem('token'); location.href='/index.html'; } return; }
+    const url = API_BASE+'/messages';
+    console.log('📍 Cargando conversaciones desde:', url);
+    console.log('🔐 Token enviado:', authToken);
+    
+    const r = await fetch(url, { 
+      method: 'GET',
+      headers:{ 
+        'Authorization': authToken,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📊 Response status:', r.status, r.statusText);
+    
+    if(!r.ok){ 
+      if(r.status===401) { 
+        localStorage.removeItem('token'); 
+        location.href='/index.html'; 
+      } 
+      const errorText = await r.text();
+      console.error('loadConversations error:', r.status, r.statusText, errorText);
+      return; 
+    }
+    
     const d = await r.json();
-    conversations = d.conversations || [];
+    console.log('✅ Conversaciones recibidas:', d);
+    conversations = d.conversations || d.data || [];
     renderConversations(conversations);
-  }catch(e){ console.error('loadConversations', e); }
+  }catch(e){ 
+    console.error('❌ loadConversations error:', e); 
+  }
 }
 
 function renderConversations(convs){
   const container = $('#conversationsBody');
-  if(!container) return;
+  console.log('🎨 renderConversations llamado con', convs.length, 'conversaciones');
+  console.log('📦 Contenedor encontrado:', !!container);
+  
+  if(!container) {
+    console.error('❌ #conversationsBody no encontrado en el DOM');
+    return;
+  }
 
   if(!convs.length){
+    console.log('📭 Sin conversaciones, mostrando estado vacío');
     container.innerHTML = `<div class="empty-state">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a 2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <p>No tienes conversaciones aún</p></div>`;
     return;
   }
 
-  container.innerHTML = convs.map(conv=>{
+  const html = convs.map(conv=>{
+    console.log('📝 Renderizando conversación:', conv);
     const isActive = currentConversation && currentConversation.id===conv.id;
     const last = conv.lastMessage;
     const isUnread = last && !last.read && !last.isMine;
@@ -283,6 +591,9 @@ function renderConversations(convs){
       </div>
     </div>`;
   }).join('');
+  
+  container.innerHTML = html;
+  console.log('✅ Conversaciones renderizadas en el DOM');
 }
 
 function handleSearch(e){
@@ -296,18 +607,22 @@ function handleSearch(e){
 
 function selectConversation(id,userId,name,image){
   currentConversation={id};
-  currentRecipient={ id:userId, name, nick:name, nickname:name, image };
+  currentRecipient={ id:userId, name, nick:name, nickname:name, image, avatar:image };
 
   const head = $('#chatHead');
   head.style.display = 'flex';
+  
+  const avatarUrl = resolveAvatar(currentRecipient);
+  const nick = getNick(currentRecipient) || name.toLowerCase().replace(/\s+/g, '.');
+  
   head.innerHTML = `
     <button class="btn ghost small" id="backToList" style="display:none">← Atrás</button>
-    <img src="${resolveAvatar(currentRecipient)}" class="chat-avatar" alt="${escapeHtml(name)}" id="chatHeadAva">
+    <img src="${avatarUrl}" class="chat-avatar" alt="${escapeHtml(name)}" id="chatHeadAva" onerror="this.src='img/default-avatar.png'">
     <div class="chat-user-info">
-      <a class="chat-username" id="chatHeadLink" href="profile.html?id=${encodeURIComponent(userId)}" style="text-decoration:none">
+      <a class="chat-username" id="chatHeadLink" href="profile.html?id=${encodeURIComponent(userId)}" style="text-decoration:none;color:var(--text);font-weight:700;display:block">
         ${escapeHtml(name)}
       </a>
-      <div class="chat-status">Activo ahora</div>
+      <a class="chat-status" href="profile.html?id=${encodeURIComponent(userId)}" style="color:var(--muted);font-size:12px;text-decoration:none">@${escapeHtml(nick)}</a>
     </div>`;
 
   $('#chatHeadAva').onclick = (e)=>{ e.preventDefault(); location.href = `profile.html?id=${encodeURIComponent(userId)}`; };
@@ -338,7 +653,12 @@ function selectConversation(id,userId,name,image){
   body.style.overflow = 'auto';
 
   const composer = $('#chatComposer');
-  composer.style.display = 'flex';
+  if (composer) {
+    composer.style.display = 'flex';
+    console.log('✅ Compositor mostrado');
+  } else {
+    console.error('❌ Compositor no encontrado');
+  }
 
   const backBtn = $('#backToList');
   if (window.innerWidth <= 768) {
@@ -346,6 +666,8 @@ function selectConversation(id,userId,name,image){
     backBtn.onclick = ()=>{
       $('#conversationsList').classList.remove('hidden');
       $('#chatView').classList.add('hidden');
+      const composer = $('#chatComposer');
+      if (composer) composer.style.display = 'none';
     };
   }
 
@@ -364,9 +686,23 @@ function extractEmbeddedJson(str){
   }
   return null;
 }
-function extractPostIdFromLink(str){
-  const m = str.match(/[#?&]post=([A-Za-z0-9_-]+)/);
-  return m ? m[1] : null;
+function extractPostIdFromAny(content){
+  if (content && typeof content === 'object') {
+    if (content.postId) return String(content.postId);
+    if (content.id) return String(content.id);
+    if (content.url) content = String(content.url);
+    else content = JSON.stringify(content);
+  }
+  const s = String(content || '');
+  const patterns = [
+    /[#?&](?:post|postId|id)=([A-Za-z0-9_-]+)/i,
+    /\/posts\/([A-Za-z0-9_-]{6,})/i
+  ];
+  for (const rx of patterns) {
+    const m = s.match(rx);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 async function loadMessages(conversationId, polling=false){
@@ -388,22 +724,46 @@ async function loadMessages(conversationId, polling=false){
 }
 
 function buildPostBubble(msg, data){
-  const authorName = data.name || data.author || '';
-  const nick = (data.nickname || '').replace(/^@/,'');
-  const ava = data.avatar || '';
-  const thumb = data.mediaThumb || '';
-  const caption = data.caption || '';
+  const { id: auId, user: auUser, nick } = ensureNickAndId(
+    { id: data.userId, name: data.name, nickname: data.nickname, avatar: data.avatar },
+    data.userId
+  );
+  const authorName = displayName(auUser);
+  const ava = resolveAvatar(auUser);
+  const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
+  
+  console.log('🏗️ buildPostBubble data:', data);
+  
+  let mediaUrl = '';
+  if(data.media) {
+    mediaUrl = bestMediaUrl(data.media);
+  } else if(data.postId) {
+    // Si no hay media inline, marcar para cargar después
+    console.log('📍 Post-card sin media inline, será cargado después');
+  }
+  console.log('🖼️ mediaUrl result:', mediaUrl);
 
   const header = `
     <div class="pc-head">
-      <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}">
+      <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}"
+           onerror="this.src='img/default-avatar.png'"
+           onclick="location.href='${profHref}'">
       <div class="pc-u">
-        <div class="pc-name">${escapeHtml(authorName)}</div>
-        <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
+        <div class="pc-name"><a href="${profHref}" class="user-link">${escapeHtml(authorName)}</a></div>
+        <div class="pc-nick">${nick ? `<a href="${profHref}" class="user-link">@${escapeHtml(nick)}</a>` : ''}</div>
       </div>
     </div>`;
-  const media = `<div class="pc-media"><img src="${escapeHtml(thumb)}" alt=""></div>`;
-  const cap = caption ? `<div class="pc-cap">${escapeHtml(caption)}</div>` : '';
+
+  const media = mediaUrl ? `
+    <div class="pc-media">
+      <img src="${escapeHtml(mediaUrl)}" alt=""
+           onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+    </div>` : `
+    <div class="pc-media">
+      <div class="pc-loading" data-postid="${escapeHtml(data.postId||'')}">Cargando imagen...</div>
+    </div>`;
+
+  const caption = data.caption ? `<div class="pc-cap">${escapeHtml(data.caption)}</div>` : '';
 
   return `
   <div class="message ${msg.isMine ? 'mine' : ''}">
@@ -411,37 +771,57 @@ function buildPostBubble(msg, data){
     <div class="msg-bubble post-bubble"
          data-postid="${escapeHtml(data.postId||'')}"
          data-mode="card"
-         data-userid="${escapeHtml(data.userId||'')}"
-         data-nickname="${escapeHtml(nick)}"
+         data-userid="${escapeHtml(auId||'')}"
+         data-nickname="${escapeHtml(nick||'')}"
          data-authorname="${escapeHtml(authorName)}"
          data-avatar="${escapeHtml(ava)}">
-      ${header}${media}${cap}
+      ${header}${media}${caption}
     </div>
   </div>`;
 }
 
 function buildMessageHTML(msg){
-  let data=null, postId=null;
+  let data = null, postId = null;
 
-  if(typeof msg.content === 'object' && msg.content){
+  if (typeof msg.content === 'object' && msg.content) {
     data = msg.content;
-  }else if(typeof msg.content === 'string'){
-    if(msg.content.trim().startsWith('{')){ try{ data = JSON.parse(msg.content); }catch{} }
-    if(!data){ data = extractEmbeddedJson(msg.content); }
-    if(!data){ postId = extractPostIdFromLink(msg.content); }
+  } else if (typeof msg.content === 'string') {
+    if (msg.content.trim().startsWith('{')) {
+      try { data = JSON.parse(msg.content); } catch {}
+    }
+    if (!data) { data = extractEmbeddedJson(msg.content); }
+    if (!data) { postId = extractPostIdFromAny(msg.content); }
   }
 
-  if(data && data.type==='post-card'){
+  if (data && data.type === 'post-card') {
     return buildPostBubble(msg, data);
   }
 
-  if(postId){
+  if (postId) {
     const pid = escapeHtml(postId);
     return `
     <div class="message ${msg.isMine ? 'mine' : ''}">
       <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
       <div class="msg-bubble post-bubble loading" data-postlink="${pid}">
-        <div class="pc-loading">Cargando publicación…</div>
+        <div class="pc-loading">Cargando publicacion…</div>
+      </div>
+    </div>`;
+  }
+
+  // Detectar si el contenido es una URL de imagen
+  const content = String(msg.content || '');
+  const isImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(content.trim());
+  
+  if (isImageUrl) {
+    const imgUrl = content.trim();
+    return `
+    <div class="message ${msg.isMine ? 'mine' : ''}">
+      <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
+      <div>
+        <div class="msg-bubble msg-image">
+          <img src="${escapeHtml(imgUrl)}" alt="Imagen compartida" onerror="this.style.display='none'; this.parentElement.classList.add('error');">
+        </div>
+        <div class="msg-time">${formatTime(msg.createdAt)}</div>
       </div>
     </div>`;
   }
@@ -450,7 +830,7 @@ function buildMessageHTML(msg){
     <div class="message ${msg.isMine ? 'mine' : ''}">
       <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
       <div>
-        <div class="msg-bubble">${escapeHtml(String(msg.content||''))}</div>
+        <div class="msg-bubble">${escapeHtml(content)}</div>
         <div class="msg-time">${formatTime(msg.createdAt)}</div>
       </div>
     </div>`;
@@ -461,26 +841,40 @@ async function upgradeLinkShares(){
   for(const el of els){
     const postId = el.getAttribute('data-postlink');
     const p = await fetchPost(postId);
-    if(!p) { el.innerHTML = '<div class="pc-loading">No se pudo cargar la publicación</div>'; continue; }
+    if(!p){
+      el.innerHTML = '<div class="pc-media-error">No se pudo cargar la publicación</div>';
+      continue;
+    }
 
-    const au = p.author || p.user || {};
-    const nick = (au.nickname || au.nick || '').replace(/^@/,'');
+    const baseAu = p.author || p.user || {};
+    const { id: auId, user: au, nick } = ensureNickAndId(baseAu, p.userId);
+    const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
+    
+    const mediaUrl = bestMediaUrl(p.media || {});
+
     const header = `
       <div class="pc-head">
-        <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}">
+        <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}"
+             onerror="this.src='img/default-avatar.png'"
+             onclick="location.href='${profHref}'">
         <div class="pc-u">
-          <div class="pc-name">${escapeHtml(displayName(au))}</div>
-          <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
+          <div class="pc-name"><a class="user-link" href="${profHref}">${escapeHtml(displayName(au))}</a></div>
+          <div class="pc-nick">${nick ? `<a class="user-link" href="${profHref}">@${escapeHtml(nick)}</a>` : ''}</div>
         </div>
       </div>`;
-    const media = `<div class="pc-media"><img src="${escapeHtml(p.media?.thumb || p.media?.original || '')}" alt=""></div>`;
+
+    const media = `
+      <div class="pc-media">
+        <img src="${escapeHtml(mediaUrl)}" alt=""
+             onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+      </div>`;
+
     const cap = p.caption ? `<div class="pc-cap">${escapeHtml(p.caption)}</div>` : '';
 
     el.innerHTML = `${header}${media}${cap}`;
     el.dataset.mode = 'card';
     el.dataset.postid = p.id || p._id;
-
-    el.dataset.userid = au.id || au._id || (p.userId || '');
+    el.dataset.userid = auId;
     el.dataset.nickname = nick || '';
     el.dataset.authorname = displayName(au);
     el.dataset.avatar = au.avatar || au.image || '';
@@ -488,27 +882,67 @@ async function upgradeLinkShares(){
   attachPostCardHandlers();
 }
 
-function attachPostCardHandlers(){
-  document.querySelectorAll('.post-bubble[data-postid]').forEach(el=>{
-    if(el.__bound) return;
-    el.__bound = true;
-    el.addEventListener('click', async ()=>{
-      const postId = el.getAttribute('data-postid');
-      if(!postId) return;
+async function loadPostCardImages(){
+  const loadingEls = document.querySelectorAll('.pc-loading[data-postid]');
+  console.log('🔍 loadPostCardImages: encontrados', loadingEls.length, 'elementos cargando...');
+  
+  for(const el of loadingEls){
+    const postId = el.getAttribute('data-postid');
+    if(!postId) continue;
+    
+    try {
+      console.log('⏳ Cargando imagen para post:', postId);
       const p = await fetchPost(postId);
-      if(p){
-        const au = {
-          id: el.getAttribute('data-userid') || p.userId,
-          _id: el.getAttribute('data-userid') || p.userId,
-          nickname: (el.getAttribute('data-nickname') || '').replace(/^@/, ''),
-          nick: (el.getAttribute('data-nickname') || '').replace(/^@/, ''),
-          name: el.getAttribute('data-authorname') || '',
-          avatar: el.getAttribute('data-avatar') || ''
-        };
-        p.author = au;
-        openPostModal(p);
+      if(!p || !p.media){
+        console.warn('⚠️ Post sin media:', postId);
+        el.innerHTML = 'No se pudo cargar la imagen';
+        continue;
       }
-    });
+      
+      const mediaUrl = bestMediaUrl(p.media);
+      if(!mediaUrl){
+        console.warn('⚠️ No se pudo obtener URL de media para:', postId);
+        el.innerHTML = 'No se pudo obtener la imagen';
+        continue;
+      }
+      
+      console.log('✅ Renderizando imagen para post:', postId, 'URL:', mediaUrl);
+      
+      // Reemplazar el div de carga con la imagen
+      const pcMedia = el.closest('.pc-media');
+      if(pcMedia){
+        pcMedia.innerHTML = `<img src="${escapeHtml(mediaUrl)}" alt=""
+                                 onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">`;
+      }
+    } catch(e) {
+      console.error('❌ Error cargando imagen para post', postId, ':', e);
+      el.innerHTML = 'Error al cargar';
+    }
+  }
+}
+
+function attachPostCardHandlers(){
+  document.getElementById('chatBody')?.addEventListener('click', async (e)=>{
+    const el = e.target.closest('.post-bubble');
+    if (!el) return;
+
+    const postId = el.dataset.postid || el.getAttribute('data-postlink');
+    if (!postId) return;
+
+    const p = await fetchPost(postId);
+    if (!p) return;
+
+    const au = {
+      id: el.dataset.userid || p.userId,
+      _id: el.dataset.userid || p.userId,
+      nickname: (el.dataset.nickname || '').replace(/^@/, ''),
+      nick: (el.dataset.nickname || '').replace(/^@/, ''),
+      name: el.dataset.authorname || '',
+      avatar: el.dataset.avatar || ''
+    };
+    p.author = { ...p.author, ...au };
+
+    openPostModal(p);
   });
 }
 
@@ -519,6 +953,7 @@ function renderMessages(list){
   body.innerHTML = list.map(buildMessageHTML).join('');
   attachPostCardHandlers();
   upgradeLinkShares();
+  loadPostCardImages(); // Cargar imágenes de post-cards que tengan data-postid
 
   body.scrollTop = body.scrollHeight;
 }
@@ -562,7 +997,6 @@ window.addEventListener('beforeunload', ()=>{ if(pollInterval) clearInterval(pol
 /* ====================== BULK DELETE (MODAL) ====================== */
 function openDeleteModal(){
   if(!delModal) return;
-  // Construir la lista con conversaciones actuales
   if(!conversations.length){
     delList.innerHTML = `<div class="muted" style="padding:8px 4px">No hay conversaciones para borrar.</div>`;
   }else{
@@ -581,21 +1015,18 @@ function openDeleteModal(){
         </label>`;
     }).join('');
   }
-  // contador
   updateDelCount();
-  // listeners
   delList.querySelectorAll('.del-check').forEach(ch=>{
     ch.addEventListener('change', updateDelCount);
   });
-
-  // botones
   delCancel.onclick = closeDeleteModal;
   delConfirm.onclick = confirmDeleteSelected;
-
   delModal.setAttribute('aria-hidden','false');
+  delModal.removeAttribute('inert');
 }
 function closeDeleteModal(){
   delModal?.setAttribute('aria-hidden','true');
+  delModal?.setAttribute('inert', '');
   if(delList) delList.innerHTML = '';
   updateDelCount();
 }
@@ -611,7 +1042,6 @@ async function confirmDeleteSelected(){
 
   delConfirm.disabled = true;
 
-  // intenta varios endpoints comunes
   async function tryDeleteOne(id){
     const candidates = [
       { m:'DELETE', p:`/messages/conversation/${id}` },
@@ -633,10 +1063,8 @@ async function confirmDeleteSelected(){
     if(!ok) okAll = false;
   }
 
-  // Recargar lista pase lo que pase
   await loadConversations();
   if(currentConversation && ids.includes(currentConversation.id)){
-    // si borraste la actual, limpia la vista de chat
     currentConversation = null;
     $('#chatBody')?.replaceChildren();
     $('#chatHead')?.replaceChildren();
@@ -648,3 +1076,106 @@ async function confirmDeleteSelected(){
 
   if(!okAll) alert('Algunas conversaciones no pudieron eliminarse.');
 }
+
+/* ====================== NUEVO MENSAJE (MODAL) ====================== */
+let nmSelectedUserId = null;
+
+function wireNewMessageModal(){
+  const btnOpen   = $('#newMsgBtn');
+  const modal     = $('#newMsgModal');
+  const btnClose  = $('#newMsgClose');
+  const inpSearch = $('#pickSearch');
+  const list      = $('#pickList');
+  const btnChat   = $('#pickChatBtn');
+
+  if (!btnOpen || !modal) return;
+
+  function setVisible(flag){
+    modal.setAttribute('aria-hidden', (!flag) + '');
+    if (flag) {
+      modal.removeAttribute('inert');
+    } else {
+      modal.setAttribute('inert', '');
+    }
+  }
+
+  async function refreshList(q=''){
+    const users = await loadFollowingForNewMsg(q);
+    renderNewMsgList(users);
+  }
+
+  function renderNewMsgList(users){
+    nmSelectedUserId = null;
+    if(!list) return;
+
+    if(!users.length){
+      list.innerHTML = `<div class="muted" style="padding:12px">No se encontraron usuarios</div>`;
+      if (btnChat) btnChat.disabled = true;
+      return;
+    }
+
+    list.innerHTML = users.map(u => `
+      <label class="del-row" style="grid-template-columns:auto 40px 1fr auto">
+        <input type="radio" name="nmUser" value="${escapeHtml(u.id)}">
+        <img src="${resolveAvatar(u)}" class="del-ava" alt="">
+        <div class="del-info">
+          <div class="del-name" title="${escapeHtml(u.name)}">${escapeHtml(u.name)}</div>
+        </div>
+      </label>
+    `).join('');
+
+    list.querySelectorAll('input[name="nmUser"]').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        nmSelectedUserId = r.value;
+        if (btnChat) btnChat.disabled = !nmSelectedUserId;
+      });
+    });
+
+    if (btnChat) btnChat.disabled = true;
+  }
+
+  btnOpen.addEventListener('click', async ()=>{
+    setVisible(true);
+    await refreshList('');
+    if (inpSearch) inpSearch.value = '';
+    nmSelectedUserId = null;
+    if (btnChat) btnChat.disabled = true;
+  });
+
+  btnClose?.addEventListener('click', ()=> setVisible(false));
+  modal?.addEventListener('click', (e)=>{ if (e.target === modal) setVisible(false); });
+
+  inpSearch?.addEventListener('input', async (e)=>{
+    await refreshList(e.target.value || '');
+  });
+
+  btnChat?.addEventListener('click', async ()=>{
+    if(!nmSelectedUserId) return;
+    setVisible(false);
+    await startConversationWithUser(nmSelectedUserId);
+  });
+}
+
+// Delegación: abre el modal al hacer click en cualquier .post-bubble
+document.getElementById('chatBody')?.addEventListener('click', async (e)=>{
+  const el = e.target.closest('.post-bubble');
+  if (!el) return;
+
+  const postId = el.dataset.postid || el.getAttribute('data-postlink');
+  if (!postId) return;
+
+  const p = await fetchPost(postId);
+  if (!p) return;
+
+  const au = {
+    id: el.dataset.userid || p.userId,
+    _id: el.dataset.userid || p.userId,
+    nickname: (el.dataset.nickname || '').replace(/^@/, ''),
+    nick: (el.dataset.nickname || '').replace(/^@/, ''),
+    name: el.dataset.authorname || '',
+    avatar: el.dataset.avatar || ''
+  };
+  p.author = { ...p.author, ...au };
+
+  openPostModal(p);
+});

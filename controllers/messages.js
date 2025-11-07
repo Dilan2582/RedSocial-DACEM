@@ -17,7 +17,7 @@ async function getConversations(req, res) {
     const conversations = await Conversation.find({
       participants: userId
     })
-      .populate('participants', 'nick nickname firstName lastName name image avatar')
+      .populate('participants', 'nick nickname image avatar')
       .populate('lastMessage')
       .sort({ lastMessageAt: -1 })
       .limit(50);
@@ -30,11 +30,7 @@ async function getConversations(req, res) {
         id: conv._id,
         user: {
           id: otherUser._id,
-          nick: otherUser.nick || otherUser.nickname,
           nickname: otherUser.nickname || otherUser.nick,
-          firstName: otherUser.firstName,
-          lastName: otherUser.lastName,
-          name: otherUser.name,
           image: otherUser.image || otherUser.avatar
         },
         lastMessage: conv.lastMessage ? {
@@ -210,18 +206,18 @@ async function sendMessage(req, res) {
       lastMessageAt: message.createdAt
     });
     
-    // Poblar sender para la respuesta
-    await message.populate('senderId', 'nick image');
+    // Poblar remitente para la respuesta
+    await message.populate('senderId', 'nick nickname image avatar');
     
     res.json({
       ok: true,
       message: {
         id: message._id,
         content: message.content,
-        sender: {
+        remitente: {
           id: message.senderId._id,
-          nick: message.senderId.nick,
-          image: message.senderId.image
+          nickname: message.senderId.nickname || message.senderId.nick,
+          image: message.senderId.image || message.senderId.avatar
         },
         isMine: true,
         read: message.read,
@@ -306,7 +302,7 @@ async function deleteConversation(req, res) {
     const { conversationId } = req.params;
     
     if (!conversationId || !Types.ObjectId.isValid(conversationId)) {
-      return res.status(400).json({ ok: false, message: 'conversationId inválido' });
+      return res.status(400).json({ ok: false, message: 'ID de conversación inválido' });
     }
     
     // Verificar que el usuario es parte de la conversación
@@ -315,12 +311,11 @@ async function deleteConversation(req, res) {
       return res.status(404).json({ ok: false, message: 'Conversación no encontrada' });
     }
     
-    const isParticipant = conversation.participants.some(p => p._id.toString() === userId);
-    if (!isParticipant) {
+    if (!conversation.hasParticipant(userId)) {
       return res.status(403).json({ ok: false, message: 'No tienes permiso para eliminar esta conversación' });
     }
     
-    // Eliminar todos los mensajes de esta conversación
+    // Eliminar todos los mensajes de la conversación
     await Message.deleteMany({ conversationId });
     
     // Eliminar la conversación

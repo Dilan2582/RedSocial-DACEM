@@ -21,7 +21,13 @@
     })();
   </script>
   
-  <link rel="stylesheet" href="css/profile.css">
+  <!-- Navegación suave (cargar antes para prevenir FOUC) -->
+  <script src="js/smooth-navigation.js"></script>
+  
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/sidebar.css?v=2">
+  <link rel="stylesheet" href="css/profile.css?v=16">
+  <link rel="stylesheet" href="css/transformations.css">
 </head>
 <body class="profile-page">
   <!-- Topbar -->
@@ -43,30 +49,7 @@
 
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <nav class="nav">
-          <a class="nav-item" href="user.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Inicio
-          </a>
-          <a class="nav-item" href="messages.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mensajes
-            <span class="unread-badge" id="unreadBadge" style="display:none"></span>
-          </a>
-          <a class="nav-item active" href="profile.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mi perfil
-          </a>
-        </nav>
-      </aside>
+      <!-- Sidebar se generará dinámicamente -->
 
       <!-- Main -->
       <main class="main">
@@ -127,22 +110,33 @@
   <!-- Visor post -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
-      <button class="btn ghost small lb-close" id="lbClose">✕</button>
-      <button class="btn danger small lb-delete" id="lbDelete" style="display:none; position:absolute; top:16px; right:60px; z-index:10;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right:4px;">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        </svg>
-        Eliminar
-      </button>
+      <!-- Controles superiores -->
+      <div class="lb-controls">
+        <button class="btn danger small lb-delete" id="lbDelete" style="display:none;" title="Eliminar publicación">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+        <button class="btn ghost small lb-close" id="lbClose" title="Cerrar">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      
       <div class="lb-media"><img id="lbImg" alt=""></div>
       <aside class="lb-side">
         <header class="lb-head">
-          <img id="lbAva" class="lb-ava" alt="">
+          <img id="lbAva" class="lb-ava" alt="" style="cursor:pointer" title="Ver perfil">
           <div style="flex:1">
-            <div id="lbName" style="font-weight:700"></div>
+            <a id="lbName" href="#" style="font-weight:700;color:var(--text);text-decoration:none;display:block"></a>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
+          <button id="lbFaceRecognition" class="btn ghost small" title="Analizar rostro">
+            <i data-lucide="smile"></i>
+          </button>
           <button id="lbMessage" class="btn ghost small" style="display:none" title="Enviar mensaje">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -150,9 +144,27 @@
           </button>
         </header>
         <div class="lb-body" id="lbComments"></div>
+        
+        <div class="lb-actions">
+          <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta">
+            <i data-lucide="heart"></i>
+            <span id="lbLikes">0</span>
+          </button>
+          <button id="lbComment" class="btn-icon" title="Comentar">
+            <i data-lucide="message-circle"></i>
+            <span id="lbCommentsCount">0</span>
+          </button>
+        </div>
+        
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
-          <button id="lbSend" class="btn">Publicar</button>
+          <button id="lbSend" class="btn primary">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            Publicar
+          </button>
         </div>
       </aside>
     </div>
@@ -241,7 +253,7 @@
       </div>
 
       <div class="modal-body" style="max-height:500px; overflow-y:auto;">
-        <div id="commentsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+        <div id="commentsList" style="display:flex; flex-direction:column; gap:6px;"></div>
       </div>
     </div>
   </div>
@@ -314,6 +326,29 @@
     const $  = s => document.querySelector(s);
     const qs = new URLSearchParams(location.search);
     const viewId = qs.get('id');
+
+    /* ====== Helpers para manejo de medios ====== */
+    function pickFirst(...vals){
+      for (const v of vals) if (v && typeof v === 'string' && v.trim()) return v;
+      return null;
+    }
+
+    function resolveMediaSrc(m){
+      if (!m || typeof m !== 'object') return null;
+      return pickFirst(
+        m.thumb, m.t1, m['t1_bw'],
+        m.original, m.url, m.src,
+        m.t2, m.t3, m.t4, m.t5, m.t6, m.t7, m.t8, m.t9, m.t10
+      );
+    }
+
+    function setSrcWithFallback(img, candidates){
+      const list = candidates.filter(Boolean);
+      let i = 0;
+      const tryNext = ()=>{ if (i < list.length) img.src = list[i++]; };
+      img.onerror = tryNext;
+      tryNext();
+    }
 
     let me=null, other=null, isFollowing=false;
 
@@ -390,6 +425,9 @@
         <div class="u-actions">
           <a class="btn ghost small" href="profile.html?id=${u.id}">Ver</a>
           <button class="btn small follow-toggle">${followingNow ? 'Dejar de seguir' : 'Seguir'}</button>
+          ${FOLLOW_STATE.tab === 'followers' && FOLLOW_STATE.userId === me?._id ? 
+            `<button class="btn danger small remove-follower">Eliminar seguidor</button>` : ''
+          }
         </div>`;
       return row;
     }
@@ -435,6 +473,33 @@
             btn.disabled = false;
           }
         };
+
+        // Agregar funcionalidad para eliminar seguidor
+        const removeBtn = row.querySelector('.remove-follower');
+        if (removeBtn) {
+          removeBtn.onclick = async () => {
+            if (!confirm('¿Estás seguro de que deseas eliminar a este seguidor?')) return;
+            
+            removeBtn.disabled = true;
+            try {
+              const r = await fetch(API(`/follow/${u.id}/remove`), { 
+                method: 'POST', 
+                headers: H 
+              });
+              const d = await r.json();
+              if (d.ok) {
+                row.remove();
+                const cntEl = document.getElementById('followersCnt');
+                if (cntEl) cntEl.textContent = Math.max(0, (+cntEl.textContent||1) - 1);
+              }
+            } catch(err) {
+              alert('Error al eliminar seguidor');
+            } finally {
+              removeBtn.disabled = false;
+            }
+          };
+        }
+        
         followList.appendChild(row);
       }
     }
@@ -649,6 +714,7 @@
       managePostsList.innerHTML = '';
       d.posts.forEach(post => {
         const postCard = document.createElement('div');
+        postCard.dataset.postId = post.id || post._id;
         postCard.style.cssText = 'border:1px solid var(--line); border-radius:8px; padding:16px; display:flex; gap:16px;';
         postCard.innerHTML = `
           <img src="${post.media.thumb}" alt="" style="width:120px; height:120px; object-fit:cover; border-radius:8px;">
@@ -718,17 +784,29 @@
 
       commentsList.innerHTML = '';
       
+      console.log('Renderizando comentarios con enlaces clicables...');
+      
       for (const comment of comments){
         const u = await getUserPublic(comment.userId);
-        const display = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'Usuario';
+        const nickname = u?.nickname || u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || 'Usuario';
+        
+        console.log('Comentario de usuario:', nickname, 'ID:', comment.userId);
         
         const commentCard = document.createElement('div');
-        commentCard.style.cssText = 'border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; justify-content:space-between; align-items:start; gap:12px;';
+        commentCard.style.cssText = 'border:1px solid var(--line); border-radius:6px; padding:8px 10px; display:flex; justify-content:space-between; align-items:start; gap:8px; font-size:13px;';
         commentCard.innerHTML = `
-          <div style="flex:1;">
-            <div style="font-weight:600; margin-bottom:4px;">${display}</div>
-            <div style="font-size:14px; color:var(--muted);">${comment.text}</div>
-            <div style="font-size:12px; color:var(--muted); margin-top:4px;">${timeAgo(comment.createdAt)}</div>
+          <div style="flex:1; line-height:1.3;">
+            <div style="font-weight:600; margin-bottom:2px;">
+              <a href="profile.html?id=${encodeURIComponent(comment.userId)}" 
+                 class="user-name-link nm user-link"
+                 style="color:#8b5cf6; text-decoration:none; transition: all 0.2s; cursor: pointer; font-weight:700;"
+                 onmouseover="this.style.color='#a855f7'; this.style.textDecoration='underline';"
+                 onmouseout="this.style.color='#8b5cf6'; this.style.textDecoration='none';">
+                @${nickname}
+              </a>
+            </div>
+            <div style="font-size:13px; color:var(--text);">${comment.text}</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">${timeAgo(comment.createdAt)}</div>
           </div>
           <button class="btn danger small delete-comment-btn" data-comment-id="${comment._id}" data-post-id="${postId}">
             Eliminar
@@ -768,13 +846,153 @@
       }
     }
 
+    // Función para analizar rostros en la publicación
+    async function analyzeFaceInPost(post) {
+      const btn = lbFaceRecognitionBtn;
+      const originalText = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader"></i>';
+      if (window.lucide) lucide.createIcons();
+
+      try {
+        const imageUrl = post.media.t1 || post.media.original || post.media.thumb;
+        
+        const res = await fetch(API('/face-recognition/analyze'), {
+          method: 'POST',
+          headers: { ...H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl })
+        });
+
+        const data = await res.json();
+
+        if (!data.ok) {
+          alert('Error: ' + data.message);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
+        if (data.facesDetected === 0) {
+          alert('No se detectaron rostros en la imagen');
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+          return;
+        }
+
+        // Crear modal con los resultados
+        showFaceAnalysisResults(data.faces);
+
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        if (window.lucide) lucide.createIcons();
+
+      } catch (error) {
+        console.error('Error analizando rostro:', error);
+        alert('Error al analizar la imagen: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    }
+
+    // Función para mostrar resultados del análisis facial
+    function showFaceAnalysisResults(faces) {
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
+        display: flex; align-items: center; justify-content: center; 
+        z-index: 1000; padding: 20px;
+      `;
+
+      let html = `
+        <div style="background: var(--panel); color: var(--text); border-radius: 12px; 
+                    max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; font-size: 24px;">Análisis Facial</h2>
+            <button onclick="this.closest('div').parentElement.remove()" 
+                    style="background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 24px;">
+              ✕
+            </button>
+          </div>
+          
+          <p style="color: var(--muted); margin-bottom: 20px;">
+            Se detectaron <strong>${faces.length}</strong> rostro(s) en la imagen
+          </p>
+      `;
+
+      faces.forEach((face, idx) => {
+        const mainEmotion = face.emotions.length > 0 ? face.emotions[0] : null;
+        
+        html += `
+          <div style="border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <h3 style="margin: 0 0 12px 0; color: var(--primary);">Rostro ${idx + 1}</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div>
+                <strong>Edad estimada:</strong><br>
+                ${face.ageRange ? `${face.ageRange.low} - ${face.ageRange.high} años` : 'No disponible'}
+              </div>
+              <div>
+                <strong>Género:</strong><br>
+                ${face.gender ? `${face.gender.value} (${face.gender.confidence}%)` : 'No disponible'}
+              </div>
+              <div>
+                <strong>Confianza:</strong><br>
+                ${face.confidence}%
+              </div>
+              <div>
+                <strong>Expresión:</strong><br>
+                ${mainEmotion ? `${mainEmotion.type} (${mainEmotion.confidence}%)` : 'No disponible'}
+              </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong>Características detectadas:</strong>
+              <ul style="margin: 8px 0; padding-left: 20px;">
+                ${face.eyeglasses.present ? `<li>Gafas (${face.eyeglasses.confidence}%)</li>` : ''}
+                ${face.sunglasses.present ? `<li>Gafas de sol (${face.sunglasses.confidence}%)</li>` : ''}
+                ${face.beard.present ? `<li>Barba (${face.beard.confidence}%)</li>` : ''}
+                ${face.mustache.present ? `<li>Bigote (${face.mustache.confidence}%)</li>` : ''}
+                ${face.mouthOpen.present ? `<li>Boca abierta (${face.mouthOpen.confidence}%)</li>` : ''}
+                ${!face.eyesOpen.present ? `<li>Ojos cerrados (${face.eyesOpen.confidence}%)</li>` : ''}
+                ${face.smiling.present ? `<li>Sonriendo (${face.smiling.confidence}%)</li>` : ''}
+              </ul>
+            </div>
+
+            ${face.emotions.length > 0 ? `
+              <div>
+                <strong>Emociones detectadas:</strong>
+                <div style="margin-top: 8px;">
+                  ${face.emotions.map(e => `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                      <span>${e.type}</span>
+                      <span style="color: var(--primary); font-weight: 600;">${e.confidence}%</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+
+      modal.innerHTML = html;
+      document.body.appendChild(modal);
+
+      modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+      };
+    }
+
     /* ---------- Grid + modal de post ---------- */
     const grid = document.getElementById('gridIg');
     const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
     const lbName = document.getElementById('lbName'), lbUser = document.getElementById('lbUser');
     const lbBody = document.getElementById('lbComments'), lbInp = document.getElementById('lbInp'), lbSend = document.getElementById('lbSend');
-
+    const lbFaceRecognitionBtn = document.getElementById('lbFaceRecognition');
     const userCache = new Map();
     async function getUserPublic(uId){
       if (userCache.has(uId)) return userCache.get(uId);
@@ -784,6 +1002,13 @@
       const d = await r.json();
       if (d.ok){ userCache.set(uId, d.user); return d.user; }
       return null;
+    }
+    async function getUserCached(id){
+      if (userCache.has(id)) return userCache.get(id);
+      const r = await fetch(API(`/user/${id}/public`), { headers:H });
+      const d = await r.json(); 
+      if (d.ok){ userCache.set(id,d.user); return d.user; }
+      return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
     }
     async function listPostComments(postId){
       const r = await fetch(API(`/posts/${postId}/comments?limit=100`), { headers:H });
@@ -798,10 +1023,10 @@
       lbBody.innerHTML = '';
       list.forEach(c=>{
         const u = authorMap.get(String(c.userId));
-        const nm = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'usuario';
+        const nick = u ? (u.nickname || u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || 'usuario') : 'usuario';
         const row = document.createElement('div');
         row.className = 'lb-cmt';
-        row.innerHTML = `<span class="nm">${nm}</span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
+        row.innerHTML = `<span class="nm-wrap"><a href="profile.html?id=${encodeURIComponent(c.userId)}" class="nm user-link">@${nick}</a></span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
         lbBody.appendChild(row);
       });
       lbBody.scrollTop = lbBody.scrollHeight;
@@ -816,18 +1041,68 @@
       const r = await fetch(url, { headers:H }); const d = await r.json(); grid.innerHTML='';
       if (!d.ok || !d.posts?.length){ grid.innerHTML = '<div class="muted">Aún no hay publicaciones.</div>'; return; }
       d.posts.forEach(p=>{
-        const a=document.createElement('a'); a.href='#'; a.className='ig-item';
-        a.innerHTML=`<img src="${p.media.thumb}" alt="">`;
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'ig-item';
+        
+        const img = document.createElement('img');
+        setSrcWithFallback(img, [
+          p.media?.thumb, p.media?.t1, p.media?.['t1_bw'],
+          p.media?.original, p.media?.url, p.media?.src,
+          p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
+        ]);
+        img.alt = '';
+        
+        a.appendChild(img);
         a.addEventListener('click', ev=>{ ev.preventDefault(); openPostModal(p); });
         grid.appendChild(a);
       });
     }
 
     async function openPostModal(p){
-      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
+      lbImg.style.display = 'block';
+      setSrcWithFallback(lbImg, [
+        resolveMediaSrc(p.media),
+        p.media?.t1, p.media?.thumb, p.media?.original, p.media?.url, p.media?.src,
+        p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
+      ]);
       const u = await getUserPublic(p.userId);
       const display = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'Usuario';
-      lbAva.src  = resolveAvatar(u); lbName.textContent = display; lbUser.textContent = u ? `@${u.nickname || 'usuario'}` : '';
+      lbAva.src  = resolveAvatar(u); 
+      lbName.textContent = display;
+      lbName.href = `profile.html?id=${p.userId}`;
+      lbName.onmouseenter = () => lbName.style.color = 'var(--primary)';
+      lbName.onmouseleave = () => lbName.style.color = 'var(--text)';
+      lbAva.onclick = () => location.href = `profile.html?id=${p.userId}`;
+      lbUser.textContent = u ? `@${u.nickname || u.email?.split('@')[0] || 'usuario'}` : '';
+      
+      // Sincronizar likes y comentarios
+      const lbLike = document.getElementById('lbLike');
+      const lbLikes = document.getElementById('lbLikes');
+      const lbCommentsCount = document.getElementById('lbCommentsCount');
+      const lbComment = document.getElementById('lbComment');
+      
+      lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
+      lbLikes.textContent = p.counts?.likes || 0;
+      lbCommentsCount.textContent = p.counts?.comments || 0;
+      
+      // Funcionalidad de like
+      lbLike.onclick = async ()=>{
+        const pressed = lbLike.getAttribute('aria-pressed') === 'true';
+        lbLike.setAttribute('aria-pressed', (!pressed) + '');
+        const newCount = (+lbLikes.textContent + (pressed ? -1 : 1));
+        lbLikes.textContent = newCount;        try{
+          const r = await fetch(API(`/posts/${p.id}/likes/toggle`), { method:'POST', headers:H });
+          const d = await r.json();
+          if(!d.ok) throw 0;
+        }catch{
+          lbLike.setAttribute('aria-pressed', pressed + '');
+          const revertCount = (+lbLikes.textContent + (pressed ? 1 : -1));
+          lbLikes.textContent = revertCount;
+        }
+      };
+      
+      lbComment.onclick = ()=>{ lbInp.focus(); lbBody.scrollTop = lbBody.scrollHeight; };
       
       // Mostrar botón mensaje si no es tu post
       const lbMessageBtn = document.getElementById('lbMessage');
@@ -851,7 +1126,8 @@
             'Esta acción no se puede deshacer. Se eliminarán todos los likes y comentarios asociados.',
             async () => {
               lbDeleteBtn.disabled = true;
-              lbDeleteBtn.textContent = 'Eliminando...';
+              lbDeleteBtn.innerHTML = '<i data-lucide="loader"></i>';
+              if (window.lucide) lucide.createIcons();
               
               const r = await fetch(API(`/posts/${p.id}`), { method:'DELETE', headers:H });
               const d = await r.json();
@@ -865,11 +1141,10 @@
                 alert(d.message || 'Error al eliminar');
                 lbDeleteBtn.disabled = false;
                 lbDeleteBtn.innerHTML = `
-                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right:4px;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
                     <polyline points="3 6 5 6 21 6"></polyline>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
-                  Eliminar
                 `;
               }
             }
@@ -879,14 +1154,39 @@
         lbDeleteBtn.style.display = 'none';
       }
       
-      const comments = await listPostComments(p.id); const authors = new Map(); if (u) authors.set(String(p.userId), u);
+      const comments = await listPostComments(p.id); 
+      const authors = new Map(); 
+      if (u) authors.set(String(p.userId), u);
+      
+      // Agregar todos los comentaristas al mapa de autores
+      for (const c of comments){
+        if (!authors.has(String(c.userId))){
+          const cu = await getUserCached(c.userId);
+          if (cu) authors.set(String(c.userId), cu);
+        }
+      }
+      
       renderComments(comments, authors);
+      lbCommentsCount.textContent = comments.length;
+      
       lbSend.onclick = async ()=>{
         const t = lbInp.value.trim(); if (!t) return;
         const c = await addPostComment(p.id, t);
-        if (c){ lbInp.value=''; comments.push(c); renderComments(comments, authors); }
+        if (c){ 
+          lbInp.value=''; 
+          comments.push(c); 
+          renderComments(comments, authors); 
+          lbCommentsCount.textContent = comments.length;
+        }
       };
+
+      // Botón reconocimiento facial
+      lbFaceRecognitionBtn.onclick = async ()=> {
+        await analyzeFaceInPost(p);
+      };
+
       lb.setAttribute('aria-hidden','false');
+      if (window.lucide) lucide.createIcons();
     }
     function closePostModal(){ 
       lb.setAttribute('aria-hidden','true'); 
@@ -895,6 +1195,12 @@
       lbBody.innerHTML=''; 
       const lbDeleteBtn = document.getElementById('lbDelete');
       lbDeleteBtn.style.display = 'none';
+      const lbLike = document.getElementById('lbLike');
+      const lbLikes = document.getElementById('lbLikes');
+      const lbCommentsCount = document.getElementById('lbCommentsCount');
+      lbLike.setAttribute('aria-pressed','false');
+      lbLikes.textContent = '0';
+      lbCommentsCount.textContent = '0';
     }
     lbClose.onclick = closePostModal;
     lb.addEventListener('click',(e)=>{ if(e.target===lb) closePostModal(); });
@@ -907,11 +1213,66 @@
       const uid  = (viewId && viewId!==myId) ? viewId : myId;
       await loadProfilePostsIG(uid);
     })();
+
+    // Actualizar badge de notificaciones
+    async function updateNotificationBadge() {
+      try {
+        const res = await fetch(API('/notifications/unread-count'), { headers: H });
+        const data = await res.json();
+        const badge = document.getElementById('notificationsBadge');
+        if (badge) {
+          if (data.ok && data.count > 0) {
+            badge.textContent = data.count > 99 ? '99+' : data.count;
+            badge.style.display = 'inline-flex';
+          } else {
+            badge.style.display = 'none';
+          }
+        }
+      } catch (error) {
+        console.error('Error actualizando badge de notificaciones:', error);
+      }
+    }
+
+    // Actualizar badge cada 30 segundos
+    updateNotificationBadge();
+    setInterval(updateNotificationBadge, 30000);
+
+    // Manejar notificaciones - abrir post si viene del parámetro postId
+    (async function() {
+      const params = new URLSearchParams(window.location.search);
+      const postId = params.get('postId');
+      
+      if (postId) {
+        console.log('Abriendo post desde notificación en profile:', postId);
+        
+        try {
+          // Obtener los datos del post desde la API
+          const res = await fetch(API(`/posts/${postId}`), { headers: H });
+          const data = await res.json();
+          
+          if (data.ok && data.post) {
+            console.log('Post obtenido de la API:', data.post);
+            // Abrir el modal directamente con los datos del post
+            openPostModal(data.post);
+          } else {
+            console.error('No se pudo obtener el post');
+          }
+        } catch (error) {
+          console.error('Error obteniendo post:', error);
+        }
+      }
+    })();
   </script>
+
+  <!-- Sistema de Transformaciones de Imágenes -->
+  <script src="js/transformations.js"></script>
 
   <!-- Footer -->
   <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">
     © 2025 Proyecto Desarrollo Web - Desarrollado por Dilan Escobar y Andrea Chafolla
   </footer>
+
+  <!-- Sidebar unificado -->
+  <script src="js/sidebar.js"></script>
 </body>
 </html>

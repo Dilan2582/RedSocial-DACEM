@@ -1,0 +1,275 @@
+/* ========================================
+   SIDEBAR UNIFICADO - Estilos consistentes para todas las páginas
+   ======================================== */
+
+/* ===== DEGRADADO DE FONDO ===== */
+
+/* Efectos de glow en el fondo (solo modo claro) */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+}
+
+body::before {
+  top: -15%;
+  left: -10%;
+  width: 65vw;
+  height: 55vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, rgba(124, 92, 252, .28) 0%, rgba(124, 92, 252, 0) 65%),
+    radial-gradient(50% 50% at 20% 30%, rgba(168, 85, 247, .18) 0%, rgba(168, 85, 247, 0) 70%);
+}
+
+body::after {
+  right: -10%;
+  top: 10%;
+  width: 55vw;
+  height: 50vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, rgba(34, 211, 238, .18) 0%, rgba(34, 211, 238, 0) 65%),
+    radial-gradient(50% 50% at 70% 30%, rgba(168, 85, 247, .12) 0%, rgba(168, 85, 247, 0) 70%);
+}
+
+/* Ocultar degradados en modo oscuro */
+[data-theme="dark"] body::before,
+[data-theme="dark"] body::after {
+  display: none;
+}
+
+/* ===== FIN DEGRADADO DE FONDO ===== */
+
+/* ===== TRANSICIONES SUAVES ENTRE PÁGINAS ===== */
+
+/* View Transitions API (navegadores modernos) */
+@view-transition {
+  navigation: auto;
+}
+
+/* Transiciones personalizadas para View Transitions API */
+::view-transition-old(root) {
+  animation: fadeOut 0.25s ease;
+}
+
+::view-transition-new(root) {
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Prevenir flash de contenido sin estilo (FOUC) */
+html {
+  background-color: var(--bg);
+}
+
+/* Estado de carga inicial */
+html.page-loading {
+  opacity: 0;
+}
+
+/* Transición suave en el elemento raíz */
+html {
+  transition: opacity 0.25s ease-out;
+  opacity: 1;
+}
+
+/* Estado completamente cargado */
+html.page-loaded {
+  opacity: 1;
+}
+
+/* Transición del body para fallback */
+body {
+  transition: opacity 0.25s ease-out;
+  opacity: 1;
+}
+
+/* Prevenir flash mientras carga */
+html:not(.page-loaded) .main,
+html:not(.page-loaded) .layout {
+  opacity: 0;
+}
+
+/* Animación suave de entrada para el contenido */
+.main, .layout {
+  animation: fadeInUp 0.4s ease-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optimizaciones de rendimiento */
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hardware acceleration para transiciones suaves */
+.nav-item,
+.main,
+.layout {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ===== FIN TRANSICIONES ===== */
+
+/* Contenedor del sidebar */
+.sidebar { 
+  width: 240px; 
+  flex-shrink: 0;
+}
+
+/* Navegación */
+.nav { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; 
+  position: sticky; 
+  top: 80px;
+}
+
+/* Items de navegación */
+.nav-item { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 12px 16px;
+  border-radius: 12px; 
+  text-decoration: none; 
+  color: var(--muted);
+  transition: all .15s ease; 
+  font-weight: 500; 
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.nav-item:hover { 
+  background: rgba(124, 92, 252, .08); 
+  border-color: rgba(124, 92, 252, .15);
+  color: var(--text);
+}
+
+.nav-item.active { 
+  background: rgba(124, 92, 252, .15); 
+  border-color: rgba(124, 92, 252, .35); 
+  color: var(--primary); 
+  font-weight: 600;
+}
+
+/* Iconos de navegación */
+.nav-ico { 
+  width: 24px; 
+  height: 24px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+}
+
+.nav-ico svg { 
+  width: 100%; 
+  height: 100%; 
+  stroke: currentColor; 
+  fill: none; 
+  stroke-width: 2;
+}
+
+.nav-item.active .nav-ico svg { 
+  stroke: var(--primary);
+}
+
+/* Badge de notificaciones y mensajes no leídos */
+.unread-badge,
+.notif-badge {
+  margin-left: auto; 
+  background: #ef4444; 
+  color: #fff; 
+  font-size: 11px; 
+  font-weight: 700;
+  min-width: 20px; 
+  height: 20px; 
+  border-radius: 10px; 
+  display: inline-flex;
+  align-items: center; 
+  justify-content: center; 
+  padding: 0 6px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* Tablets y móviles */
+@media (max-width: 768px) {
+  .sidebar { 
+    width: 100%; 
+    position: sticky; 
+    top: 60px; 
+    background: var(--bg); 
+    z-index: 40; 
+    padding-bottom: 12px;
+  }
+  
+  .nav { 
+    flex-direction: row; 
+    position: static; 
+    overflow-x: auto;
+    gap: 8px;
+  }
+  
+  .nav-item { 
+    flex-shrink: 0;
+    min-width: max-content;
+  }
+}
+
+/* Móviles pequeños */
+@media (max-width: 480px) {
+  .sidebar {
+    top: 52px;
+    padding: 6px 0;
+  }
+  
+  .nav {
+    gap: 4px;
+    padding: 0 8px;
+  }
+  
+  .nav-item {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  
+  .nav-ico {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Para la página de user.html que tiene un layout diferente */
+@media (max-width: 1080px) {
+  .layout.user-layout .sidebar {
+    order: 3;
+  }
+}
