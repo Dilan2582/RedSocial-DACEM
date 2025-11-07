@@ -17,6 +17,36 @@ const safeUser = (u) => ({
   isVerified: !!u.isVerified,
 });
 
+// POST /api/follow/:id/remove-follower
+async function removeFollower(req, res) {
+  try {
+    const me = req.user.id || req.user.sub;
+    const followerId = req.params.id;
+
+    if (!Types.ObjectId.isValid(followerId)) {
+      return res.status(400).json({ ok: false, message: 'ID inválido' });
+    }
+
+    // Encontrar y eliminar la relación de seguimiento
+    const follow = await Follow.findOneAndDelete({
+      user: followerId,
+      followed: me,
+      status: 'accepted'
+    });
+
+    if (!follow) {
+      return res.status(404).json({ ok: false, message: 'Relación de seguimiento no encontrada' });
+    }
+
+    // Devolver éxito
+    res.json({ ok: true, message: 'Seguidor eliminado correctamente' });
+
+  } catch (error) {
+    console.error('Error al eliminar seguidor:', error);
+    res.status(500).json({ ok: false, message: 'Error al eliminar seguidor' });
+  }
+}
+
 // POST /api/follow/:id  (enviar solicitud de seguimiento)
 async function followUser(req, res) {
   try {
@@ -287,4 +317,5 @@ module.exports = {
   acceptFollowRequest,
   rejectFollowRequest,
   getFollowRequests,
+  removeFollower
 };

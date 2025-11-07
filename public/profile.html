@@ -327,6 +327,29 @@
     const qs = new URLSearchParams(location.search);
     const viewId = qs.get('id');
 
+    /* ====== Helpers para manejo de medios ====== */
+    function pickFirst(...vals){
+      for (const v of vals) if (v && typeof v === 'string' && v.trim()) return v;
+      return null;
+    }
+
+    function resolveMediaSrc(m){
+      if (!m || typeof m !== 'object') return null;
+      return pickFirst(
+        m.thumb, m.t1, m['t1_bw'],
+        m.original, m.url, m.src,
+        m.t2, m.t3, m.t4, m.t5, m.t6, m.t7, m.t8, m.t9, m.t10
+      );
+    }
+
+    function setSrcWithFallback(img, candidates){
+      const list = candidates.filter(Boolean);
+      let i = 0;
+      const tryNext = ()=>{ if (i < list.length) img.src = list[i++]; };
+      img.onerror = tryNext;
+      tryNext();
+    }
+
     let me=null, other=null, isFollowing=false;
 
     const displayName = (u)=> u?.name || `${u?.firstName||''} ${u?.lastName||''}`.trim() || (u?.nickname || 'Usuario');
@@ -402,6 +425,9 @@
         <div class="u-actions">
           <a class="btn ghost small" href="profile.html?id=${u.id}">Ver</a>
           <button class="btn small follow-toggle">${followingNow ? 'Dejar de seguir' : 'Seguir'}</button>
+          ${FOLLOW_STATE.tab === 'followers' && FOLLOW_STATE.userId === me?._id ? 
+            `<button class="btn danger small remove-follower">Eliminar seguidor</button>` : ''
+          }
         </div>`;
       return row;
     }
@@ -447,6 +473,33 @@
             btn.disabled = false;
           }
         };
+
+        // Agregar funcionalidad para eliminar seguidor
+        const removeBtn = row.querySelector('.remove-follower');
+        if (removeBtn) {
+          removeBtn.onclick = async () => {
+            if (!confirm('¿Estás seguro de que deseas eliminar a este seguidor?')) return;
+            
+            removeBtn.disabled = true;
+            try {
+              const r = await fetch(API(`/follow/${u.id}/remove`), { 
+                method: 'POST', 
+                headers: H 
+              });
+              const d = await r.json();
+              if (d.ok) {
+                row.remove();
+                const cntEl = document.getElementById('followersCnt');
+                if (cntEl) cntEl.textContent = Math.max(0, (+cntEl.textContent||1) - 1);
+              }
+            } catch(err) {
+              alert('Error al eliminar seguidor');
+            } finally {
+              removeBtn.disabled = false;
+            }
+          };
+        }
+        
         followList.appendChild(row);
       }
     }
@@ -988,15 +1041,31 @@
       const r = await fetch(url, { headers:H }); const d = await r.json(); grid.innerHTML='';
       if (!d.ok || !d.posts?.length){ grid.innerHTML = '<div class="muted">Aún no hay publicaciones.</div>'; return; }
       d.posts.forEach(p=>{
-        const a=document.createElement('a'); a.href='#'; a.className='ig-item';
-        a.innerHTML=`<img src="${p.media.thumb}" alt="">`;
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'ig-item';
+        
+        const img = document.createElement('img');
+        setSrcWithFallback(img, [
+          p.media?.thumb, p.media?.t1, p.media?.['t1_bw'],
+          p.media?.original, p.media?.url, p.media?.src,
+          p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
+        ]);
+        img.alt = '';
+        
+        a.appendChild(img);
         a.addEventListener('click', ev=>{ ev.preventDefault(); openPostModal(p); });
         grid.appendChild(a);
       });
     }
 
     async function openPostModal(p){
-      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
+      lbImg.style.display = 'block';
+      setSrcWithFallback(lbImg, [
+        resolveMediaSrc(p.media),
+        p.media?.t1, p.media?.thumb, p.media?.original, p.media?.url, p.media?.src,
+        p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
+      ]);
       const u = await getUserPublic(p.userId);
       const display = u ? (u.name || `${u.firstName||''} ${u.lastName||''}`.trim() || u.nickname) : 'Usuario';
       lbAva.src  = resolveAvatar(u); 

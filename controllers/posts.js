@@ -334,7 +334,9 @@ async function getPostById(req, res) {
     if (!post) return res.status(404).json({ ok: false, message: 'No encontrado' });
 
     const includeVariants = req.query.variants === '1';
+    console.log(`📍 getPostById(${id}): includeVariants=${includeVariants}, query=`, req.query);
     const data = serializePost(post, { includeVariants });
+    console.log(`✅ Serialized media:`, data.media);
 
     // viewerLiked si hay auth
     if (req.user?.id) {
@@ -473,13 +475,22 @@ function serializePost(post, opts = {}) {
     thumb:    base(post.media.keyThumb),
     width: post.media.width,
     height: post.media.height,
-    mime: post.media.mime
+    mime: post.media.mime,
+    selectedFilter: post.media.selectedFilter || 'original',
+    variants: {}
   };
+  
   if (include) {
-    if (variants.t1) media.t1 = base(variants.t1);  // Blanco y Negro
-    if (variants.t2) media.t2 = base(variants.t2);  // Sepia
-    if (variants.t3) media.t3 = base(variants.t3);  // Blur
-    if (variants.t4) media.t4 = base(variants.t4);  // Ampliación
+    if (variants.t1) media.variants.t1_bw = base(variants.t1);           // Blanco y Negro
+    if (variants.t2) media.variants.t2_sepia = base(variants.t2);  // Sepia
+    if (variants.t3) media.variants.t3_blur = base(variants.t3);     // Blur
+    if (variants.t4) media.variants.t4_upscale = base(variants.t4); // Ampliación
+    if (variants.t5) media.variants.t5_bright = base(variants.t5);   // Brillante
+    if (variants.t6) media.variants.t6_dark = base(variants.t6);       // Oscuro
+    if (variants.t7) media.variants.t7_vibrant = base(variants.t7); // Vibrante
+    if (variants.t8) media.variants.t8_warm = base(variants.t8);       // Cálido
+    if (variants.t9) media.variants.t9_cool = base(variants.t9);       // Frío
+    if (variants.t10) media.variants.t10_invert = base(variants.t10); // Invertido
   }
 
   return {

@@ -26,11 +26,74 @@ function goToProfile(u){
 function resolveAvatar(u){
   if(!u) return 'img/default-avatar.png';
   const img = u.image || u.avatar;
-  if (img){ if(img.startsWith('http')) return img; return `${location.origin}${img.startsWith('/')?img:'/'+img}`; }
+  if (img){ 
+    if(img.startsWith('http')) return img; 
+    return `${location.origin}${img.startsWith('/') ? img : '/' + img}`; 
+  }
   const seed = encodeURIComponent(u.nick || u.nickname || u.name || 'U');
   return `https://api.dicebear.com/8.x/initials/svg?seed=${seed}&radius=50&scale=110&fontWeight=700`;
 }
 function escapeHtml(t=''){ const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+function absUrl(u){
+  if(!u) return '';
+  const s = String(u);
+  // deja pasar http/https, data:, blob:
+  if (/^(https?:|data:|blob:)/i.test(s)) return s;
+  // normaliza duplicados de /
+  const join = (a,b)=> a.replace(/\/+$/,'') + '/' + b.replace(/^\/+/,'');
+  return join(location.origin, s);
+}
+
+function previewCandidates(media){
+  // Acepta tanto objeto como string plano
+  if(!media) return [];
+  if (typeof media === 'string') return [absUrl(media)];
+
+  console.log('🔍 previewCandidates input:', media);
+  
+  const v = media.variants || {};
+  const sel = media.selectedFilter && (v[media.selectedFilter] || media[media.selectedFilter]);
+
+  const list = [
+    sel,
+    v.preview, v.small, v.medium, v.large, v.final, v.output,
+    media.filtered,        // si tu backend guarda una url ya filtrada
+    media.url,             // url genérica
+    media.t1,              // miniatura
+    media.thumb,
+    media.original
+  ].filter(Boolean).map(absUrl);
+
+  console.log('✅ previewCandidates output:', list);
+  // dedup
+  return [...new Set(list)];
+}
+
+function imgWithFallback(media){
+  const cand = previewCandidates(media);
+  if(!cand.length){
+    return `<div class="pc-media-error">No se pudo cargar la imagen</div>`;
+  }
+  const [first, ...rest] = cand;
+  const fb = rest.join('|').replace(/"/g,'&quot;');
+
+  // Un solo mensaje de error, sin duplicados
+  return `
+    <img class="pc-img" src="${first}" alt=""
+         loading="lazy" decoding="async"
+         data-fallbacks="${fb}"
+         onerror="
+           const q=this.dataset.fallbacks||'';
+           if(q){
+             const a=q.split('|'); const nx=a.shift();
+             this.dataset.fallbacks=a.join('|');
+             if(nx){ this.src=nx; return; }
+           }
+           this.outerHTML='<div class=&quot;pc-media-error&quot;>No se pudo cargar la imagen</div>';
+         ">
+  `;
+}
 
 function formatTime(ts){
   if(!ts) return ''; const d=new Date(ts); const diff=Date.now()-d;
@@ -199,8 +262,13 @@ async function refreshCounts(postId){
 
 let currentPost = null;
 async function fetchPost(postId){
-  const r = await fetch(`${API_BASE}/posts/${postId}`, { headers:{ Authorization:authToken }});
-  const d = await r.json(); return d.ok ? d.post : null;
+  const r = await fetch(`${API_BASE}/posts/${postId}?variants=1`, { headers:{ Authorization:authToken }});
+  const d = await r.json(); 
+  if(d.ok){
+    console.log('📦 fetchPost response:', d.post);
+    console.log('📷 Media object:', d.post?.media);
+  }
+  return d.ok ? d.post : null;
 }
 async function listPostComments(postId){
   const r=await fetch(`${API_BASE}/posts/${postId}/comments?limit=100`,{headers:{Authorization:authToken}});
@@ -223,20 +291,78 @@ function renderCommentRow(c){
   return `<span class="nm-wrap">${nmLink}</span>${escapeHtml(c.text)}<span class="dt">${formatTime(c.createdAt)}</span>`;
 }
 
+function bestMediaUrl(media){
+  if(!media) {
+    console.warn('❌ bestMediaUrl: media is empty');
+    return '';
+  }
+  
+  console.log('🎯 bestMediaUrl input:', JSON.stringify(media));
+  
+  // Si original es una URL válida, usarla directamente
+  if(media.original && typeof media.original === 'string') {
+    console.log('✅ Using original:', media.original);
+    return media.original;
+  }
+  
+  // Si thumb es una URL válida, usarlo
+  if(media.thumb && typeof media.thumb === 'string') {
+    console.log('✅ Using thumb:', media.thumb);
+    return media.thumb;
+  }
+  
+  // Intentar variantes
+  const v = media.variants || {};
+  const sf = media.selectedFilter && (v[media.selectedFilter] || media[media.selectedFilter]);
+
+  const list = [
+    sf,
+    v.preview, v.small, v.medium, v.large, v.final,
+    v.t1_bw, v.t2_sepia, v.t3_blur, v.t4_upscale, v.t5_bright,
+    v.t6_dark, v.t7_vibrant, v.t8_warm, v.t9_cool, v.t10_invert,
+    media.filtered, media.url,
+  ].filter(Boolean);
+
+  if(list.length) {
+    console.log('✅ Using variant:', list[0]);
+    return list[0];
+  }
+  
+  console.warn('⚠️ bestMediaUrl: No valid URL found');
+  return '';
+}
+
+function ensureNickAndId(u = {}, fallbackId = '') {
+  const id = u.id || u._id || u.userId || fallbackId || '';
+  let nu = normalizeUser({ ...u, id });
+  let nick = getNick(nu);
+
+  // Si aún no hay nick, intenta cache o fallback determinista
+  if (!nick && id) {
+    const cached = __userPublicCache.get(id);
+    if (cached) nu = normalizeUser({ ...nu, ...cached });
+    if (!getNick(nu)) {
+      const fb = buildNickFallback(nu, id);
+      nu.nickname = fb; nu.nick = fb;
+      handleCache.set(id, fb);
+    }
+    nick = getNick(nu);
+  }
+  return { id, user: nu, nick };
+}
+
 async function openPostModal(p){
   if(!p) return;
   currentPost = p;
 
-  lbImg.src = p.media?.t1 || p.media?.original || p.media?.thumb || '';
-  const au = p.author || p.user || {};
-  lbAva.src = resolveAvatar(au);
-
-  const nm      = displayName(au);
-  const pid     = au.id || au._id || p.userId || '';
-  const rawNick = getNick(au);
+  lbImg.src = bestMediaUrl(p.media) || '';
+  
+  const baseAu = p.author || p.user || {};
+  const { id: pid, user: au, nick: rawNick } = ensureNickAndId(baseAu, p.userId);
   const profHref = pid ? `profile.html?id=${encodeURIComponent(pid)}` : '#';
 
-  lbName.innerHTML = `<a href="${profHref}" class="lb-author">${escapeHtml(nm)}</a>`;
+  lbAva.src = resolveAvatar(au);
+  lbName.innerHTML = `<a href="${profHref}" class="lb-author">${escapeHtml(displayName(au))}</a>`;
   lbUser.innerHTML = rawNick ? `<a href="${profHref}" class="lb-author muted">@${escapeHtml(rawNick)}</a>` : '';
   lbAva.onclick = () => goToProfile({ id: pid });
 
@@ -585,22 +711,34 @@ async function loadMessages(conversationId, polling=false){
 }
 
 function buildPostBubble(msg, data){
-  const authorName = data.name || data.author || '';
-  const nick = (data.nickname || '').replace(/^@/,'');
-  const ava = data.avatar || '';
-  const thumb = data.mediaThumb || '';
-  const caption = data.caption || '';
+  const { id: auId, user: auUser, nick } = ensureNickAndId(
+    { id: data.userId, name: data.name, nickname: data.nickname, avatar: data.avatar },
+    data.userId
+  );
+  const authorName = displayName(auUser);
+  const ava = resolveAvatar(auUser);
+  const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
+  
+  const mediaUrl = bestMediaUrl(data.media || {});
 
   const header = `
     <div class="pc-head">
-      <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}">
+      <img src="${escapeHtml(ava)}" class="pc-ava" alt="${escapeHtml(authorName)}"
+           onerror="this.src='img/default-avatar.png'"
+           onclick="location.href='${profHref}'">
       <div class="pc-u">
-        <div class="pc-name">${escapeHtml(authorName)}</div>
-        <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
+        <div class="pc-name"><a href="${profHref}" class="user-link">${escapeHtml(authorName)}</a></div>
+        <div class="pc-nick">${nick ? `<a href="${profHref}" class="user-link">@${escapeHtml(nick)}</a>` : ''}</div>
       </div>
     </div>`;
-  const media = `<div class="pc-media"><img src="${escapeHtml(thumb)}" alt=""></div>`;
-  const cap = caption ? `<div class="pc-cap">${escapeHtml(caption)}</div>` : '';
+
+  const media = `
+    <div class="pc-media">
+      <img src="${escapeHtml(mediaUrl)}" alt=""
+           onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+    </div>`;
+
+  const caption = data.caption ? `<div class="pc-cap">${escapeHtml(data.caption)}</div>` : '';
 
   return `
   <div class="message ${msg.isMine ? 'mine' : ''}">
@@ -608,11 +746,11 @@ function buildPostBubble(msg, data){
     <div class="msg-bubble post-bubble"
          data-postid="${escapeHtml(data.postId||'')}"
          data-mode="card"
-         data-userid="${escapeHtml(data.userId||'')}"
-         data-nickname="${escapeHtml(nick)}"
+         data-userid="${escapeHtml(auId||'')}"
+         data-nickname="${escapeHtml(nick||'')}"
          data-authorname="${escapeHtml(authorName)}"
          data-avatar="${escapeHtml(ava)}">
-      ${header}${media}${cap}
+      ${header}${media}${caption}
     </div>
   </div>`;
 }
@@ -640,7 +778,25 @@ function buildMessageHTML(msg){
     <div class="message ${msg.isMine ? 'mine' : ''}">
       <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
       <div class="msg-bubble post-bubble loading" data-postlink="${pid}">
-        <div class="pc-loading">Cargando publicación…</div>
+        <div class="pc-loading">Cargando publicacion…</div>
+      </div>
+    </div>`;
+  }
+
+  // Detectar si el contenido es una URL de imagen
+  const content = String(msg.content || '');
+  const isImageUrl = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i.test(content.trim());
+  
+  if (isImageUrl) {
+    const imgUrl = content.trim();
+    return `
+    <div class="message ${msg.isMine ? 'mine' : ''}">
+      <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
+      <div>
+        <div class="msg-bubble msg-image">
+          <img src="${escapeHtml(imgUrl)}" alt="Imagen compartida" onerror="this.style.display='none'; this.parentElement.classList.add('error');">
+        </div>
+        <div class="msg-time">${formatTime(msg.createdAt)}</div>
       </div>
     </div>`;
   }
@@ -649,7 +805,7 @@ function buildMessageHTML(msg){
     <div class="message ${msg.isMine ? 'mine' : ''}">
       <img src="${resolveAvatar(msg.sender)}" class="msg-avatar" alt="${escapeHtml(displayName(msg.sender))}">
       <div>
-        <div class="msg-bubble">${escapeHtml(String(msg.content||''))}</div>
+        <div class="msg-bubble">${escapeHtml(content)}</div>
         <div class="msg-time">${formatTime(msg.createdAt)}</div>
       </div>
     </div>`;
@@ -660,26 +816,40 @@ async function upgradeLinkShares(){
   for(const el of els){
     const postId = el.getAttribute('data-postlink');
     const p = await fetchPost(postId);
-    if(!p) { el.innerHTML = '<div class="pc-loading">No se pudo cargar la publicación</div>'; continue; }
+    if(!p){
+      el.innerHTML = '<div class="pc-media-error">No se pudo cargar la publicación</div>';
+      continue;
+    }
 
-    const au = p.author || p.user || {};
-    const nick = getNick(au);
+    const baseAu = p.author || p.user || {};
+    const { id: auId, user: au, nick } = ensureNickAndId(baseAu, p.userId);
+    const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
+    
+    const mediaUrl = bestMediaUrl(p.media || {});
+
     const header = `
       <div class="pc-head">
-        <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}">
+        <img src="${resolveAvatar(au)}" class="pc-ava" alt="${escapeHtml(displayName(au))}"
+             onerror="this.src='img/default-avatar.png'"
+             onclick="location.href='${profHref}'">
         <div class="pc-u">
-          <div class="pc-name">${escapeHtml(displayName(au))}</div>
-          <div class="pc-nick">${nick ? '@'+escapeHtml(nick) : ''}</div>
+          <div class="pc-name"><a class="user-link" href="${profHref}">${escapeHtml(displayName(au))}</a></div>
+          <div class="pc-nick">${nick ? `<a class="user-link" href="${profHref}">@${escapeHtml(nick)}</a>` : ''}</div>
         </div>
       </div>`;
-    const media = `<div class="pc-media"><img src="${escapeHtml(p.media?.thumb || p.media?.original || '')}" alt=""></div>`;
+
+    const media = `
+      <div class="pc-media">
+        <img src="${escapeHtml(mediaUrl)}" alt=""
+             onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+      </div>`;
+
     const cap = p.caption ? `<div class="pc-cap">${escapeHtml(p.caption)}</div>` : '';
 
     el.innerHTML = `${header}${media}${cap}`;
     el.dataset.mode = 'card';
     el.dataset.postid = p.id || p._id;
-
-    el.dataset.userid = au.id || au._id || (p.userId || '');
+    el.dataset.userid = auId;
     el.dataset.nickname = nick || '';
     el.dataset.authorname = displayName(au);
     el.dataset.avatar = au.avatar || au.image || '';
