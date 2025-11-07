@@ -17,7 +17,7 @@ async function getConversations(req, res) {
     const conversations = await Conversation.find({
       participants: userId
     })
-      .populate('participants', 'nick nickname firstName lastName name image avatar')
+      .populate('participants', 'nick nickname image avatar')
       .populate('lastMessage')
       .sort({ lastMessageAt: -1 })
       .limit(50);
@@ -30,11 +30,7 @@ async function getConversations(req, res) {
         id: conv._id,
         user: {
           id: otherUser._id,
-          nick: otherUser.nick || otherUser.nickname,
           nickname: otherUser.nickname || otherUser.nick,
-          firstName: otherUser.firstName,
-          lastName: otherUser.lastName,
-          name: otherUser.name,
           image: otherUser.image || otherUser.avatar
         },
         lastMessage: conv.lastMessage ? {
@@ -210,18 +206,18 @@ async function sendMessage(req, res) {
       lastMessageAt: message.createdAt
     });
     
-    // Poblar sender para la respuesta
-    await message.populate('senderId', 'nick image');
+    // Poblar remitente para la respuesta
+    await message.populate('senderId', 'nick nickname image avatar');
     
     res.json({
       ok: true,
       message: {
         id: message._id,
         content: message.content,
-        sender: {
+        remitente: {
           id: message.senderId._id,
-          nick: message.senderId.nick,
-          image: message.senderId.image
+          nickname: message.senderId.nickname || message.senderId.nick,
+          image: message.senderId.image || message.senderId.avatar
         },
         isMine: true,
         read: message.read,
