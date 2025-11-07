@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js",
-    "migrate:users": "node scripts/migrate_users.js"
+    "start": "node index.js",
+    "migrate:users": "node scripts/migrate_users.js",
+    "dev": "nodemon index.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "author": "Dilan Escobar",
   "license": "ISC",
