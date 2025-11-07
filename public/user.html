@@ -11,11 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="css/header.css">
-  <link rel="stylesheet" href="css/sidebar.css">
-  <link rel="stylesheet" href="css/user.css?v=10">
+  <link rel="stylesheet" href="css/user.css">
   <link rel="stylesheet" href="css/transformations.css">
-  <link rel="stylesheet" href="css/composer-filters.css">
 
   <!-- Iconos Lucide -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -28,9 +25,6 @@
       document.documentElement.setAttribute('data-theme', saved);
     })();
   </script>
-
-  <!-- Navegación suave (cargar antes para prevenir FOUC) -->
-  <script src="js/smooth-navigation.js"></script>
 
   <!-- Mejora visual solo para el modal Compartir (coincide con tu estética) -->
   <style>
@@ -112,7 +106,21 @@
 
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar se generará dinámicamente -->
+      <!-- Sidebar -->
+      <aside class="sidebar card">
+        <nav class="nav">
+          <a class="nav-item active" href="user.html">
+            <i class="nav-ico" data-lucide="home"></i> Inicio
+          </a>
+          <a class="nav-item" href="messages.html">
+            <i class="nav-ico" data-lucide="message-circle"></i> Mensajes
+            <span class="unread-badge" id="unreadBadge" style="display:none"></span>
+          </a>
+          <a class="nav-item" href="profile.html">
+            <i class="nav-ico" data-lucide="user-2"></i> Mi perfil
+          </a>
+        </nav>
+      </aside>
 
       <!-- Centro -->
       <main class="main">
@@ -123,29 +131,16 @@
           </div>
 
           <div id="cmpPreview" class="cmp-preview" style="display:none">
-            <div class="cmp-preview-main">
-              <img id="cmpPreviewImg" alt="preview" class="cmp-preview-img">
-              <div class="cmp-filter-badge" id="cmpFilterBadge">🎞️ Original</div>
-            </div>
-            <button id="cmpRemoveImg" class="btn ghost small cmp-remove-btn">
+            <img id="cmpPreviewImg" alt="preview">
+            <button id="cmpRemoveImg" class="btn ghost small">
               <i class="nav-ico" data-lucide="x"></i> Quitar
             </button>
           </div>
 
-          <!-- Filtros de imagen -->
-          <div class="cmp-filters-container" id="cmpFiltersContainer">
-            <div class="cmp-filters-label">
-              👇 Selecciona un filtro para publicar
-            </div>
-            <div class="cmp-filters-scroll" id="cmpFiltersScroll">
-              <!-- Los botones se generan dinámicamente -->
-            </div>
-          </div>
-
           <div class="cmp-tools">
-            <input id="cmpFile" type="file" accept="image/*,video/mp4,video/quicktime,video/x-msvideo" hidden>
+            <input id="cmpFile" type="file" accept="image/*" hidden>
             <button id="cmpPick" class="btn ghost small">
-              <i class="nav-ico" data-lucide="image"></i> Imagen/Video
+              <i class="nav-ico" data-lucide="image"></i> Imagen
             </button>
             <div class="spacer"></div>
             <button id="cmpPost" class="btn primary">
@@ -173,7 +168,7 @@
   </div>
 
   <!-- Lightbox (ver publicación) -->
-  <div class="lightbox" id="lightbox" aria-hidden="true" inert>
+  <div class="lightbox" id="lightbox" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Publicación">
       <button class="btn ghost small lb-close" id="lbClose">
         <i class="nav-ico" data-lucide="x"></i>
@@ -181,14 +176,18 @@
       <div class="lb-media"><img id="lbImg" alt=""></div>
       <aside class="lb-side">
         <header class="lb-head">
-          <img id="lbAva" class="lb-ava" alt="" style="cursor:pointer" title="Ver perfil">
+          <img id="lbAva" class="lb-ava" alt="">
           <div style="flex:1">
-            <a id="lbName" href="#" style="font-weight:700;color:var(--text);text-decoration:none;display:block"></a>
+            <div id="lbName" style="font-weight:700"></div>
             <div id="lbUser" class="muted" style="font-size:12px"></div>
           </div>
-          <!-- botón reconocimiento facial -->
-          <button id="lbFaceRecognition" class="btn ghost small" title="Analizar rostro">
-            <i data-lucide="smile"></i>
+          <!-- botón análisis facial -->
+          <button id="lbFaceAnalysis" class="btn ghost small" style="display:none" title="Análisis Facial">
+            <span style="font-size:18px;">😊</span>
+          </button>
+          <!-- botón transformaciones -->
+          <button id="lbTransformations" class="btn ghost small" style="display:none" title="Ver transformaciones">
+            <i data-lucide="sparkles"></i>
           </button>
           <!-- botón compartir dentro del modal -->
           <button id="lbShare" class="btn ghost small" title="Compartir">
@@ -200,30 +199,26 @@
         <div class="lb-actions">
           <button id="lbLike" class="btn-icon" aria-pressed="false" title="Me gusta">
             <i data-lucide="heart"></i>
-            <span id="lbLikes">0</span>
           </button>
           <button id="lbComment" class="btn-icon" title="Comentar">
             <i data-lucide="message-circle"></i>
-            <span id="lbCommentsCount">0</span>
           </button>
+          <div class="spacer"></div>
+          <div class="post-counts">
+            <span id="lbLikes">0</span> · <span id="lbCommentsCount">0</span>
+          </div>
         </div>
 
         <div class="lb-input">
           <input id="lbInp" placeholder="Añade un comentario…">
-          <button id="lbSend" class="btn primary">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-            Publicar
-          </button>
+          <button id="lbSend" class="btn"><i class="nav-ico" data-lucide="send"></i></button>
         </div>
       </aside>
     </div>
   </div>
 
   <!-- Modal Compartir publicación -->
-  <div class="lightbox" id="shareModal" aria-hidden="true" inert>
+  <div class="lightbox" id="shareModal" aria-hidden="true">
     <div class="lb-content" role="dialog" aria-modal="true" aria-label="Compartir" style="grid-template-columns: min(90vw,560px); max-width:560px">
       <div class="lb-side" style="display:flex;flex-direction:column">
         <header class="lb-head" style="gap:8px">
@@ -244,6 +239,19 @@
           <button id="shareSend" class="btn primary" disabled>Enviar</button>
           <div id="shareInfo" class="muted" style="font-size:12px"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Análisis Facial -->
+  <div id="faceAnalysisModal" class="backdrop" style="z-index:10000">
+    <div class="modal" style="max-width:600px; max-height:90vh; overflow-y:auto">
+      <div class="modal-head" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; padding:20px">
+        <h3 style="margin:0; font-size:20px">🔍 Análisis Facial</h3>
+        <button class="btn ghost small" id="closeFaceAnalysis" style="color:white; border-color:rgba(255,255,255,0.3)">&times;</button>
+      </div>
+      <div class="modal-body" id="faceAnalysisContent" style="padding:20px">
+        <div class="muted" style="text-align:center">Cargando análisis...</div>
       </div>
     </div>
   </div>
@@ -370,79 +378,24 @@
     cmp.pick.onclick = ()=> cmp.fileEl.click();
     cmp.fileEl.onchange = e=>{
       const f = e.target.files?.[0];
-      if(!f){ 
-        selectedFile=null; 
-        cmp.imgBox.style.display='none';
-        // Limpiar filtros
-        if (window.composerFilters) {
-          window.composerFilters.clearFilters();
-        }
-        return; 
-      }
-      selectedFile = f; 
-      const url = URL.createObjectURL(f);
-      cmp.img.src = url;
-      cmp.imgBox.style.display='flex';
-      
-      // Generar previews de filtros
-      if (window.composerFilters && f.type.startsWith('image/')) {
-        window.composerFilters.setImage(url);
-      }
+      if(!f){ selectedFile=null; cmp.imgBox.style.display='none'; return; }
+      selectedFile = f; cmp.img.src = URL.createObjectURL(f); cmp.imgBox.style.display='flex';
     };
-    cmp.rm.onclick = ()=>{ 
-      selectedFile=null; 
-      cmp.fileEl.value=''; 
-      cmp.imgBox.style.display='none'; 
-      cmp.img.removeAttribute('src');
-      // Limpiar filtros
-      if (window.composerFilters) {
-        window.composerFilters.clearFilters();
-      }
-    };
+    cmp.rm.onclick = ()=>{ selectedFile=null; cmp.fileEl.value=''; cmp.imgBox.style.display='none'; cmp.img.removeAttribute('src'); };
 
     async function publish(){
       cmp.post.disabled = true; cmp.msg.textContent = 'Publicando...';
       try{
         const fd = new FormData();
-        
-        // Obtener información del filtro seleccionado
-        if (selectedFile) {
-          // Si hay filtros activados, usar el filtro seleccionado
-          if (window.composerFilters && window.composerFilters.currentImage) {
-            const filterInfo = window.composerFilters.getCurrentFilterInfo();
-            const selectedImage = window.composerFilters.getSelectedImage();
-            
-            // Convertir dataURL a Blob
-            const response = await fetch(selectedImage.dataUrl);
-            const blob = await response.blob();
-            
-            fd.append('image', blob, 'image.jpg');
-            fd.append('filter', filterInfo.filterType); // Enviar tipo de filtro al backend
-            
-            console.log('📤 Publicando con filtro:', filterInfo.label);
-          } else {
-            fd.append('image', selectedFile);
-            fd.append('filter', 'original');
-          }
-        }
-        
+        if (selectedFile) fd.append('image', selectedFile);
         if (cmp.txt.value.trim()) fd.append('caption', cmp.txt.value.trim());
         const r = await fetch(API('/posts'), { method:'POST', headers:H, body:fd });
         const d = await r.json();
         if(!d.ok) throw new Error(d.message||'Error');
         prependPost(d.post);
-        
-        // Limpiar filtros
-        if (window.composerFilters) {
-          window.composerFilters.clearFilters();
-        }
-        
         cmp.msg.textContent = '¡Publicado!'; cmp.txt.value=''; cmp.rm.click();
         setTimeout(()=>cmp.msg.textContent='', 1200);
-      }catch(err){ 
-        console.error('Error publicando:', err);
-        cmp.msg.textContent = 'No se pudo publicar'; 
-      }
+      }catch{ cmp.msg.textContent = 'No se pudo publicar'; }
       finally{ cmp.post.disabled=false; }
     }
     cmp.post.onclick = publish;
@@ -461,169 +414,6 @@
       return { nickname:'usuario', firstName:'', lastName:'', avatar:null };
     }
 
-    // Función para analizar rostros en la publicación
-    async function analyzeFaceInPost(post) {
-      const btn = lbFaceRecognitionBtn;
-      const originalText = btn.innerHTML;
-      
-      btn.disabled = true;
-      btn.innerHTML = '<i data-lucide="loader"></i>';
-      if (window.lucide) lucide.createIcons();
-
-      try {
-        const imageUrl = post.media.t1 || post.media.original || post.media.thumb;
-        
-        const res = await fetch(API('/face-recognition/analyze'), {
-          method: 'POST',
-          headers: { ...H, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl })
-        });
-
-        const data = await res.json();
-
-        if (!data.ok) {
-          alert('Error: ' + data.message);
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-          return;
-        }
-
-        if (data.facesDetected === 0) {
-          alert('No se detectaron rostros en la imagen');
-          btn.disabled = false;
-          btn.innerHTML = originalText;
-          return;
-        }
-
-        // Crear modal con los resultados
-        showFaceAnalysisResults(data.faces);
-
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        if (window.lucide) lucide.createIcons();
-
-      } catch (error) {
-        console.error('Error analizando rostro:', error);
-        alert('Error al analizar la imagen: ' + error.message);
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-      }
-    }
-
-    // Función para mostrar resultados del análisis facial
-    function showFaceAnalysisResults(faces) {
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed; inset: 0; background: rgba(0,0,0,0.8); 
-        display: flex; align-items: center; justify-content: center; 
-        z-index: 1000; padding: 20px;
-      `;
-
-      let html = `
-        <div style="background: var(--panel); color: var(--text); border-radius: 12px; 
-                    max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; padding: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="margin: 0; font-size: 24px;">Análisis Facial</h2>
-            <button onclick="this.closest('div').parentElement.remove()" 
-                    style="background: transparent; border: none; color: var(--text); cursor: pointer; font-size: 24px;">
-              ✕
-            </button>
-          </div>
-          
-          <p style="color: var(--muted); margin-bottom: 20px;">
-            Se detectaron <strong>${faces.length}</strong> rostro(s) en la imagen
-          </p>
-      `;
-
-      faces.forEach((face, idx) => {
-        const mainEmotion = face.emotions.length > 0 ? face.emotions[0] : null;
-        
-        html += `
-          <div style="border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-            <h3 style="margin: 0 0 12px 0; color: var(--primary);">Rostro ${idx + 1}</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div>
-                <strong>Edad estimada:</strong><br>
-                ${face.ageRange ? `${face.ageRange.low} - ${face.ageRange.high} años` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Género:</strong><br>
-                ${face.gender ? `${face.gender.value} (${face.gender.confidence}%)` : 'No disponible'}
-              </div>
-              <div>
-                <strong>Confianza:</strong><br>
-                ${face.confidence}%
-              </div>
-              <div>
-                <strong>Expresión:</strong><br>
-                ${mainEmotion ? `${mainEmotion.type} (${mainEmotion.confidence}%)` : 'No disponible'}
-              </div>
-            </div>
-
-            <div style="margin-bottom: 12px;">
-              <strong>Características detectadas:</strong>
-              <ul style="margin: 8px 0; padding-left: 20px;">
-                ${face.eyeglasses.present ? `<li>Gafas (${face.eyeglasses.confidence}%)</li>` : ''}
-                ${face.sunglasses.present ? `<li>Gafas de sol (${face.sunglasses.confidence}%)</li>` : ''}
-                ${face.beard.present ? `<li>Barba (${face.beard.confidence}%)</li>` : ''}
-                ${face.mustache.present ? `<li>Bigote (${face.mustache.confidence}%)</li>` : ''}
-                ${face.mouthOpen.present ? `<li>Boca abierta (${face.mouthOpen.confidence}%)</li>` : ''}
-                ${!face.eyesOpen.present ? `<li>Ojos cerrados (${face.eyesOpen.confidence}%)</li>` : ''}
-                ${face.smiling.present ? `<li>Sonriendo (${face.smiling.confidence}%)</li>` : ''}
-              </ul>
-            </div>
-
-            ${face.emotions.length > 0 ? `
-              <div>
-                <strong>Emociones detectadas:</strong>
-                <div style="margin-top: 8px;">
-                  ${face.emotions.map(e => `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                      <span>${e.type}</span>
-                      <span style="color: var(--primary); font-weight: 600;">${e.confidence}%</span>
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-
-      html += `</div>`;
-
-      modal.innerHTML = html;
-      document.body.appendChild(modal);
-
-      modal.onclick = (e) => {
-        if (e.target === modal) modal.remove();
-      };
-    }
-
-    /* ====== Helpers para manejo de medios ====== */
-    function pickFirst(...vals){
-      for (const v of vals) if (v && typeof v === 'string' && v.trim()) return v;
-      return null;
-    }
-
-    function resolveMediaSrc(m){
-      if (!m || typeof m !== 'object') return null;
-      return pickFirst(
-        m.thumb, m.t1, m['t1_bw'],
-        m.original, m.url, m.src,
-        m.t2, m.t3, m.t4, m.t5, m.t6, m.t7, m.t8, m.t9, m.t10
-      );
-    }
-
-    function setSrcWithFallback(img, candidates){
-      const list = candidates.filter(Boolean);
-      let i = 0;
-      const tryNext = ()=>{ if (i < list.length) img.src = list[i++]; };
-      img.onerror = tryNext;
-      tryNext();
-    }
-
     /* ====== Lightbox ====== */
     const lb = document.getElementById('lightbox'), lbClose = document.getElementById('lbClose');
     const lbImg = document.getElementById('lbImg'), lbAva = document.getElementById('lbAva');
@@ -632,10 +422,8 @@
     const lbLike = document.getElementById('lbLike');
     const lbComment = document.getElementById('lbComment');
     const lbLikes = document.getElementById('lbLikes');
-    const lbLikesCount = document.getElementById('lbLikesCount'); // Contador destacado
     const lbCommentsCount = document.getElementById('lbCommentsCount');
     const lbShareBtn = document.getElementById('lbShare');
-    const lbFaceRecognitionBtn = document.getElementById('lbFaceRecognition');
 
     let currentPost = null;
 
@@ -651,36 +439,41 @@
       lbBody.innerHTML='';
       for (const c of list) if (!userCache.has(c.userId)) await getUserCached(c.userId);
       list.forEach(c=>{
-        const u=userCache.get(c.userId), nick=(u?.nickname || u?.name || 'usuario');
+        const u=userCache.get(c.userId), nm=displayName(u)||'usuario';
         const row=document.createElement('div'); row.className='lb-cmt';
-        row.innerHTML=`<span class="nm-wrap"><a href="profile.html?id=${encodeURIComponent(c.userId)}" class="nm user-link">@${nick}</a></span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
+        row.innerHTML=`<span class="nm">${nm}</span>${c.text}<span class="dt">${timeAgo(c.createdAt)}</span>`;
         lbBody.appendChild(row);
       });
       lbBody.scrollTop = lbBody.scrollHeight;
     }
     async function openPostModal(p){
       currentPost = p;
+      window.currentPostData = p; // Guardar para sistema de transformaciones
 
-      lbImg.style.display = 'block';
-      setSrcWithFallback(lbImg, [
-        resolveMediaSrc(p.media),
-        p.media?.t1, p.media?.thumb, p.media?.original, p.media?.url, p.media?.src,
-        p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
-      ]);
+      lbImg.src = p.media.t1 || p.media.original || p.media.thumb;
 
       const u = await getUserCached(p.userId);
       lbAva.src = resolveAvatar(u);
       lbName.textContent = displayName(u);
-      lbName.href = `profile.html?id=${p.userId}`;
-      lbName.onmouseenter = () => lbName.style.color = 'var(--primary)';
-      lbName.onmouseleave = () => lbName.style.color = 'var(--text)';
-      lbAva.onclick = () => location.href = `profile.html?id=${p.userId}`;
       lbUser.textContent = `@${u.nickname || 'usuario'}`;
 
+      // Mostrar botón de análisis facial si hay datos de Rekognition
+      const lbFaceAnalysisBtn = document.getElementById('lbFaceAnalysis');
+      if (p.visionRaw && p.visionRaw.faces && p.visionRaw.faces.length > 0) {
+        lbFaceAnalysisBtn.style.display = 'inline-flex';
+      } else {
+        lbFaceAnalysisBtn.style.display = 'none';
+      }
+
+      // Mostrar botón de transformaciones si hay variantes
+      const lbTransformationsBtn = document.getElementById('lbTransformations');
+      if (p.media && p.media.variants) {
+        lbTransformationsBtn.style.display = 'inline-flex';
+      } else {
+        lbTransformationsBtn.style.display = 'none';
+      }
+
       lbLike.setAttribute('aria-pressed', p.viewerLiked ? 'true' : 'false');
-      const likesCount = p.counts?.likes || 0;
-      lbLikes.textContent = likesCount;
-      if (lbLikesCount) lbLikesCount.textContent = likesCount; // Actualizar contador destacado
       lbCommentsCount.textContent = p.counts?.comments || 0;
 
       const comments = await listPostComments(p.id);
@@ -702,18 +495,14 @@
       lbLike.onclick = async ()=>{
         const pressed = lbLike.getAttribute('aria-pressed') === 'true';
         lbLike.setAttribute('aria-pressed', (!pressed) + '');
-        const newCount = (+lbLikes.textContent + (pressed ? -1 : 1));
-        lbLikes.textContent = newCount;
-        if (lbLikesCount) lbLikesCount.textContent = newCount; // Actualizar contador destacado
+        lbLikes.textContent = (+lbLikes.textContent + (pressed ? -1 : 1));
         try{
           const r = await fetch(API(`/posts/${p.id}/likes/toggle`), { method:'POST', headers:H });
           const d = await r.json();
           if(!d.ok) throw 0;
         }catch{
           lbLike.setAttribute('aria-pressed', pressed + '');
-          const revertCount = (+lbLikes.textContent + (pressed ? 1 : -1));
-          lbLikes.textContent = revertCount;
-          if (lbLikesCount) lbLikesCount.textContent = revertCount; // Revertir contador destacado
+          lbLikes.textContent = (+lbLikes.textContent + (pressed ? 1 : -1));
         }
       };
 
@@ -722,23 +511,14 @@
       // compartir desde el visor
       lbShareBtn.onclick = ()=> openShareModal(p);
 
-      // reconocimiento facial
-      lbFaceRecognitionBtn.onclick = async ()=> {
-        await analyzeFaceInPost(p);
-      };
-
       lb.setAttribute('aria-hidden','false');
-      lb.removeAttribute('inert');
       if (window.lucide) lucide.createIcons();
     }
     function closePostModal(){
       lb.setAttribute('aria-hidden','true');
-      lb.setAttribute('inert', '');
       lbImg.removeAttribute('src'); lbInp.value=''; lbBody.innerHTML='';
       lbLike.setAttribute('aria-pressed','false');
-      lbLikes.textContent = '0';
-      if (lbLikesCount) lbLikesCount.textContent = '0'; // Limpiar contador destacado
-      lbCommentsCount.textContent = '0';
+      lbLikes.textContent = '0'; lbCommentsCount.textContent = '0';
       currentPost = null;
     }
     lbClose.onclick = closePostModal;
@@ -748,119 +528,45 @@
     /* ====== Tarjeta de post ====== */
     function postCard(p){
       const cls = ratioClass(p.media.width, p.media.height);
-      const el = document.createElement('article'); 
-      el.className='post-card';
-      el.dataset.postId = p.id || p._id;
+      const el = document.createElement('article'); el.className='post-card';
       const author = userCache.get(p.userId) || {};
       const isMyPost = me && (String(p.userId) === String(me._id || me.id));
 
-      // Debug: verificar datos del autor
-      console.log('Post author data:', { userId: p.userId, author, nickname: author.nickname });
-
-      const isVideo = (p.media?.mime && p.media.mime.startsWith('video/')) ||
-                (typeof p.media?.thumb === 'string' && /\.mp4|\.webm|\.mov$/i.test(p.media.thumb));
-
-      const container = document.createElement('div');
-      container.className = `post-media ${cls}`;
-
-      if (isVideo) {
-        const vsrc = pickFirst(p.media?.thumb, p.media?.original, p.media?.url, p.media?.src);
-        const video = document.createElement('video');
-        video.className = 'post-video';
-        if (vsrc) video.src = vsrc;
-        video.controls = true;
-        video.playsInline = true;
-        container.appendChild(video);
-      } else {
-        const img = document.createElement('img');
-        img.className = 'post-img';
-        setSrcWithFallback(img, [
-          p.media?.thumb, p.media?.t1, p.media?.['t1_bw'],
-          p.media?.original, p.media?.url, p.media?.src,
-          p.media?.t2, p.media?.t3, p.media?.t4, p.media?.t5, p.media?.t6, p.media?.t7, p.media?.t8, p.media?.t9, p.media?.t10
-        ]);
-        container.appendChild(img);
-      }
-
-      // Crear el elemento base
       el.innerHTML = `
         <header class="post-head">
-          <img class="post-ava" src="${resolveAvatar(author)}" alt="" style="cursor:pointer" data-user-id="${p.userId}">
+          <img class="post-ava" src="${resolveAvatar(author)}" alt="">
           <div class="post-user">
             <a class="post-name" href="profile.html?id=${p.userId}">${displayName(author)}</a>
-            <div class="post-userid">@${author.nickname || author.email?.split('@')[0] || 'usuario'}</div>
+            <div class="post-userid">@${author.nickname || 'usuario'}</div>
           </div>
         </header>
-      `;
+        <div class="post-media ${cls}"><img class="post-img" src="${p.media.thumb}" alt=""></div>
+        <div class="post-actions">
+          <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta"><i data-lucide="heart"></i></button>
+          <button class="btn-icon btn-comment" title="Comentar"><i data-lucide="message-circle"></i></button>
+          <button class="btn-icon btn-share" title="Compartir"><i data-lucide="send"></i></button>
+          <div class="spacer"></div>
+          <div class="post-counts"><span class="likes">${p.counts?.likes||0}</span> · <span class="comments">${p.counts?.comments||0}</span></div>
+        </div>
+        ${p.caption ? `<div class="post-caption">${p.caption}</div>` : '' }`;
 
-      // Insertar el contenedor de media después del header
-      const head = el.querySelector('.post-head');
-      head.insertAdjacentElement('afterend', container);
-
-      // Agregar el resto de elementos después del contenedor de media
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'post-actions';
-      actionsDiv.innerHTML = `
-        <button class="btn-icon btn-like" aria-pressed="${p.viewerLiked?'true':'false'}" title="Me gusta">
-          <i data-lucide="heart"></i>
-          <span class="likes">${p.counts?.likes||0}</span>
-        </button>
-        <button class="btn-icon btn-comment" title="Comentar">
-          <i data-lucide="message-circle"></i>
-          <span class="comments">${p.counts?.comments||0}</span>
-        </button>
-        <button class="btn-icon btn-share" title="Compartir"><i data-lucide="send"></i></button>
-      `;
-      container.insertAdjacentElement('afterend', actionsDiv);
-
-      // Agregar caption si existe
-      if (p.caption) {
-        const captionDiv = document.createElement('div');
-        captionDiv.className = 'post-caption';
-        captionDiv.textContent = p.caption;
-        actionsDiv.insertAdjacentElement('afterend', captionDiv);
-      }
-
-      // Event listeners
-      const avatarImg = el.querySelector('.post-ava');
-      avatarImg.onclick = (e) => {
-        e.stopPropagation();
-        location.href = `profile.html?id=${p.userId}`;
-      };
-
-      // Like button handler
-      const likeBtn = el.querySelector('.btn-like');
-      const likesEl = el.querySelector('.likes');
-      likeBtn.onclick = async () => {
+      const likeBtn = el.querySelector('.btn-like'); const likesEl = el.querySelector('.likes');
+      likeBtn.onclick = async ()=>{
         const pressed = likeBtn.getAttribute('aria-pressed')==='true';
-        likeBtn.setAttribute('aria-pressed', (!pressed)+'');
-        likesEl.textContent = (+likesEl.textContent + (pressed?-1:1));
-        try {
-          const r = await fetch(API(`/posts/${p.id}/likes/toggle`), {method:'POST', headers:H});
-          const d = await r.json();
-          if(!d.ok) throw new Error('Failed to toggle like');
-        } catch(err) {
-          likeBtn.setAttribute('aria-pressed', pressed+'');
-          likesEl.textContent = (+likesEl.textContent + (pressed?1:-1));
+        likeBtn.setAttribute('aria-pressed',(!pressed)+'' );
+        likesEl.textContent=(+likesEl.textContent+(pressed?-1:1));
+        try{
+          const r=await fetch(API(`/posts/${p.id}/likes/toggle`), {method:'POST', headers:H});
+          const d=await r.json(); if(!d.ok) throw 0;
+        } catch{
+          likeBtn.setAttribute('aria-pressed',pressed+'' );
+          likesEl.textContent=(+likesEl.textContent+(pressed?1:-1));
         }
       };
 
-      // Comment button handler
-      el.querySelector('.btn-comment').onclick = () => openPostModal(p);
-
-      // Share button handler
-      el.querySelector('.btn-share').onclick = () => openShareModal(p);
-
-      // Media click handler (both for image and video)
-      container.onclick = () => openPostModal(p);
-      const mediaElement = container.querySelector(isVideo ? '.post-video' : '.post-img');
-      if (mediaElement) {
-        mediaElement.style.cursor = 'pointer';
-        mediaElement.onclick = (e) => {
-          e.stopPropagation();
-          openPostModal(p);
-        };
-      }
+      el.querySelector('.btn-comment').onclick = ()=> openPostModal(p);
+      el.querySelector('.post-img').onclick   = ()=> openPostModal(p);
+      el.querySelector('.btn-share').onclick  = ()=> openShareModal(p);
 
       if (window.lucide) lucide.createIcons();
       return el;
@@ -916,12 +622,10 @@
       shareInfo.textContent = '';
       listFollowing().then(()=> filterShareList(''));
       shareModal.setAttribute('aria-hidden','false');
-      shareModal.removeAttribute('inert');
       if (window.lucide) lucide.createIcons();
     }
     function closeShareModal(){
       shareModal.setAttribute('aria-hidden','true');
-      shareModal.setAttribute('inert', '');
       shareList.innerHTML = '';
     }
     shareClose.onclick = closeShareModal;
@@ -1030,95 +734,108 @@
       if (m) location.hash = '';
     })();
 
-    // Actualizar badge de notificaciones
-    // Actualizar badge de notificaciones
-    async function updateNotificationBadge() {
-      try {
-        const res = await fetch(API('/notifications/unread-count'), { headers: H });
-        const data = await res.json();
-        const badge = document.getElementById('notificationsBadge');
-        if (badge) {
-          if (data.ok && data.count > 0) {
-            badge.textContent = data.count > 99 ? '99+' : data.count;
-            badge.style.display = 'inline-flex';
-          } else {
-            badge.style.display = 'none';
-          }
-        }
-      } catch (error) {
-        console.error('Error actualizando badge de notificaciones:', error);
-      }
-    }
-
-    // Actualizar badge de mensajes no leídos
-    async function updateMessagesBadge() {
-      try {
-        const res = await fetch(API('/messages'), { headers: H });
-        const data = await res.json();
-        if (data.ok) {
-          const unreadCount = data.conversations.filter(c => c.hasUnread).length;
-          const badge = document.getElementById('unreadBadge');
-          if (unreadCount > 0) {
-            badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = 'inline-flex';
-          } else {
-            badge.style.display = 'none';
-          }
-        }
-      } catch (error) {
-        console.error('Error actualizando badge de mensajes:', error);
-      }
-    }
-
-    // Actualizar ambos badges cada 30 segundos
-    updateNotificationBadge();
-    updateMessagesBadge();
-    setInterval(() => {
-      updateNotificationBadge();
-      updateMessagesBadge();
-    }, 30000);
-
-    // Manejar notificaciones - abrir post si viene del parámetro postId
-    (async function() {
-      const params = new URLSearchParams(window.location.search);
-      const postId = params.get('postId');
-      
-      if (postId) {
-        console.log('Abriendo post desde notificación:', postId);
-        
-        try {
-          // Obtener los datos del post desde la API
-          const res = await fetch(API(`/posts/${postId}`), { headers: H });
-          const data = await res.json();
-          
-          if (data.ok && data.post) {
-            console.log('Post obtenido de la API:', data.post);
-            // Abrir el modal directamente con los datos del post
-            openPostModal(data.post);
-          } else {
-            console.error('No se pudo obtener el post');
-          }
-        } catch (error) {
-          console.error('Error obteniendo post:', error);
-        }
-      }
-    })();
-
     // Cargar todo
     window.addEventListener('load', () => { if (window.lucide) lucide.createIcons(); });
+    
+    // Modal de Análisis Facial
+    const faceAnalysisModal = document.getElementById('faceAnalysisModal');
+    const closeFaceAnalysisBtn = document.getElementById('closeFaceAnalysis');
+    const faceAnalysisContent = document.getElementById('faceAnalysisContent');
+    
+    closeFaceAnalysisBtn.onclick = () => faceAnalysisModal.removeAttribute('data-open');
+    faceAnalysisModal.addEventListener('click', (e) => {
+      if (e.target === faceAnalysisModal) faceAnalysisModal.removeAttribute('data-open');
+    });
+    
+    document.getElementById('lbFaceAnalysis').addEventListener('click', () => {
+      if (!window.currentPostData || !window.currentPostData.visionRaw) return;
+      
+      const faces = window.currentPostData.visionRaw.faces || [];
+      if (faces.length === 0) return;
+      
+      faceAnalysisModal.setAttribute('data-open', 'true');
+      
+      // Construir HTML del análisis (igual que en profile.html)
+      let html = `<p style="color:var(--muted); margin-bottom:20px">Se detectaron ${faces.length} rostro(s) en la imagen</p>`;
+      
+      faces.forEach((face, index) => {
+        const ageRange = face.AgeRange ? `${face.AgeRange.Low} - ${face.AgeRange.High} años` : 'N/A';
+        const gender = face.Gender ? `${face.Gender.Value} (${Math.round(face.Gender.Confidence)}%)` : 'N/A';
+        
+        html += `
+          <div style="background:var(--panel2); padding:20px; border-radius:12px; margin-bottom:20px; border-left:4px solid #667eea">
+            <h4 style="color:#667eea; margin:0 0 16px; font-size:16px">Rostro ${index + 1}</h4>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px">
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Edad estimada:</label>
+                <strong style="font-size:14px">${ageRange}</strong>
+              </div>
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Género:</label>
+                <strong style="font-size:14px">${gender}</strong>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:16px">
+              <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:4px">Confianza:</label>
+              <strong style="font-size:14px">${Math.round(face.Confidence || 0)}%</strong>
+            </div>
+            
+            ${face.Emotions && face.Emotions.length > 0 ? `
+              <div style="margin-bottom:16px">
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Expresión:</label>
+                <strong style="font-size:14px; color:#667eea">${face.Emotions[0].Type} (${Math.round(face.Emotions[0].Confidence)}%)</strong>
+              </div>
+              
+              <div style="margin-bottom:16px">
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Características detectadas:</label>
+                <ul style="margin:0; padding-left:20px; font-size:13px">
+                  ${face.MouthOpen && face.MouthOpen.Value ? `<li>Boca abierta (${Math.round(face.MouthOpen.Confidence)}%)</li>` : ''}
+                  ${face.Smile && face.Smile.Value ? `<li>Sonriendo (${Math.round(face.Smile.Confidence)}%)</li>` : ''}
+                  ${face.Eyeglasses && face.Eyeglasses.Value ? `<li>Lentes (${Math.round(face.Eyeglasses.Confidence)}%)</li>` : ''}
+                </ul>
+              </div>
+              
+              <div>
+                <label style="display:block; color:var(--muted); font-size:12px; margin-bottom:8px">Emociones detectadas:</label>
+                <div style="display:flex; flex-direction:column; gap:6px">
+                  ${face.Emotions.map(emotion => `
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                      <span style="font-size:13px">${emotion.Type}</span>
+                      <div style="flex:1; margin:0 12px; height:6px; background:var(--line); border-radius:3px; overflow:hidden">
+                        <div style="width:${emotion.Confidence}%; height:100%; background:linear-gradient(90deg, #667eea, #764ba2)"></div>
+                      </div>
+                      <span style="font-size:12px; color:#667eea; font-weight:600">${Math.round(emotion.Confidence)}%</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      faceAnalysisContent.innerHTML = html;
+    });
   </script>
 
-  <!-- Sistema de Transformaciones de Imágenes -->
+  <!-- Sistema de Transformaciones -->
   <script src="js/transformations.js"></script>
-  <!-- Sistema de Filtros en el Compositor -->
-  <script src="js/composer-filters.js"></script>
+  <script>
+    // Inicializar sistema de transformaciones
+    const transformations = new ImageTransformations();
+    
+    // Conectar el botón de transformaciones
+    document.getElementById('lbTransformations').addEventListener('click', () => {
+      if (window.currentPostData) {
+        transformations.showTransformations(window.currentPostData);
+      }
+    });
+  </script>
 
   <footer style="text-align:center;padding:16px;margin-top:40px;font-size:0.85rem;color:var(--muted);border-top:1px solid var(--line)">
     © 2025 Proyecto Desarrollo Web - Desarrollado por Dilan Escobar y Andrea Chafolla
   </footer>
-
-  <!-- Sidebar unificado -->
-  <script src="js/sidebar.js"></script>
 </body>
 </html>
-
