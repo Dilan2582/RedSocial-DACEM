@@ -420,27 +420,8 @@ async function listComments(req, res) {
 
     const limit = Math.min(Number(req.query.limit || 20), 100);
     const rows = await Comment.find({ postId: id })
-      .populate('userId', 'name nickname nick fullname avatar') // Traer datos del usuario
       .sort({ createdAt: -1 }).limit(limit).lean();
-    
-    // Reformatear para que `user` contenga los datos poblados
-    const formatted = rows.map(c => ({
-      id: c._id,
-      postId: c.postId,
-      userId: c.userId._id,
-      text: c.text,
-      createdAt: c.createdAt,
-      user: {
-        id: c.userId._id,
-        _id: c.userId._id,
-        name: c.userId.name || c.userId.fullname || 'Usuario',
-        nickname: c.userId.nickname || c.userId.nick || '',
-        nick: c.userId.nick || c.userId.nickname || '',
-        avatar: c.userId.avatar || null
-      }
-    }));
-    
-    res.json({ ok: true, comments: formatted });
+    res.json({ ok: true, comments: rows });
   } catch (e) {
     console.error('[listComments] error', e);
     res.status(500).json({ ok:false, message:'Error listando comentarios' });
@@ -461,11 +442,6 @@ async function addComment(req, res) {
     const c = await Comment.create({ postId: id, userId, text });
     await Post.updateOne({ _id: id }, { $inc: { 'counts.comments': 1 } });
     
-    // Traer el comentario con el usuario poblado
-    const cWithUser = await Comment.findById(c._id)
-      .populate('userId', 'name nickname nick fullname avatar')
-      .lean();
-    
     // Crear notificación de comentario
     try {
       const post = await Post.findById(id);
@@ -481,24 +457,7 @@ async function addComment(req, res) {
       console.error('Error creando notificación de comentario:', err);
     }
     
-    // Reformatear comentario para consistencia
-    const formatted = {
-      id: cWithUser._id,
-      postId: cWithUser.postId,
-      userId: cWithUser.userId._id,
-      text: cWithUser.text,
-      createdAt: cWithUser.createdAt,
-      user: {
-        id: cWithUser.userId._id,
-        _id: cWithUser.userId._id,
-        name: cWithUser.userId.name || cWithUser.userId.fullname || 'Usuario',
-        nickname: cWithUser.userId.nickname || cWithUser.userId.nick || '',
-        nick: cWithUser.userId.nick || cWithUser.userId.nickname || '',
-        avatar: cWithUser.userId.avatar || null
-      }
-    };
-    
-    res.json({ ok: true, comment: formatted });
+    res.json({ ok: true, comment: c });
   } catch (e) {
     console.error('[addComment] error', e);
     res.status(500).json({ ok:false, message:'Error comentando' });
