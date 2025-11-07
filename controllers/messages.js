@@ -299,11 +299,45 @@ async function getUnreadCount(req, res) {
   }
 }
 
+/* ----------------------------- ELIMINAR CONVERSACIÓN ----------------------------- */
+async function deleteConversation(req, res) {
+  try {
+    const userId = ensureAuthUser(req);
+    const { conversationId } = req.params;
+    
+    if (!conversationId || !Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({ ok: false, message: 'ID de conversación inválido' });
+    }
+    
+    // Verificar que el usuario es parte de la conversación
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      return res.status(404).json({ ok: false, message: 'Conversación no encontrada' });
+    }
+    
+    if (!conversation.hasParticipant(userId)) {
+      return res.status(403).json({ ok: false, message: 'No tienes permiso para eliminar esta conversación' });
+    }
+    
+    // Eliminar todos los mensajes de la conversación
+    await Message.deleteMany({ conversationId });
+    
+    // Eliminar la conversación
+    await Conversation.findByIdAndDelete(conversationId);
+    
+    res.json({ ok: true, message: 'Conversación eliminada correctamente' });
+  } catch (err) {
+    console.error('Error en deleteConversation:', err);
+    res.status(500).json({ ok: false, message: err.message });
+  }
+}
+
 module.exports = {
   getConversations,
   getOrCreateConversation,
   getMessages,
   sendMessage,
   markAsRead,
-  getUnreadCount
+  getUnreadCount,
+  deleteConversation
 };

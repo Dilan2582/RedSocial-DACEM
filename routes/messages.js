@@ -25,4 +25,7 @@ router.post('/:conversationId', ctrl.sendMessage);
 // PUT /api/messages/:conversationId/read - Marcar mensajes como leídos
 router.put('/:conversationId/read', ctrl.markAsRead);
 
+// DELETE /api/messages/:conversationId - Eliminar una conversación
+router.delete('/:conversationId', ctrl.deleteConversation);
+
 module.exports = router;
