@@ -719,7 +719,16 @@ function buildPostBubble(msg, data){
   const ava = resolveAvatar(auUser);
   const profHref = auId ? `profile.html?id=${encodeURIComponent(auId)}` : '#';
   
-  const mediaUrl = bestMediaUrl(data.media || {});
+  console.log('🏗️ buildPostBubble data:', data);
+  
+  let mediaUrl = '';
+  if(data.media) {
+    mediaUrl = bestMediaUrl(data.media);
+  } else if(data.postId) {
+    // Si no hay media inline, marcar para cargar después
+    console.log('📍 Post-card sin media inline, será cargado después');
+  }
+  console.log('🖼️ mediaUrl result:', mediaUrl);
 
   const header = `
     <div class="pc-head">
@@ -732,10 +741,13 @@ function buildPostBubble(msg, data){
       </div>
     </div>`;
 
-  const media = `
+  const media = mediaUrl ? `
     <div class="pc-media">
       <img src="${escapeHtml(mediaUrl)}" alt=""
            onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">
+    </div>` : `
+    <div class="pc-media">
+      <div class="pc-loading" data-postid="${escapeHtml(data.postId||'')}">Cargando imagen...</div>
     </div>`;
 
   const caption = data.caption ? `<div class="pc-cap">${escapeHtml(data.caption)}</div>` : '';
@@ -857,6 +869,45 @@ async function upgradeLinkShares(){
   attachPostCardHandlers();
 }
 
+async function loadPostCardImages(){
+  const loadingEls = document.querySelectorAll('.pc-loading[data-postid]');
+  console.log('🔍 loadPostCardImages: encontrados', loadingEls.length, 'elementos cargando...');
+  
+  for(const el of loadingEls){
+    const postId = el.getAttribute('data-postid');
+    if(!postId) continue;
+    
+    try {
+      console.log('⏳ Cargando imagen para post:', postId);
+      const p = await fetchPost(postId);
+      if(!p || !p.media){
+        console.warn('⚠️ Post sin media:', postId);
+        el.innerHTML = 'No se pudo cargar la imagen';
+        continue;
+      }
+      
+      const mediaUrl = bestMediaUrl(p.media);
+      if(!mediaUrl){
+        console.warn('⚠️ No se pudo obtener URL de media para:', postId);
+        el.innerHTML = 'No se pudo obtener la imagen';
+        continue;
+      }
+      
+      console.log('✅ Renderizando imagen para post:', postId, 'URL:', mediaUrl);
+      
+      // Reemplazar el div de carga con la imagen
+      const pcMedia = el.closest('.pc-media');
+      if(pcMedia){
+        pcMedia.innerHTML = `<img src="${escapeHtml(mediaUrl)}" alt=""
+                                 onerror="this.closest('.pc-media').innerHTML='No se pudo cargar la imagen'">`;
+      }
+    } catch(e) {
+      console.error('❌ Error cargando imagen para post', postId, ':', e);
+      el.innerHTML = 'Error al cargar';
+    }
+  }
+}
+
 function attachPostCardHandlers(){
   document.getElementById('chatBody')?.addEventListener('click', async (e)=>{
     const el = e.target.closest('.post-bubble');
@@ -889,6 +940,7 @@ function renderMessages(list){
   body.innerHTML = list.map(buildMessageHTML).join('');
   attachPostCardHandlers();
   upgradeLinkShares();
+  loadPostCardImages(); // Cargar imágenes de post-cards que tengan data-postid
 
   body.scrollTop = body.scrollHeight;
 }
