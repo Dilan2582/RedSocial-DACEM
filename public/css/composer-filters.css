@@ -34,14 +34,7 @@
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cmp-filters-label::before {
-  content: '✨';
-  font-size: 14px;
+  margin-bottom: 8px;
 }
 
 .cmp-filters-scroll {
@@ -49,8 +42,12 @@
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 8px;
+  padding-left: 4px;
+  padding-right: 4px;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
+  max-width: 100%;
+  margin: 0 -4px;
 }
 
 .cmp-filters-scroll::-webkit-scrollbar {
@@ -75,18 +72,17 @@
 
 .cmp-filter-btn {
   flex-shrink: 0;
-  padding: 14px 20px;
-  border: 2px solid var(--line);
-  border-radius: 14px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
   background: var(--card);
   color: var(--text);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   white-space: nowrap;
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 8px;
   min-width: 85px;

@@ -36,15 +36,15 @@ body{
 }
 
 /* ===== Topbar mínima (usa estilos globales de profile.css) ===== */
-.topbar{ position:sticky; top:0; z-index:50; border-bottom:1px solid var(--line); }
-.topbar .topbar-inner{ max-width:1200px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:12px }
+.topbar{ position:fixed; top:0; left:0; right:0; z-index:50; border-bottom:1px solid var(--line); background:var(--panel); }
+.topbar .topbar-inner{ max-width:1200px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:12px }
 .brand{ font-weight:900; display:flex; align-items:center; gap:10px }
 .logo-badge{ width:28px; height:28px; border-radius:9px; overflow:hidden; display:grid; place-items:center }
 
 /* ===== Contenedor principal de mensajes ===== */
 .messages-container{
   display:flex;
-  height:calc(100vh - 58px);
+  height:calc(100vh - 52px);
   max-width:1400px;
   margin:0 auto;
   border-left:1px solid var(--line);
