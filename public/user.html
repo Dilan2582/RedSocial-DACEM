@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -11,9 +11,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Estilos -->
+  <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/buttons.css">
   <link rel="stylesheet" href="css/sidebar.css">
-  <link rel="stylesheet" href="css/user.css?v=10">
+  <link rel="stylesheet" href="css/user.css?v=11">
   <link rel="stylesheet" href="css/transformations.css">
   <link rel="stylesheet" href="css/composer-filters.css">
 
@@ -31,6 +33,9 @@
 
   <!-- Navegación suave (cargar antes para prevenir FOUC) -->
   <script src="js/smooth-navigation.js"></script>
+
+  <!-- Script de búsqueda -->
+  <script src="js/search.js"></script>
 
   <!-- Mejora visual solo para el modal Compartir (coincide con tu estética) -->
   <style>
@@ -99,6 +104,13 @@
         <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM logo"></span>
         <span>DACEM</span>
       </div>
+      
+      <!-- Barra de búsqueda -->
+      <div class="top-search">
+        <input id="topSearch" type="search" placeholder="Buscar usuarios…">
+        <div id="topSearchResults" class="top-search-results"></div>
+      </div>
+      
       <div style="margin-left:auto" class="topbar-actions">
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
           <i class="nav-ico" data-lucide="moon"></i> <span id="themeTxt">Modo oscuro</span>
@@ -145,7 +157,7 @@
           <div class="cmp-tools">
             <input id="cmpFile" type="file" accept="image/*,video/mp4,video/quicktime,video/x-msvideo" hidden>
             <button id="cmpPick" class="btn ghost small">
-              <i class="nav-ico" data-lucide="image"></i> Imagen/Video
+              <i class="nav-ico" data-lucide="image"></i> Imagen
             </button>
             <div class="spacer"></div>
             <button id="cmpPost" class="btn primary">
@@ -164,7 +176,7 @@
 
       <!-- Aside -->
       <aside class="aside">
-        <div class="card" style="padding:18px">
+        <div class="card people-card" style="padding:18px">
           <h3 style="margin:0 0 16px;font-size:1rem;color:var(--text);font-weight:800">Personas sugeridas</h3>
           <div id="peopleList" class="people-list"></div>
         </div>
@@ -479,10 +491,16 @@
           body: JSON.stringify({ imageUrl })
         });
 
+        // Manejo de errores HTTP
+        if (!res.ok) {
+          console.error('Error HTTP:', res.status, res.statusText);
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
         const data = await res.json();
 
         if (!data.ok) {
-          alert('Error: ' + data.message);
+          alert('Error: ' + (data.message || 'Error desconocido'));
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
@@ -1119,6 +1137,9 @@
 
   <!-- Sidebar unificado -->
   <script src="js/sidebar.js"></script>
+  
+  <!-- Script de búsqueda -->
+  <script src="js/search.js"></script>
 </body>
 </html>
 

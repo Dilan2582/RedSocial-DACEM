@@ -82,6 +82,25 @@ class ComposerFilters {
     reader.readAsDataURL(file);
   }
 
+  // Función para establecer imagen desde una URL (llamada desde user.html)
+  async setImage(imageUrl) {
+    this.currentImage = imageUrl;
+    this.currentFilter = 'original';
+    this.filteredImages = { original: this.currentImage };
+
+    const previewContainer = document.getElementById('cmpPreview');
+    const previewImg = document.getElementById('cmpPreviewImg');
+    if (previewContainer) previewContainer.style.display = 'flex';
+    if (previewImg) {
+      previewImg.src = this.currentImage;
+      previewImg.style.display = 'block';
+    }
+
+    this.showFiltersContainer();
+    await this.generateFilters();
+    this.updatePreviewImage('original');
+  }
+
   showFiltersContainer() {
     const container = this.getOrCreateFiltersContainer();
     container.classList.add('active');

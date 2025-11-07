@@ -1,60 +1,67 @@
-/* =========================================
-   THEME
-========================================= */
-/* LIGHT */
-:root{
-  --bg:#f5f3ff; --bg2:#efeaff; --panel:#ffffff; --card:#ffffff;
-  --line:rgba(16,24,40,.08);
-  --text:#151826; --muted:#6b7280;
-  --primary:#7c5cfc; --primary2:#a855f7; --accent:#22d3ee;
-  --ring:rgba(124,92,252,.28);
-  --shadow:0 12px 28px rgba(2,6,23,.08);
-  --r:18px;
-
-  /* Layout */
+/* Layout */
+:root {
   --header-height: 68px;
   --content-max-width: 1400px;
   --sidebar-width: 280px;
   --aside-width: 360px;
-
-  /* Preview (más pequeño) */
+  --r: 18px;
   --preview-max-w: 420px;
   --preview-max-h: 300px;
   --preview-max-h-sm: 220px;
 }
 
-/* DARK */
-[data-theme="dark"]{
-  --bg:#0a0b14; --bg2:#0d1022; --panel:#0f1324; --card:#11162b;
-  --line:rgba(255,255,255,.08);
-  --text:#e7e9f3; --muted:#9aa3b2;
-  --primary:#8b5cf6; --primary2:#d946ef; --accent:#22d3ee;
-  --ring:rgba(139,92,246,.25);
-  --shadow:0 12px 28px rgba(0,0,0,.45);
+/* Estilos base para tarjetas */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
 }
 
-/* =========================================
-   RESET
-========================================= */
-html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);
-     font-family:'Plus Jakarta Sans',system-ui,Segoe UI,Roboto,Arial}
-*,*::before,*::after{box-sizing:border-box}
-img{max-width:100%;height:auto;display:block}
+/* Estilos para hover en tarjetas */
+.card:hover {
+  border-color: var(--hover-border);
+  box-shadow: var(--hover-shadow);
+}
 
-/* Glow (solo light) */
-body::before,body::after{content:"";position:fixed;inset:auto;pointer-events:none;z-index:-1}
-body::before{top:-15%;left:-10%;width:65vw;height:55vh;filter:blur(90px);
-  background:
-    radial-gradient(50% 50% at 50% 50%, rgba(124,92,252,.28) 0%, rgba(124,92,252,0) 65%),
-    radial-gradient(50% 50% at 20% 30%, rgba(168,85,247,.18) 0%, rgba(168,85,247,0) 70%);
+/* Efectos de resplandor */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.3s ease, background 0.3s ease;
 }
-body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
+
+body::before {
+  top: -15%;
+  left: -10%;
+  width: 65vw;
+  height: 55vh;
+  filter: blur(90px);
   background:
-    radial-gradient(50% 50% at 50% 50%, rgba(34,211,238,.18) 0%, rgba(34,211,238,0) 65%),
-    radial-gradient(50% 50% at 70% 30%, rgba(168,85,247,.12) 0%, rgba(168,85,247,0) 70%);
+    radial-gradient(50% 50% at 50% 50%, var(--glow-1) 0%, transparent 65%),
+    radial-gradient(50% 50% at 20% 30%, var(--glow-2) 0%, transparent 70%);
 }
-[data-theme="dark"] body::before,[data-theme="dark"] body::after{display:none}
+
+body::after {
+  right: -10%;
+  top: 10%;
+  width: 55vw;
+  height: 50vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, var(--glow-3) 0%, transparent 65%),
+    radial-gradient(50% 50% at 70% 30%, var(--glow-4) 0%, transparent 70%);
+}
+
+/* Asegurar que el layout tome el color de fondo */
+.wrap {
+  background-color: var(--bg);
+}
 
 /* =========================================
    TOPBAR
@@ -116,18 +123,41 @@ body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
   width: 100%;
   margin: 0 auto;
   max-width: 1280px;
+  grid-template-areas: 
+    "sidebar main aside";
 }
 
+.sidebar { grid-area: sidebar; }
+.main { 
+  grid-area: main; 
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.aside { grid-area: aside; }
+
 .sidebar{min-height:1px}
-.sidebar, .aside{ position: sticky; top: calc(var(--header-height) + 16px); align-self:start; height:max-content }
+.sidebar, .aside{ position: sticky; top: calc(var(--header-height) + 16px); align-self:start; height:max-content; max-height: calc(100vh - var(--header-height) - 40px); overflow-y: auto; }
+.aside { padding-right: 8px; margin-right: -8px; width: 100%; }
 
 @media (max-width:1199.98px){
-  .layout{ grid-template-columns: var(--sidebar-width) minmax(0,1fr); }
+  .layout{ 
+    grid-template-columns: var(--sidebar-width) minmax(0,1fr); 
+    grid-template-areas: 
+      "sidebar main";
+  }
   .aside{ display:none; }
 }
 @media (max-width:959.98px){
   .wrap{ padding: calc(var(--header-height) + 16px) 16px 16px; }
-  .layout{ grid-template-columns: 1fr; gap: 20px; max-width: 720px; }
+  .layout{ 
+    grid-template-columns: 1fr; 
+    gap: 20px; 
+    max-width: 720px;
+    grid-template-areas: 
+      "main";
+  }
   .sidebar, .aside{ position: static; }
 }
 @media (max-width:768px){
@@ -162,15 +192,24 @@ body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
    COMPOSER
 ========================================= */
 .composer{
-  padding: 18px; display: grid !important; gap: 14px;
-  background: var(--card); border: 1px solid var(--line);
-  border-radius: var(--r); box-shadow: var(--shadow);
-  margin-bottom: 24px; width: 100%; max-width: 100%;
+  padding: 18px; 
+  display: grid !important; 
+  gap: 14px;
+  background: var(--card); 
+  border: 1px solid var(--line);
+  border-radius: var(--r); 
+  box-shadow: var(--shadow);
+  margin-bottom: 24px; 
+  width: 100%;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
   position: relative; 
-  overflow: hidden;
-  justify-items: stretch !important;  /* por defecto, todo estira */
+  overflow: visible;
+  justify-items: stretch !important;
+  box-sizing: border-box;
 }
-@media (max-width:768px){ .composer{padding:14px;gap:12px} }
+@media (max-width:768px){ .composer{padding:14px;gap:12px;max-width:100%;} }
 
 /* Centrar solo el preview dentro del composer */
 .composer > .cmp-preview{ justify-self: center !important; margin-inline:auto !important; }
@@ -378,6 +417,11 @@ body::after{right:-10%;top:10%;width:55vw;height:50vh;filter:blur(90px);
 /* =========================================
    PEOPLE / ASIDE
 ========================================= */
+.people-card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
 .people-list{
   display:grid; gap:14px;
   max-height: calc(100vh - 300px);

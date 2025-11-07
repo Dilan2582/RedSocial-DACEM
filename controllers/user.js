@@ -358,4 +358,28 @@ module.exports = {
 
   // google
   googleLogin,
+
+  // búsqueda de usuarios
+  searchUsers: async (req, res) => {
+    try {
+      const query = req.query.q?.toString().trim().toLowerCase();
+      if (!query) return res.json({ users: [] });
+
+      const users = await User.find({
+        $or: [
+          { firstName: { $regex: query, $options: 'i' } },
+          { lastName: { $regex: query, $options: 'i' } },
+          { nickname: { $regex: query, $options: 'i' } },
+          { email: { $regex: query, $options: 'i' } }
+        ]
+      })
+      .select('firstName lastName nickname email avatar')
+      .limit(10);
+
+      res.json({ users });
+    } catch (error) {
+      console.error('Error en búsqueda:', error);
+      res.status(500).json({ message: 'Error al buscar usuarios' });
+    }
+  },
 };

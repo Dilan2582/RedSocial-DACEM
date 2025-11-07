@@ -1,0 +1,97 @@
+/* Estilos base para toda la aplicación */
+html {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg) !important;
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Suavizar transiciones de tema */
+* {
+  transition: background-color 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--panel2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Selección de texto */
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+/* Footer común */
+.app-footer {
+  text-align: center;
+  padding: 16px;
+  margin-top: 40px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  background-color: var(--panel);
+}
+
+/* Efecto de resplandor (glow) */
+body::before, body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+  transition: background 0.3s ease;
+}
+
+/* Glow superior izquierdo */
+body::before {
+  top: -15%;
+  left: -10%;
+  width: 65vw;
+  height: 55vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, var(--glow-1) 0%, transparent 65%),
+    radial-gradient(50% 50% at 20% 30%, var(--glow-2) 0%, transparent 70%);
+}
+
+/* Glow inferior derecho */
+body::after {
+  right: -10%;
+  top: 10%;
+  width: 55vw;
+  height: 50vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, var(--glow-3) 0%, transparent 65%),
+    radial-gradient(50% 50% at 70% 30%, var(--glow-4) 0%, transparent 70%);
+}

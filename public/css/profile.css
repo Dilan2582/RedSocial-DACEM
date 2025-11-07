@@ -1,46 +1,36 @@
-/* ====== LIGHT TOKENS (Recroot-like) ====== */
-:root{
-  --bg:#f8f9fc; --panel:#fff; --panel2:#f6f7fb; --line:#e5e7eb;
-  --text:#1e293b; --muted:#64748b; --accent:#0ea5e9; --primary:#8b5cf6;
-  --primary2:#a855f7; --ring:rgba(96,165,250,.18);
-}
-
-/* ====== DARK TOKENS (Neo Purple) ====== */
-[data-theme="dark"]{
-  --bg:#0f172a; --panel:#121a2a; --panel2:#0b1323; --line:#1f2a3a;
-  --text:#e6edf7; --muted:#94a3b8; --accent:#60a5fa; --primary:#8b5cf6;
-  --primary2:#a855f7; --ring:rgba(96,165,250,.18);
-}
-
 /* ===== Base / layout ===== */
-*{ box-sizing:border-box }
-html,body{ height:100%; margin:0; padding:0 }
-body{
-  margin:0; background:var(--bg); color:var(--text);
-  font-family:'Plus Jakarta Sans', system-ui, Segoe UI, Roboto, Arial, sans-serif;
-  overflow-x:hidden;
-  position:relative;
+
+/* Efectos de resplandor */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.3s ease, background 0.3s ease;
 }
 
-/* Glow background - LIGHT (sutil) */
-body::before, body::after{
-  content:""; position:fixed; inset:auto; pointer-events:none; z-index:-1;
-}
-body::before{
-  top:-15%; left:-10%; width:65vw; height:55vh; filter:blur(90px);
-  background:radial-gradient(circle, rgba(139,92,246,.08) 0%, rgba(168,85,247,.05) 35%, transparent 70%);
-}
-body::after{
-  right:-10%; top:10%; width:55vw; height:50vh; filter:blur(90px);
-  background:radial-gradient(circle, rgba(168,85,247,.06) 0%, rgba(139,92,246,.04) 40%, transparent 70%);
+body::before {
+  top: -15%;
+  left: -10%;
+  width: 65vw;
+  height: 55vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, var(--glow-1) 0%, transparent 65%),
+    radial-gradient(50% 50% at 20% 30%, var(--glow-2) 0%, transparent 70%);
 }
 
-/* Glow background - DARK (intenso) */
-[data-theme="dark"] body::before{
-  background:radial-gradient(circle, rgba(139,92,246,.35) 0%, rgba(168,85,247,.25) 35%, transparent 70%);
-}
-[data-theme="dark"] body::after{
-  background:radial-gradient(circle, rgba(168,85,247,.3) 0%, rgba(139,92,246,.2) 40%, transparent 70%);
+body::after {
+  right: -10%;
+  top: 10%;
+  width: 55vw;
+  height: 50vh;
+  filter: blur(90px);
+  background:
+    radial-gradient(50% 50% at 50% 50%, var(--glow-3) 0%, transparent 65%),
+    radial-gradient(50% 50% at 70% 30%, var(--glow-4) 0%, transparent 70%);
 }
 
 /* Layout principal */

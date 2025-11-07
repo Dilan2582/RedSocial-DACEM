@@ -1,0 +1,74 @@
+/* Estilos base para botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-decoration: none;
+  gap: 8px;
+}
+
+/* Botón primario */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  color: #fff;
+  box-shadow: var(--btn-shadow);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: var(--btn-hover-shadow);
+}
+
+/* Botón secundario (ghost) */
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn.ghost:hover {
+  background: var(--hover-bg);
+  border-color: var(--hover-border);
+  box-shadow: var(--hover-shadow);
+}
+
+/* Botón de peligro */
+.btn.danger {
+  background: var(--error);
+  color: white;
+}
+
+.btn.danger:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(239,68,68,.2);
+}
+
+/* Tamaños de botón */
+.btn.small {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.btn.large {
+  padding: 12px 24px;
+  font-size: 1.1rem;
+}
+
+/* Estados del botón */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Botón con icono */
+.btn i, .btn svg {
+  width: 1.2em;
+  height: 1.2em;
+}

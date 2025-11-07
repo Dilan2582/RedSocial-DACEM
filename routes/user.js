@@ -30,10 +30,14 @@ router.get('/avatar/:id', C.streamAvatar);
 router.get('/me',         ensureAuth, C.me);
 router.put('/update',     ensureAuth, C.update);
 router.get('/others',     ensureAuth, C.listOthers);
+router.get('/search',     ensureAuth, C.searchUsers);
 router.get('/:id/public', ensureAuth, C.publicProfile);
 
 // Subidas (avatar/banner) usando tu middleware `upload`
 router.post('/me/avatar', ensureAuth, upload.single('avatar'), C.updateAvatar);
 router.put('/me/banner',  ensureAuth, upload.single('banner'),  C.updateBanner);
+
+// Búsqueda de usuarios
+router.get('/search', ensureAuth, C.searchUsers);
 
 module.exports = router;

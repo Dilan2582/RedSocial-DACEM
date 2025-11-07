@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -24,9 +24,11 @@
   <!-- Navegación suave (cargar antes para prevenir FOUC) -->
   <script src="js/smooth-navigation.js"></script>
   
+  <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/buttons.css">
   <link rel="stylesheet" href="css/sidebar.css?v=2">
-  <link rel="stylesheet" href="css/profile.css?v=16">
+  <link rel="stylesheet" href="css/profile.css?v=17">
   <link rel="stylesheet" href="css/transformations.css">
 </head>
 <body class="profile-page">
@@ -37,6 +39,13 @@
         <span class="logo-badge"><img src="img/Dacem.png" alt="DACEM"></span>
         DACEM
       </div>
+      
+      <!-- Barra de búsqueda -->
+      <div class="top-search">
+        <input id="topSearch" type="search" placeholder="Buscar usuarios…">
+        <div id="topSearchResults" class="top-search-results"></div>
+      </div>
+
       <div class="topbar-actions">
         <button id="themeToggle" class="btn ghost small" title="Cambiar tema">
           <i class="nav-ico" data-lucide="moon"></i>
@@ -864,10 +873,16 @@
           body: JSON.stringify({ imageUrl })
         });
 
+        // Manejo de errores HTTP
+        if (!res.ok) {
+          console.error('Error HTTP:', res.status, res.statusText);
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
         const data = await res.json();
 
         if (!data.ok) {
-          alert('Error: ' + data.message);
+          alert('Error: ' + (data.message || 'Error desconocido'));
           btn.disabled = false;
           btn.innerHTML = originalText;
           return;
@@ -1274,5 +1289,8 @@
 
   <!-- Sidebar unificado -->
   <script src="js/sidebar.js"></script>
+  
+  <!-- Script de búsqueda -->
+  <script src="js/search.js"></script>
 </body>
 </html>
