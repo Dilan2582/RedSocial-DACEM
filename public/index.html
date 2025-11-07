@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/header.css">
   <link rel="stylesheet" href="css/buttons.css">
 
+  <style>
     *{box-sizing:border-box}
     html,body{height:100%; margin:0}
     body.auth-page{
@@ -146,6 +147,15 @@
 
     #recaptcha-login, #recaptcha-register{ display:flex; justify-content:center; margin:8px 0; transform:scale(0.92) }
 
+    .msg{margin-top:8px; font-size:.9rem}
+    .msg.error{color:var(--error)}
+    .msg.success{color:var(--success)}
+
+    /* Tema toggle */
+    #themeToggle{ position:absolute; top:16px; right:16px; background:transparent; border:1px solid var(--line); color:var(--text); width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.2s ease }
+    #themeToggle:hover{ background:var(--hover-bg); border-color:var(--primary) }
+    #themeIcon{ display:flex; align-items:center; justify-content:center }
+
     /* Modal registro */
     .modal-backdrop{
       position:fixed; inset:0; background:#0008; display:none; align-items:center; justify-content:center; z-index:60;
@@ -195,9 +205,9 @@
 
   <main class="auth-shell">
     <section class="card" id="loginCard">
-      <!-- Tema -->
-      <button id="themeToggle" style="position:absolute;top:16px;right:16px;background:transparent;border:1px solid var(--line);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s ease" title="Cambiar tema">
-        <span id="themeIcon" style="display:flex;align-items:center;justify-content:center"></span>
+      <!-- Tema toggle -->
+      <button id="themeToggle" title="Cambiar tema">
+        <span id="themeIcon"></span>
       </button>
 
       <!-- Logo -->
