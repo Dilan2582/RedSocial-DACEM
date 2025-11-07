@@ -21,6 +21,11 @@
     })();
   </script>
   
+  <!-- Navegación suave (cargar antes para prevenir FOUC) -->
+  <script src="js/smooth-navigation.js"></script>
+  
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/notifications.css">
 </head>
 <body class="notifications-page">
@@ -43,37 +48,7 @@
 
   <div class="wrap">
     <div class="layout">
-      <!-- Sidebar -->
-      <aside class="sidebar">
-        <nav class="nav">
-          <a class="nav-item" href="user.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5M5 10v10h14V10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Inicio
-          </a>
-          <a class="nav-item active" href="notifications.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Notificaciones
-            <span class="notif-badge" id="notifBadge" style="display:none"></span>
-          </a>
-          <a class="nav-item" href="messages.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mensajes
-            <span class="unread-badge" id="unreadBadge" style="display:none"></span>
-          </a>
-          <a class="nav-item" href="profile.html">
-            <span class="nav-ico" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </span>
-            Mi perfil
-          </a>
-        </nav>
-      </aside>
+      <!-- Sidebar se generará dinámicamente -->
 
       <!-- Main -->
       <main class="main">
@@ -89,20 +64,7 @@
             <span>Todas</span>
             <span class="filter-count" id="countAll">0</span>
           </button>
-          <button class="filter-btn" data-filter="like">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-            <span>Likes</span>
-            <span class="filter-count" id="countLikes">0</span>
-          </button>
-          <button class="filter-btn" data-filter="comment">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-            <span>Comentarios</span>
-            <span class="filter-count" id="countComments">0</span>
-          </button>
+          
           <button class="filter-btn" data-filter="follow_request">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -110,8 +72,24 @@
               <line x1="19" y1="8" x2="19" y2="14"></line>
               <line x1="22" y1="11" x2="16" y2="11"></line>
             </svg>
-            <span>Solicitudes</span>
+            <span>Amigos</span>
             <span class="filter-count" id="countFollows">0</span>
+          </button>
+
+          <button class="filter-btn" data-filter="like">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>Likes</span>
+            <span class="filter-count" id="countLikes">0</span>
+          </button>
+
+          <button class="filter-btn" data-filter="comment">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Comentarios</span>
+            <span class="filter-count" id="countComments">0</span>
           </button>
         </div>
 
@@ -129,11 +107,13 @@
         <!-- Empty state -->
         <div class="empty-state" id="emptyState" style="display:none">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <line x1="19" y1="8" x2="19" y2="14"></line>
+            <line x1="22" y1="11" x2="16" y2="11"></line>
           </svg>
-          <h3>No hay notificaciones</h3>
-          <p>Cuando alguien interactúe con tu contenido, lo verás aquí</p>
+          <h3>No hay nuevos amigos</h3>
+          <p>Cuando alguien te siga, aparecerá aquí</p>
         </div>
       </main>
     </div>
@@ -224,11 +204,11 @@
         updateCounts(data);
 
         // Actualizar badge del sidebar
-        const badge = document.getElementById('notifBadge');
-        if (data.unreadCount > 0) {
+        const badge = document.getElementById('notificationsBadge');
+        if (badge && data.unreadCount > 0) {
           badge.textContent = data.unreadCount;
           badge.style.display = 'inline-flex';
-        } else {
+        } else if (badge) {
           badge.style.display = 'none';
         }
       } catch (error) {
@@ -251,6 +231,7 @@
         let message = '';
         let actionUrl = '';
         let thumbnail = '';
+        let actionButtons = '';
 
         switch(notif.type) {
           case 'like':
@@ -264,8 +245,14 @@
             thumbnail = notif.post?.image ? `<img src="${abs(notif.post.image)}" alt="Post" class="notification-thumb">` : '';
             break;
           case 'follow_request':
-            message = `<strong>${name}</strong> comenzó a seguirte`;
+            message = `<strong>${name}</strong> quiere seguirte`;
             actionUrl = `profile.html?id=${sender._id}`;
+            actionButtons = `
+              <div class="follow-actions">
+                <button class="btn-accept" data-user-id="${sender._id}" data-notif-id="${notif._id}">Aceptar</button>
+                <button class="btn-reject" data-user-id="${sender._id}" data-notif-id="${notif._id}">Rechazar</button>
+              </div>
+            `;
             break;
           case 'follow_accepted':
             message = `<strong>${name}</strong> aceptó tu solicitud`;
@@ -285,6 +272,7 @@
             </div>
             <div class="notif-content">
               <div class="notif-text">${message}</div>
+              ${actionButtons}
               <div class="notif-time">${time}</div>
             </div>
             ${thumbnail}
@@ -315,9 +303,9 @@
         item.addEventListener('click', async (e) => {
           console.log('Click detectado en notificación', index);
           
-          // No hacer nada si es click en botón de eliminar
-          if (e.target.closest('.notification-delete')) {
-            console.log('Click en botón de eliminar, cancelando');
+          // No hacer nada si es click en botón de eliminar o botones de acción
+          if (e.target.closest('.notification-delete') || e.target.closest('.follow-actions')) {
+            console.log('Click en botón de acción, cancelando');
             return;
           }
           
@@ -382,6 +370,62 @@
           }
         });
       });
+
+      // Event listeners para botones de aceptar solicitud
+      const acceptButtons = document.querySelectorAll('.btn-accept');
+      acceptButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const userId = btn.dataset.userId;
+          const notifId = btn.dataset.notifId;
+          
+          try {
+            const res = await fetch(API(`/follow/${userId}/accept`), {
+              method: 'POST',
+              headers: H
+            });
+
+            if (res.ok) {
+              // Recargar notificaciones
+              loadNotifications();
+              showToast('Solicitud aceptada', 'success');
+            } else {
+              showToast('Error al aceptar solicitud', 'error');
+            }
+          } catch (error) {
+            console.error('Error aceptando solicitud:', error);
+            showToast('Error al aceptar solicitud', 'error');
+          }
+        });
+      });
+
+      // Event listeners para botones de rechazar solicitud
+      const rejectButtons = document.querySelectorAll('.btn-reject');
+      rejectButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const userId = btn.dataset.userId;
+          const notifId = btn.dataset.notifId;
+          
+          try {
+            const res = await fetch(API(`/follow/${userId}/reject`), {
+              method: 'POST',
+              headers: H
+            });
+
+            if (res.ok) {
+              // Recargar notificaciones
+              loadNotifications();
+              showToast('Solicitud rechazada', 'success');
+            } else {
+              showToast('Error al rechazar solicitud', 'error');
+            }
+          } catch (error) {
+            console.error('Error rechazando solicitud:', error);
+            showToast('Error al rechazar solicitud', 'error');
+          }
+        });
+      });
     }
 
     // Actualizar contadores
@@ -434,6 +478,31 @@
       }
     }
 
+    // Mostrar toast/notificación
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
     // Marcar todas como leídas
     document.getElementById('markAllRead').addEventListener('click', async () => {
       try {
@@ -474,5 +543,9 @@
     // Auto-refresh cada 30 segundos
     setInterval(loadNotifications, 30000);
   </script>
+  
+  <!-- Sidebar unificado -->
+  <script src="js/sidebar.js"></script>
 </body>
 </html>
+

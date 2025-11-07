@@ -13,10 +13,7 @@ async function connectMongo() {
   // Opcional: mantiene compatibilidad con filtros antiguos
   mongoose.set("strictQuery", true);
 
-  await mongoose.connect(uri, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 15000,
-  });
+  await mongoose.connect(uri);
 
   isConnected = true;
   console.log("✅ Conectado a MongoDB Atlas:", mongoose.connection.name);

@@ -102,30 +102,79 @@ class ImageTransformations {
         url: mediaUrls.original
       },
       {
-        type: 't1',
+        type: 't1_bw',
         label: 'Blanco y Negro',
         description: 'Versión en escala de grises',
-        icon: '⬜',
-        url: mediaUrls.t1
+        icon: '⚫',
+        url: mediaUrls.t1_bw
       },
       {
-        type: 't2',
+        type: 't2_sepia',
         label: 'Sepia',
         description: 'Efecto vintage sepia',
-        icon: '🔶',
-        url: mediaUrls.t2
+        icon: '🌅',
+        url: mediaUrls.t2_sepia
       },
       {
-        type: 't3',
+        type: 't3_blur',
         label: 'Blur Suave',
         description: 'Efecto de desenfoque',
-        icon: '✨',
-        url: mediaUrls.t3
+        icon: '🌫️',
+        url: mediaUrls.t3_blur
+      },
+      {
+        type: 't4_upscale',
+        label: 'Ampliada 2x',
+        description: 'Versión ampliada con IA',
+        icon: '🔍',
+        url: mediaUrls.t4_upscale
+      },
+      {
+        type: 't5_bright',
+        label: 'Brillante',
+        description: 'Mayor brillo y contraste',
+        icon: '☀️',
+        url: mediaUrls.t5_bright
+      },
+      {
+        type: 't6_dark',
+        label: 'Oscura',
+        description: 'Tonos más oscuros',
+        icon: '🌙',
+        url: mediaUrls.t6_dark
+      },
+      {
+        type: 't7_vibrant',
+        label: 'Vibrante',
+        description: 'Colores más vivos',
+        icon: '🎨',
+        url: mediaUrls.t7_vibrant
+      },
+      {
+        type: 't8_warm',
+        label: 'Cálida',
+        description: 'Tonos cálidos',
+        icon: '🌞',
+        url: mediaUrls.t8_warm
+      },
+      {
+        type: 't9_cool',
+        label: 'Fría',
+        description: 'Tonos fríos',
+        icon: '❄️',
+        url: mediaUrls.t9_cool
+      },
+      {
+        type: 't10_invert',
+        label: 'Invertida',
+        description: 'Colores invertidos',
+        icon: '🔄',
+        url: mediaUrls.t10_invert
       },
       {
         type: 'thumb',
         label: 'Miniatura',
-        description: 'Versión comprimida para carga rápida',
+        description: 'Versión comprimida',
         icon: '📷',
         url: mediaUrls.thumb
       }
@@ -194,9 +243,16 @@ class ImageTransformations {
         this.addTransformationButton(postElement, {
           original: post.media.original,
           thumb: post.media.thumb,
-          t1: post.media.t1,
-          t2: post.media.t2,
-          t3: post.media.t3
+          t1_bw: post.media.t1_bw,
+          t2_sepia: post.media.t2_sepia,
+          t3_blur: post.media.t3_blur,
+          t4_upscale: post.media.t4_upscale,
+          t5_bright: post.media.t5_bright,
+          t6_dark: post.media.t6_dark,
+          t7_vibrant: post.media.t7_vibrant,
+          t8_warm: post.media.t8_warm,
+          t9_cool: post.media.t9_cool,
+          t10_invert: post.media.t10_invert
         });
       }
     });
